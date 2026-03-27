@@ -6,9 +6,10 @@ import {
   listarProdutos,
   listarUnidadesMedida
 } from '../../servicos/produtos';
+import { filtrarProdutos } from '../../utilitarios/filtrarProdutos';
 import { ListaProdutos } from './listaProdutos';
 
-export function CorpoProdutos() {
+export function CorpoProdutos({ pesquisa }) {
   const [produtos, definirProdutos] = useState([]);
   const [carregando, definirCarregando] = useState(true);
   const [mensagemErro, definirMensagemErro] = useState('');
@@ -56,11 +57,13 @@ export function CorpoProdutos() {
     carregarProdutos();
   }, []);
 
+  const produtosFiltrados = filtrarProdutos(produtos, pesquisa);
+
   return (
     <CorpoPagina>
       <div className="gradePainelProdutos">
         <ListaProdutos
-          produtos={produtos}
+          produtos={produtosFiltrados}
           carregando={carregando}
           mensagemErro={mensagemErro}
         />

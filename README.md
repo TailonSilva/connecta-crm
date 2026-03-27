@@ -21,11 +21,13 @@ Projeto base com:
 - `complementar` segue o estilo de apoio contextual, como o botao `Sair` da barra lateral
 - Todo icone de botao deve usar o padrao centralizado de icones do projeto
 - O mesmo componente de botao deve suportar uso com texto, com icone + texto e somente icone, conforme a necessidade da interface
+- Nos cabecalhos de paginas com listagem, os botoes principais devem usar o padrao de somente icone
 - Botoes de acoes em grades devem seguir um padrao proprio, usando somente icones e um componente dedicado para acoes de linha
 - Grades de listagem devem usar o componente reutilizavel `GradePadrao`, mantendo cabecalho fixo e rolagem apenas na lista de itens
 - Acoes de linha em grades devem usar o componente reutilizavel `AcoesRegistro`
 - Sempre que falarmos em grid de listagem no projeto, a implementacao deve usar estrutura semantica de tabela com `table`, `thead`, `tbody`, `tr`, `th` e `td`
 - Selos de codigo em listagens devem usar o componente reutilizavel `CodigoRegistro`, adotando como padrao visual o estilo atual da tela de clientes
+- Funcoes JavaScript reutilizaveis do frontend devem ficar centralizadas em `client/src/utilitarios`
 - Toda alteracao em estrutura de banco de dados deve atualizar esta documentacao no mesmo ajuste, sem excecao
 - Toda tabela deve possuir CRUD completo no backend, com rotas para listar, consultar por identificador, incluir, atualizar e excluir
 - Sempre que uma tabela for criada ou alterada, o CRUD correspondente deve ser criado ou ajustado no mesmo ajuste
@@ -188,6 +190,9 @@ Sugestao de uso:
 - Acoes padrao de linha devem usar [acoesRegistro.jsx](c:\Users\tailo\OneDrive\Documentos\GitHub\crm\client\src\componentes\comuns\acoesRegistro.jsx)
 - Codigos de registros devem usar [codigoRegistro.jsx](c:\Users\tailo\OneDrive\Documentos\GitHub\crm\client\src\componentes\comuns\codigoRegistro.jsx)
 - O padrao de grade deve ser construido com estrutura real de tabela, e nao com simulacao usando `div` ou `grid`
+- Nos cabecalhos de `Clientes` e `Produtos`, o conjunto padrao de acoes deve ser `Importar`, `Filtrar` e `Novo registro`, todos em botoes somente com icone
+- Ao lado do botao de filtro deve existir um campo de pesquisa funcional, capaz de buscar por qualquer informacao exibida no grid
+- A ordem visual padrao no cabecalho das listagens deve ser, da direita para a esquerda: `Incluir`, `Importar`, `Filtro` e `Pesquisa`
 - O cabecalho da grade deve permanecer fixo
 - Apenas os itens da grade devem ter rolagem vertical
 - A definicao das colunas continua na tela de dominio, como em [cabecalhoGradeClientes.jsx](c:\Users\tailo\OneDrive\Documentos\GitHub\crm\client\src\paginas\clientes\cabecalhoGradeClientes.jsx)

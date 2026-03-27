@@ -326,6 +326,39 @@ body {
   gap: 12px;
 }
 
+.campoPesquisa {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 240px;
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid rgba(23, 145, 226, 0.18);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--corTextoSuave);
+}
+
+.iconeCampoPesquisa {
+  width: 16px;
+  height: 16px;
+  color: var(--corTextoSuave);
+  flex: 0 0 auto;
+}
+
+.entradaCampoPesquisa {
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--corTexto);
+  font: inherit;
+}
+
+.entradaCampoPesquisa::placeholder {
+  color: var(--corTextoSuave);
+}
+
 .cabecalhoPagina h1 {
   margin: 0 0 6px;
   font-size: 2rem;
@@ -880,6 +913,11 @@ body {
   .acoesCabecalhoPagina {
     width: 100%;
     flex-wrap: wrap;
+  }
+
+  .campoPesquisa {
+    min-width: 0;
+    width: 100%;
   }
 
   .campoBusca {

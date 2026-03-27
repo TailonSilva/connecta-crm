@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { CorpoPagina } from '../../componentes/layout/corpoPagina';
 import { listarClientes, listarContatos, listarVendedores } from '../../servicos/clientes';
+import { filtrarClientes } from '../../utilitarios/filtrarClientes';
 import { ListaClientes } from './listaClientes';
 
-export function CorpoClientes() {
+export function CorpoClientes({ pesquisa }) {
   const [clientes, definirClientes] = useState([]);
   const [carregando, definirCarregando] = useState(true);
   const [mensagemErro, definirMensagemErro] = useState('');
@@ -47,11 +48,13 @@ export function CorpoClientes() {
     carregarClientes();
   }, []);
 
+  const clientesFiltrados = filtrarClientes(clientes, pesquisa);
+
   return (
     <CorpoPagina>
       <div className="gradePainelClientes">
         <ListaClientes
-          clientes={clientes}
+          clientes={clientesFiltrados}
           carregando={carregando}
           mensagemErro={mensagemErro}
         />
