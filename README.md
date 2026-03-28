@@ -1,41 +1,389 @@
 # CRM Desktop
 
-Projeto base com:
+CRM desktop com `Electron`, `React + Vite`, `Express` e `SQLite`, com backend local, banco embarcado e interface em portugues.
+
+O projeto ja possui autenticacao, controle de acesso por perfil, agenda semanal interativa, cadastros principais de clientes e produtos, tela de configuracoes com diversos cadastros auxiliares e estrutura pronta para expansao de modulos como `Atendimentos`, `Orcamentos` e `Pedidos`.
+
+## Stack
 
 - `Electron` para a aplicacao desktop
-- `React + Vite` para a interface
-- `Express` para a API local
-- `SQLite` para persistencia embutida
+- `React 19 + Vite` para a interface
+- `Express 5` para a API local
+- `SQLite` para persistencia embarcada
+
+## Estrutura principal
+
+- `client/`: aplicacao React
+- `client/src/componentes/`: componentes reutilizaveis da interface
+- `client/src/paginas/`: paginas do sistema
+- `client/src/servicos/`: comunicacao com a API
+- `client/src/utilitarios/`: funcoes auxiliares e regras compartilhadas do frontend
+- `client/src/recursos/`: estilos e recursos visuais
+- `electron/`: processo principal e preload do desktop
+- `server/app.js`: configuracao principal da API Express
+- `server/index.js`: inicializacao do servidor
+- `server/rotas/`: rotas customizadas e autenticacao
+- `server/configuracoes/`: banco SQLite, entidades e infraestrutura compartilhada
+- `server/scripts/`: scripts utilitarios, incluindo populacao do banco
+- `data/crm.sqlite`: arquivo local do banco
 
 ## Convencoes do projeto
 
-- Todo o projeto deve usar portugues em textos, nomes de variaveis, componentes, funcoes, rotas internas e documentacao, sempre que isso nao entrar em conflito com APIs externas ou requisitos da ferramenta utilizada
+- O projeto deve usar portugues em textos, nomes internos e documentacao sempre que nao houver conflito com APIs externas
 - Todo identificador definido pelo projeto deve usar `camelCase`
-- Esse padrao vale para nomes de arquivos internos, variaveis, funcoes, propriedades, rotas internas, tabelas, colunas, classes CSS e variaveis CSS
-- Excecoes sao apenas nomes obrigatorios de ferramentas e convencoes externas, como `package.json`, `package-lock.json`, `.gitignore`, `.gitattributes`, `.vscode`, `node_modules` e `vite.config.js`
-- O frontend deve ser dividido no maximo de componentes possivel, evitando concentrar estrutura e comportamento em arquivos grandes
-- Todo botao deve ser implementado a partir de componente reutilizavel do projeto, evitando uso direto de `button` fora de componentes base
-- O projeto deve trabalhar com tres estilos visuais padrao de botao: `primario`, `secundario` e `complementar`
-- `primario` segue o estilo de destaque, como em `Novo cliente`
-- `secundario` segue o estilo de apoio, como em `Importar`
-- `complementar` segue o estilo de apoio contextual, como o botao `Sair` da barra lateral
-- Todo icone de botao deve usar o padrao centralizado de icones do projeto
-- O mesmo componente de botao deve suportar uso com texto, com icone + texto e somente icone, conforme a necessidade da interface
-- Nos cabecalhos de paginas com listagem, os botoes principais devem usar o padrao de somente icone
-- Botoes de acoes em grades devem seguir um padrao proprio, usando somente icones e um componente dedicado para acoes de linha
-- Grades de listagem devem usar o componente reutilizavel `GradePadrao`, mantendo cabecalho fixo e rolagem apenas na lista de itens
-- Acoes de linha em grades devem usar o componente reutilizavel `AcoesRegistro`
-- Sempre que falarmos em grid de listagem no projeto, a implementacao deve usar estrutura semantica de tabela com `table`, `thead`, `tbody`, `tr`, `th` e `td`
-- Selos de codigo em listagens devem usar o componente reutilizavel `CodigoRegistro`, adotando como padrao visual o estilo atual da tela de clientes
-- Funcoes JavaScript reutilizaveis do frontend devem ficar centralizadas em `client/src/utilitarios`
-- Toda alteracao em estrutura de banco de dados deve atualizar esta documentacao no mesmo ajuste, sem excecao
-- Toda tabela deve possuir CRUD completo no backend, com rotas para listar, consultar por identificador, incluir, atualizar e excluir
-- Sempre que uma tabela for criada ou alterada, o CRUD correspondente deve ser criado ou ajustado no mesmo ajuste
-- Sempre que houver dados de teste com imagens, devem ser usados links publicos validos para permitir carregamento real da interface
+- Componentes, utilitarios, servicos e estilos devem ser reaproveitados ao maximo
+- Todo botao deve sair do componente reutilizavel padrao do projeto
+- Os estilos padrao de botao sao `primario`, `secundario`, `complementar` e `perigo`
+- O projeto usa botoes com texto, icone + texto e somente icone, conforme o contexto
+- Cabecalhos de paginas e modais de configuracao priorizam botoes somente com icone
+- Grades principais devem usar estrutura semantica real de tabela
+- Acoes de linha devem usar o componente central de acoes da interface
+- Selos de codigo devem usar o componente padrao de codigo do projeto
+- Funcoes reutilizaveis do frontend devem ficar em `client/src/utilitarios`
+- Toda alteracao estrutural no banco deve ser acompanhada de ajuste nesta documentacao
 
-## Padrao de CRUD
+## Componentes e padroes reutilizaveis
 
-Cada tabela cadastrada no arquivo [entidades.js](c:\Users\tailo\OneDrive\Documentos\GitHub\crm\server\configuracoes\entidades.js) recebe automaticamente estas operacoes:
+Padroes hoje centralizados no frontend:
+
+- `Botao`: botoes primarios, secundarios, complementares, perigo e somente icone
+- `GradePadrao`: grades principais com cabecalho fixo e rolagem na lista
+- `AcoesRegistro`: acoes padrao de linha
+- `CodigoRegistro`: selo visual de codigo
+- `CampoImagemPadrao`: upload e preview de imagem
+- `ModalFiltros`: modal generico de filtros
+- `CampoSelecaoMultiplaModal`: selecao multipla com botao-resumo e modal com checkbox
+
+Utilitarios importantes:
+
+- `normalizarTelefone.js`: padroniza telefone no formato brasileiro
+- `normalizarPreco.js`: trata exibicao e digitacao de preco em real
+- `obterPrimeiroCodigoDisponivel.js`: encontra o primeiro codigo livre para novos registros
+
+## Modulos ja implementados
+
+### Login e sessao
+
+- Tela de login com marca da empresa
+- Validacao de `usuario` e `senha` via API local
+- Sessao persistida no frontend
+- Rodape da barra lateral com dados do usuario logado
+
+### Perfis de acesso
+
+Perfis disponiveis:
+
+- `Administrador`
+- `Gestor`
+- `Usuario padrao`
+
+Regras atualmente aplicadas no frontend:
+
+- `Usuario padrao` nao pode alterar configuracoes
+- `Usuario padrao` nao acessa `Empresa` nem `Usuarios` na tela de configuracoes
+- `Usuario padrao` consulta produtos, sem incluir, editar, importar ou inativar
+- `Usuario padrao` enxerga apenas clientes do vendedor vinculado a ele
+- Ao incluir cliente, `Usuario padrao` ja recebe o vendedor fixado e bloqueado
+- Na agenda, `Usuario padrao` nao pode excluir agendamentos
+
+Observacao:
+
+- As restricoes de permissao estao principalmente no frontend
+- O backend ainda nao implementa uma camada completa de autorizacao por perfil
+
+### Clientes
+
+- Tela com grade, pesquisa e filtro
+- Modal em abas para incluir, editar e consultar
+- Abas atuais: `Dados gerais`, `Endereco`, `Observacoes`, `Contato`, `Atendimento` e `Vendas`
+- Thumbnail com codigo do cliente
+- Integracao publica para consulta de `CEP`
+- Integracao publica para consulta de `CNPJ`
+- Aba de contatos com grade propria e modal dedicado para incluir e editar contato
+- Inativacao persiste no banco
+
+Filtros de clientes:
+
+- `Estado`
+- `Cidade`
+- `Ramo de atividade`
+- `Vendedor`
+- `Tipo`
+- `Ativo`
+
+### Produtos
+
+- Tela com grade, pesquisa e filtro
+- Modal no mesmo padrao de clientes
+- Modo incluir, editar e consultar
+- Codigo automatico ao incluir
+- Upload de imagem no padrao reutilizavel do projeto
+- Campo de preco com mascara e digitacao amigavel em real
+- Inativacao persiste no banco
+
+Filtros de produtos:
+
+- `Grupo`
+- `Marca`
+- `Unidade`
+- `Ativo`
+
+### Agenda
+
+- Agenda semanal de segunda a sexta
+- Grade de `15 em 15 minutos`
+- Expansao automatica da faixa horaria quando houver agendamento fora do expediente padrao
+- Horario padrao baseado na configuracao de expediente da empresa
+- Intervalo sem expediente com destaque visual leve
+- Selecao de faixa por arraste
+- Duplo clique na grade para incluir em um horario especifico
+- Botao de incluir que usa a faixa selecionada
+- Clique simples no card seleciona
+- Duplo clique no card abre edicao
+- Tooltip no hover com detalhes completos
+- Cards coloridos conforme o tipo de agenda
+- Suporte visual a conflitos de horario, dividindo o espaco em vez de sobrepor
+- Copiar e colar agendamento com `Ctrl+C` e `Ctrl+V`
+
+Comportamento de copia na agenda:
+
+- Seleciona um card com um clique
+- `Ctrl+C` copia o agendamento selecionado
+- `Ctrl+V` cola na celula ou faixa de horario selecionada
+- Se o destino for uma faixa, a copia usa aquela faixa
+- Se o destino for apenas um horario, mantem a duracao original do agendamento copiado
+
+Campos atuais do agendamento:
+
+- `Assunto`
+- `Dia`
+- `Tipo`
+- `Local`
+- `Horario de inicio`
+- `Horario de fim`
+- `Cliente`
+- `Contato do cliente`
+- `Recursos` com selecao multipla
+- `Usuarios` com selecao multipla
+- `Status da visita`
+
+Regras atuais do agendamento:
+
+- `Status` e `Usuario` sao obrigatorios
+- `Contato do cliente` e obrigatorio quando houver cliente
+- `Cliente`, `Local` e `Recurso` podem se tornar obrigatorios conforme o `Tipo de agenda`
+- Um agendamento pode ter varios recursos e varios usuarios vinculados
+
+Filtros da agenda:
+
+- `Usuario` com selecao multipla
+- `Vendedor`
+- `Cliente`
+- `Local`
+- `Recurso` com selecao multipla
+- `Status`
+
+Regra dos filtros multiplos:
+
+- Se selecionar um item, a agenda traz todas as ocorrencias em que ele participa
+- Se selecionar varios usuarios ou varios recursos, a agenda traz apenas os agendamentos em que todos os selecionados aparecem juntos
+
+### Configuracoes
+
+A tela de configuracoes usa cards grandes e modais padrao. Hoje ela cobre:
+
+- `Empresa`
+- `Usuarios`
+- `Ramos de atividade`
+- `Vendedores`
+- `Grupos de produto`
+- `Marcas`
+- `Unidades`
+- `Forma de pagamento` foi substituido por `Prazos de pagamento`
+- `Metodos de pagamento`
+- `Prazos de pagamento`
+- `Motivo da perda`
+- `Etapas do pedido`
+- `Etapas do orcamento`
+- `Locais da agenda`
+- `Tipos de recurso`
+- `Recursos`
+- `Tipos de agenda`
+- `Status da visita`
+
+Observacao:
+
+- Alguns titulos antigos podem ter sido substituidos visualmente para refletir melhor o processo comercial
+
+### Empresa
+
+O cadastro de empresa tem modal proprio com abas:
+
+- `Dados gerais`
+- `Endereco`
+- `Agenda`
+
+Campos de destaque:
+
+- `Razao social`
+- `Nome fantasia`
+- `Slogan`
+- `Documento`
+- `Imagem`
+- Endereco completo
+- Horarios de expediente da manha e da tarde
+- Flag para trabalho aos sabados
+- Horarios de sabado quando aplicavel
+
+Esses dados sao usados em:
+
+- Tela de login
+- Barra lateral
+- Faixa horaria padrao da agenda
+
+### Usuarios
+
+Usuarios possuem:
+
+- foto
+- nome
+- usuario
+- senha
+- tipo
+- ativo
+- vendedor vinculado
+
+Regra importante:
+
+- `Usuario padrao` deve obrigatoriamente estar vinculado a um vendedor
+
+## Banco de dados
+
+### Regras gerais
+
+- Banco utilizado: `SQLite`
+- Arquivo local: `data/crm.sqlite`
+- Chaves primarias usam inteiros autoincrementais
+- Campos booleanos usam `0` e `1`
+- O projeto faz migracoes simples no startup com `ALTER TABLE` e recriacao de tabelas quando necessario
+
+### Tabelas principais do sistema
+
+Cadastros comerciais:
+
+- `ramoAtividade`
+- `vendedor`
+- `grupoProduto`
+- `marca`
+- `unidadeMedida`
+- `cliente`
+- `contato`
+- `produto`
+
+Cadastros da empresa e acesso:
+
+- `empresa`
+- `usuario`
+
+Cadastros de configuracao comercial:
+
+- `metodoPagamento`
+- `prazoPagamento`
+- `motivoPerda`
+- `etapaPedido`
+- `etapaOrcamento`
+
+Cadastros da agenda:
+
+- `localAgenda`
+- `tipoRecurso`
+- `recurso`
+- `tipoAgenda`
+- `statusVisita`
+- `agendamento`
+- `agendamentoRecurso`
+- `agendamentoUsuario`
+
+### Campos de destaque por tabela
+
+#### `empresa`
+
+- dados gerais de empresa
+- `slogan`
+- `imagem`
+- endereco
+- expediente da manha e da tarde
+- configuracao de sabado
+
+#### `usuario`
+
+- `nome`
+- `usuario`
+- `senha`
+- `tipo`
+- `ativo`
+- `imagem`
+- `idVendedor`
+
+#### `cliente`
+
+- vendedor, ramo, documento, endereco, observacao e imagem
+- `tipo` pode ser `Fisico` ou `Juridico`
+
+#### `contato`
+
+- nome, cargo, email, telefone, whatsapp, ativo e principal
+
+#### `produto`
+
+- referencia, descricao, grupo, marca, unidade, preco, imagem e ativo
+
+#### `prazoPagamento`
+
+- metodo
+- `prazo1` ate `prazo6`
+- descricao montada a partir do metodo e dos dias
+
+#### `tipoAgenda`
+
+- `descricao`
+- `cor`
+- `obrigarCliente`
+- `obrigarLocal`
+- `obrigarRecurso`
+- `status`
+
+#### `statusVisita`
+
+- `descricao`
+- `icone` com emoji
+- `status`
+
+#### `agendamento`
+
+- `data`
+- `assunto`
+- `horaInicio`
+- `horaFim`
+- `idLocal`
+- `idCliente`
+- `idContato`
+- `idUsuario` legado e principal
+- `idTipoAgenda`
+- `idStatusVisita`
+- `tipo`
+- `status`
+
+Relacionamentos extras do agendamento:
+
+- `agendamentoRecurso`: varios recursos por agendamento
+- `agendamentoUsuario`: varios usuarios por agendamento
+
+## API
+
+### CRUD generico
+
+As tabelas registradas em `server/configuracoes/entidades.js` recebem automaticamente:
 
 | Operacao | Metodo | Padrao da rota |
 | --- | --- | --- |
@@ -45,159 +393,57 @@ Cada tabela cadastrada no arquivo [entidades.js](c:\Users\tailo\OneDrive\Documen
 | Atualizar | `PUT` | `/api/recurso/:id` |
 | Excluir | `DELETE` | `/api/recurso/:id` |
 
-Rotas atualmente registradas:
+Rotas cadastradas atualmente:
 
-- `ramoAtividade`: `/api/ramosAtividade`
-- `vendedor`: `/api/vendedores`
-- `grupoProduto`: `/api/gruposProduto`
-- `marca`: `/api/marcas`
-- `unidadeMedida`: `/api/unidadesMedida`
-- `cliente`: `/api/clientes`
-- `contato`: `/api/contatos`
-- `produto`: `/api/produtos`
+- `/api/ramosAtividade`
+- `/api/vendedores`
+- `/api/gruposProduto`
+- `/api/marcas`
+- `/api/unidadesMedida`
+- `/api/locaisAgenda`
+- `/api/tiposRecurso`
+- `/api/recursos`
+- `/api/tiposAgenda`
+- `/api/statusVisita`
+- `/api/metodosPagamento`
+- `/api/prazosPagamento`
+- `/api/motivosPerda`
+- `/api/etapasPedido`
+- `/api/etapasOrcamento`
+- `/api/empresas`
+- `/api/usuarios`
+- `/api/clientes`
+- `/api/contatos`
+- `/api/produtos`
 
-## Documentacao do banco de dados
+### Rotas customizadas
 
-### Regras gerais
+- `POST /api/login`: autenticacao
+- `/api/agendamentos`: CRUD customizado para agendamento, com suporte a multiplos recursos e multiplos usuarios
 
-- Banco utilizado: `SQLite`
-- Arquivo local: `data/crm.sqlite`
-- Chaves primarias usam identificadores inteiros autoincrementais
-- Campos booleanos usam `0` e `1` no SQLite
-- Campos de data de criacao usam `CURRENT_TIMESTAMP` como valor padrao quando aplicavel
+## Integracoes externas
 
-### Tabela `ramoAtividade`
+Hoje o frontend usa APIs publicas para:
 
-| Campo | Tipo | Regra |
-| --- | --- | --- |
-| `idRamo` | `INTEGER` | chave primaria |
-| `descricao` | `VARCHAR(150)` | obrigatorio |
-| `status` | `BOOLEAN` | obrigatorio, padrao `1` |
+- `CEP`: `ViaCEP`
+- `CNPJ`: `BrasilAPI`
 
-### Tabela `vendedor`
+Essas integracoes sao usadas no cadastro de clientes para preencher dados automaticamente.
 
-| Campo | Tipo | Regra |
-| --- | --- | --- |
-| `idVendedor` | `INTEGER` | chave primaria |
-| `nome` | `VARCHAR(150)` | obrigatorio |
-| `email` | `VARCHAR(150)` | obrigatorio |
-| `status` | `BOOLEAN` | obrigatorio, padrao `1` |
+## Seeds e dados de teste
 
-### Tabela `grupoProduto`
+O script `npm run popular:banco` recria dados de teste e hoje gera principalmente:
 
-| Campo | Tipo | Regra |
-| --- | --- | --- |
-| `idGrupo` | `INTEGER` | chave primaria |
-| `descricao` | `VARCHAR(150)` | obrigatorio |
-| `status` | `BOOLEAN` | obrigatorio, padrao `1` |
+- cadastros base comerciais
+- etapas padrao de orcamento em formato de funil
+- clientes e contatos de exemplo
+- produtos de exemplo
 
-### Tabela `marca`
+Os dados de teste usam:
 
-| Campo | Tipo | Regra |
-| --- | --- | --- |
-| `idMarca` | `INTEGER` | chave primaria |
-| `descricao` | `VARCHAR(150)` | obrigatorio |
-| `status` | `BOOLEAN` | obrigatorio, padrao `1` |
-
-### Tabela `unidadeMedida`
-
-| Campo | Tipo | Regra |
-| --- | --- | --- |
-| `idUnidade` | `INTEGER` | chave primaria |
-| `descricao` | `VARCHAR(50)` | obrigatorio |
-| `status` | `BOOLEAN` | obrigatorio, padrao `1` |
-
-### Tabela `cliente`
-
-| Campo | Tipo | Regra |
-| --- | --- | --- |
-| `idCliente` | `INTEGER` | chave primaria |
-| `idVendedor` | `INTEGER` | obrigatorio, chave estrangeira para `vendedor.idVendedor` |
-| `idRamo` | `INTEGER` | obrigatorio, chave estrangeira para `ramoAtividade.idRamo` |
-| `razaoSocial` | `VARCHAR(255)` | obrigatorio |
-| `nomeFantasia` | `VARCHAR(255)` | obrigatorio |
-| `tipo` | `VARCHAR(20)` | obrigatorio |
-| `cnpj` | `VARCHAR(18)` | obrigatorio |
-| `inscricaoEstadual` | `VARCHAR(20)` | opcional |
-| `status` | `BOOLEAN` | obrigatorio, padrao `1` |
-| `email` | `VARCHAR(150)` | opcional |
-| `telefone` | `VARCHAR(20)` | opcional |
-| `logradouro` | `VARCHAR(255)` | opcional |
-| `numero` | `VARCHAR(10)` | opcional |
-| `complemento` | `VARCHAR(100)` | opcional |
-| `bairro` | `VARCHAR(100)` | opcional |
-| `cidade` | `VARCHAR(100)` | opcional |
-| `estado` | `CHAR(2)` | opcional |
-| `cep` | `VARCHAR(10)` | opcional |
-| `observacao` | `TEXT` | opcional |
-| `imagem` | `VARCHAR(255)` | opcional |
-| `dataCriacao` | `TIMESTAMP` | obrigatorio, padrao `CURRENT_TIMESTAMP` |
-
-### Tabela `contato`
-
-| Campo | Tipo | Regra |
-| --- | --- | --- |
-| `idContato` | `INTEGER` | chave primaria |
-| `idCliente` | `INTEGER` | obrigatorio, chave estrangeira para `cliente.idCliente` |
-| `nome` | `VARCHAR(150)` | obrigatorio |
-| `cargo` | `VARCHAR(100)` | opcional |
-| `email` | `VARCHAR(150)` | opcional |
-| `telefone` | `VARCHAR(20)` | opcional |
-| `whatsapp` | `VARCHAR(20)` | opcional |
-| `status` | `BOOLEAN` | obrigatorio, padrao `1` |
-| `principal` | `BOOLEAN` | obrigatorio, padrao `0` |
-
-### Tabela `produto`
-
-| Campo | Tipo | Regra |
-| --- | --- | --- |
-| `idProduto` | `INTEGER` | chave primaria |
-| `referencia` | `VARCHAR(100)` | obrigatorio |
-| `descricao` | `VARCHAR(255)` | obrigatorio |
-| `idGrupo` | `INTEGER` | obrigatorio, chave estrangeira para `grupoProduto.idGrupo` |
-| `idMarca` | `INTEGER` | obrigatorio, chave estrangeira para `marca.idMarca` |
-| `idUnidade` | `INTEGER` | obrigatorio, chave estrangeira para `unidadeMedida.idUnidade` |
-| `preco` | `DECIMAL(10,2)` | obrigatorio, padrao `0` |
-| `imagem` | `VARCHAR(255)` | opcional |
-| `status` | `BOOLEAN` | obrigatorio, padrao `1` |
-| `dataCriacao` | `TIMESTAMP` | obrigatorio, padrao `CURRENT_TIMESTAMP` |
-
-## Paleta de cores
-
-Paleta inspirada na imagem de referencia do dashboard, com foco em azuis vibrantes, neutros frios e branco de interface.
-
-| Papel | Variavel CSS | Hex |
-| --- | --- | --- |
-| Azul principal | `--corPrimaria` | `#1791E2` |
-| Azul destaque | `--corDestaque` | `#1EA5F4` |
-| Azul profundo | `--corPrimariaEscura` | `#0D78C8` |
-| Cinza azulado | `--corBorda` | `#C7D3DD` |
-| Cinza claro | `--corSuperficieSuave` | `#E8EEF2` |
-| Branco gelo | `--corFundo` | `#F8FBFD` |
-| Texto escuro | `--corTexto` | `#3C4A57` |
-
-Sugestao de uso:
-
-- `#1791E2` para botoes principais, links e graficos
-- `#0D78C8` para hover, estados ativos e sidebar
-- `#C7D3DD` e `#E8EEF2` para bordas, cards e fundos secundarios
-- `#F8FBFD` para fundo base da interface
-- `#3C4A57` para titulos e texto principal
-
-## Padrao de Grade
-
-- Toda listagem principal deve usar o componente [gradePadrao.jsx](c:\Users\tailo\OneDrive\Documentos\GitHub\crm\client\src\componentes\comuns\gradePadrao.jsx)
-- Acoes padrao de linha devem usar [acoesRegistro.jsx](c:\Users\tailo\OneDrive\Documentos\GitHub\crm\client\src\componentes\comuns\acoesRegistro.jsx)
-- Codigos de registros devem usar [codigoRegistro.jsx](c:\Users\tailo\OneDrive\Documentos\GitHub\crm\client\src\componentes\comuns\codigoRegistro.jsx)
-- O padrao de grade deve ser construido com estrutura real de tabela, e nao com simulacao usando `div` ou `grid`
-- Nos cabecalhos de `Clientes` e `Produtos`, o conjunto padrao de acoes deve ser `Importar`, `Filtrar` e `Novo registro`, todos em botoes somente com icone
-- Ao lado do botao de filtro deve existir um campo de pesquisa funcional, capaz de buscar por qualquer informacao exibida no grid
-- A ordem visual padrao no cabecalho das listagens deve ser, da direita para a esquerda: `Incluir`, `Importar`, `Filtro` e `Pesquisa`
-- O cabecalho da grade deve permanecer fixo
-- Apenas os itens da grade devem ter rolagem vertical
-- A definicao das colunas continua na tela de dominio, como em [cabecalhoGradeClientes.jsx](c:\Users\tailo\OneDrive\Documentos\GitHub\crm\client\src\paginas\clientes\cabecalhoGradeClientes.jsx)
-- Cada linha da grade deve ser quebrada em componentes pequenos e especificos do dominio
-- Mensagens de carregamento, erro e vazio devem passar pelo componente padrao da grade
+- links publicos para imagens
+- cidades reais do Brasil
+- dados coerentes para validacao visual da interface
 
 ## Como rodar
 
@@ -207,41 +453,54 @@ Sugestao de uso:
 ### Desenvolvimento
 
 - `npm run dev`: sobe backend, frontend web e Electron juntos
-- `npm run dev:webapp`: sobe backend e frontend web juntos, sem Electron
-- `npm run dev:backend`: sobe somente o backend Express
+- `npm run dev:webapp`: sobe backend e frontend web juntos
+- `npm run dev:backend`: sobe somente o backend Express com `nodemon`
 - `npm run dev:web`: sobe somente o frontend web com Vite
-- `npm run dev:electron`: abre somente o Electron, esperando backend e web ja ativos
+- `npm run dev:electron`: abre somente o Electron, aguardando backend e frontend
 
 ### Inicializacao manual
 
-- `npm run start:backend`: inicia o backend sem nodemon
-- `npm run start:web`: inicia o frontend web no Vite
+- `npm run start:backend`: inicia o backend sem `nodemon`
+- `npm run start:web`: inicia o frontend web
 - `npm run start:electron`: abre o app no Electron
 
 ### Build
 
+- `npm run build`: gera a build web
 - `npm run build:web`: gera a build web em `dist/web`
-- `npm run build:electron`: gera a build web e empacota o app Electron em `dist/electron`
+- `npm run build:electron`: gera a build web e empacota o Electron em `dist/electron`
 
-### Dados de teste
+### Popular banco
 
-- `npm run popular:banco`: limpa e popula o banco com 10 registros em cada tabela
-- Os campos `imagem` de `cliente` e `produto` usam links publicos validos para testes visuais na interface
-- Os clientes de teste usam cidades reais do Brasil, com `cidade`, `estado` e `cep` coerentes
+- `npm run popular:banco`: limpa e popula o banco com dados de teste
 
-No modo desktop empacotado, o Electron inicia o backend local automaticamente e salva o SQLite em uma pasta de dados da aplicacao.
+## Paleta visual atual
 
-## Estrutura
+Variaveis CSS principais:
 
-- `client/`: aplicacao React
-- `client/src/componentes/`: componentes reutilizaveis da interface
-- `client/src/paginas/`: composicao das telas
-- `client/src/servicos/`: comunicacao com a API
-- `client/src/utilitarios/`: estruturas e funcoes auxiliares
-- `client/src/recursos/`: estilos, imagens e outros arquivos visuais
-- `electron/`: processo principal e preload do Electron
-- `server/app.js`: configuracao principal da API Express
-- `server/index.js`: inicializacao do servidor
-- `server/rotas/`: definicao das rotas da API
-- `server/repositorios/`: acesso aos dados do backend
-- `server/configuracoes/`: configuracoes compartilhadas, como banco SQLite
+| Papel | Variavel | Hex |
+| --- | --- | --- |
+| Azul principal | `--corPrimaria` | `#1791E2` |
+| Azul forte | `--corPrimariaForte` | `#0D78C8` |
+| Azul suave | `--corPrimariaSuave` | `#5BBDF5` |
+| Fundo | `--corFundo` | `#EEF4F9` |
+| Superficie | `--corSuperficie` | `#FFFFFF` |
+| Superficie suave | `--corSuperficieSuave` | `#DFE9F1` |
+| Borda | `--corBorda` | `#C8D5DF` |
+| Texto | `--corTexto` | `#3C4A57` |
+| Texto suave | `--corTextoSuave` | `#7A8894` |
+
+## Estado atual da navegacao
+
+Paginas hoje presentes no painel:
+
+- `Pagina inicial`
+- `Agenda`
+- `Atendimentos`
+- `Clientes`
+- `Produtos`
+- `Orcamentos`
+- `Pedidos`
+- `Configuracoes`
+
+Algumas dessas paginas ainda estao em estrutura base, prontas para evolucao futura.
