@@ -1,6 +1,6 @@
 import { Icone } from './icone';
 
-const variantesPermitidas = ['primario', 'secundario', 'complementar'];
+const variantesPermitidas = ['primario', 'secundario', 'complementar', 'perigo'];
 
 export function Botao({
   children,

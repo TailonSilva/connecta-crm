@@ -6,14 +6,27 @@ function normalizarTexto(valor) {
     .trim();
 }
 
-export function filtrarClientes(clientes, pesquisa) {
+export function filtrarClientes(clientes, pesquisa, filtros = {}) {
   const termo = normalizarTexto(pesquisa);
 
-  if (!termo) {
-    return clientes;
-  }
-
   return clientes.filter((cliente) => {
+    const passouFiltros = (
+      (!filtros.estado || normalizarTexto(cliente.estado) === normalizarTexto(filtros.estado)) &&
+      (!filtros.cidade || normalizarTexto(cliente.cidade) === normalizarTexto(filtros.cidade)) &&
+      (!filtros.idRamo || String(cliente.idRamo) === String(filtros.idRamo)) &&
+      (!filtros.idVendedor || String(cliente.idVendedor) === String(filtros.idVendedor)) &&
+      (!filtros.tipo || normalizarTexto(cliente.tipo) === normalizarTexto(filtros.tipo)) &&
+      (!filtros.status || String(Number(Boolean(cliente.status))) === String(filtros.status))
+    );
+
+    if (!passouFiltros) {
+      return false;
+    }
+
+    if (!termo) {
+      return true;
+    }
+
     const camposPesquisa = [
       cliente.idCliente,
       cliente.nomeFantasia,

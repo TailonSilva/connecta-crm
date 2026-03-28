@@ -5,7 +5,10 @@ import { LinhaCliente } from './linhaCliente';
 export function ListaClientes({
   clientes,
   carregando,
-  mensagemErro
+  mensagemErro,
+  aoEditarCliente,
+  aoConsultarCliente,
+  aoInativarCliente
 }) {
   return (
     <GradePadrao
@@ -17,7 +20,13 @@ export function ListaClientes({
       mensagemVazia="Nenhum cliente encontrado."
     >
       {clientes.map((cliente) => (
-        <LinhaCliente key={cliente.idCliente} cliente={cliente} />
+        <LinhaCliente
+          key={cliente.idCliente}
+          cliente={cliente}
+          aoConsultar={() => aoConsultarCliente(cliente)}
+          aoEditar={() => aoEditarCliente(cliente)}
+          aoInativar={() => aoInativarCliente(cliente)}
+        />
       ))}
     </GradePadrao>
   );

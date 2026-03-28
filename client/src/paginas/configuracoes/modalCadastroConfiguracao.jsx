@@ -1,0 +1,378 @@
+import { useEffect, useState } from 'react';
+import { Botao } from '../../componentes/comuns/botao';
+import { BotaoAcaoGrade } from '../../componentes/comuns/botaoAcaoGrade';
+import { CodigoRegistro } from '../../componentes/comuns/codigoRegistro';
+
+export function ModalCadastroConfiguracao({
+  aberto,
+  titulo,
+  rotuloIncluir,
+  registros,
+  chavePrimaria,
+  classeTabela = '',
+  classeFormulario = '',
+  statusField = 'status',
+  exibirConsulta = true,
+  somenteConsulta = false,
+  colunas,
+  camposFormulario,
+  aoFechar,
+  aoSalvar,
+  aoInativar
+}) {
+  const [modalFormularioAberto, definirModalFormularioAberto] = useState(false);
+  const [modoFormulario, definirModoFormulario] = useState('novo');
+  const [registroSelecionado, definirRegistroSelecionado] = useState(null);
+  const [formulario, definirFormulario] = useState({});
+  const [salvando, definirSalvando] = useState(false);
+  const [mensagemErro, definirMensagemErro] = useState('');
+
+  useEffect(() => {
+    if (!aberto) {
+      return;
+    }
+
+    definirModalFormularioAberto(false);
+    definirModoFormulario('novo');
+    definirRegistroSelecionado(null);
+    definirFormulario(criarFormularioVazio(camposFormulario));
+    definirSalvando(false);
+    definirMensagemErro('');
+  }, [aberto, camposFormulario]);
+
+  useEffect(() => {
+    if (!aberto) {
+      return undefined;
+    }
+
+    function tratarTecla(evento) {
+      if (evento.key === 'Escape' && modalFormularioAberto) {
+        fecharFormulario();
+        return;
+      }
+
+      if (evento.key === 'Escape' && !salvando) {
+        aoFechar();
+      }
+    }
+
+    window.addEventListener('keydown', tratarTecla);
+
+    return () => {
+      window.removeEventListener('keydown', tratarTecla);
+    };
+  }, [aberto, aoFechar, modalFormularioAberto, salvando]);
+
+  if (!aberto) {
+    return null;
+  }
+
+  function abrirNovo() {
+    definirRegistroSelecionado(null);
+    definirFormulario(criarFormularioVazio(camposFormulario));
+    definirModoFormulario('novo');
+    definirMensagemErro('');
+    definirModalFormularioAberto(true);
+  }
+
+  function abrirEdicao(registro) {
+    definirRegistroSelecionado(registro);
+    definirFormulario(criarFormularioRegistro(registro, camposFormulario));
+    definirModoFormulario('edicao');
+    definirMensagemErro('');
+    definirModalFormularioAberto(true);
+  }
+
+  function abrirConsulta(registro) {
+    definirRegistroSelecionado(registro);
+    definirFormulario(criarFormularioRegistro(registro, camposFormulario));
+    definirModoFormulario('consulta');
+    definirMensagemErro('');
+    definirModalFormularioAberto(true);
+  }
+
+  function fecharFormulario() {
+    definirModalFormularioAberto(false);
+    definirRegistroSelecionado(null);
+    definirModoFormulario('novo');
+    definirFormulario(criarFormularioVazio(camposFormulario));
+    definirMensagemErro('');
+    definirSalvando(false);
+  }
+
+  function alterarCampo(evento) {
+    const { name, value, type, checked } = evento.target;
+
+    definirFormulario((estadoAtual) => ({
+      ...estadoAtual,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  }
+
+  async function submeterFormulario(evento) {
+    evento.preventDefault();
+
+    if (modoFormulario === 'consulta') {
+      return;
+    }
+
+    const mensagemValidacao = camposFormulario.find((campo) => (
+      campo.required && String(formulario[campo.name] ?? '').trim() === ''
+    ));
+
+    if (mensagemValidacao) {
+      definirMensagemErro(`Informe ${mensagemValidacao.label.toLowerCase()}.`);
+      return;
+    }
+
+    definirSalvando(true);
+    definirMensagemErro('');
+
+    try {
+      await aoSalvar({
+        [chavePrimaria]: registroSelecionado?.[chavePrimaria],
+        ...formulario
+      });
+      fecharFormulario();
+    } catch (erro) {
+      definirMensagemErro(erro.message || `Nao foi possivel salvar ${titulo.toLowerCase()}.`);
+      definirSalvando(false);
+    }
+  }
+
+  function fecharAoClicarNoFundo(evento) {
+    if (evento.target === evento.currentTarget && !salvando) {
+      aoFechar();
+    }
+  }
+
+  function fecharFormularioNoFundo(evento) {
+    if (evento.target === evento.currentTarget && !salvando) {
+      fecharFormulario();
+    }
+  }
+
+  return (
+    <div className="camadaModal" role="presentation" onMouseDown={fecharAoClicarNoFundo}>
+      <section
+        className="modalCliente"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={`tituloModal${titulo}`}
+        onMouseDown={(evento) => evento.stopPropagation()}
+      >
+        <header className="cabecalhoModalCliente">
+          <h2 id={`tituloModal${titulo}`}>{titulo}</h2>
+
+          <div className="acoesCabecalhoModalCliente">
+            <Botao
+              variante="secundario"
+              type="button"
+              icone="fechar"
+              somenteIcone
+              title="Fechar"
+              aria-label="Fechar"
+              onClick={aoFechar}
+            >
+              Fechar
+            </Botao>
+            {!somenteConsulta ? (
+              <Botao
+                variante="primario"
+                type="button"
+                icone="adicionar"
+                somenteIcone
+                title={rotuloIncluir}
+                aria-label={rotuloIncluir}
+                onClick={abrirNovo}
+              >
+                {rotuloIncluir}
+              </Botao>
+            ) : null}
+          </div>
+        </header>
+
+        <div className="corpoModalCliente corpoModalUsuarios">
+          <section className="painelContatosModalCliente">
+            <div className="gradeContatosModal">
+              <table className={`tabelaContatosModal tabelaCadastrosConfiguracao ${classeTabela}`.trim()}>
+                <thead>
+                  <tr>
+                    <th>Codigo</th>
+                    {colunas.map((coluna) => (
+                      <th key={coluna.key}>{coluna.label}</th>
+                    ))}
+                    <th>Status</th>
+                    <th className="cabecalhoAcoesContato">Acoes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {registros.length > 0 ? (
+                    registros.map((registro) => (
+                      <tr key={registro[chavePrimaria]}>
+                        <td>
+                          <CodigoRegistro valor={registro[chavePrimaria]} />
+                        </td>
+                        {colunas.map((coluna) => (
+                          <td key={coluna.key}>
+                            {typeof coluna.render === 'function'
+                              ? coluna.render(registro)
+                              : registro[coluna.key]}
+                          </td>
+                        ))}
+                        <td>
+                          <span className={`etiquetaStatus ${registro[statusField] ? 'ativo' : 'inativo'}`}>
+                            {registro[statusField] ? 'Ativo' : 'Inativo'}
+                          </span>
+                        </td>
+                        <td className="celulaAcoesUsuarios">
+                          <div className="acoesContatoModal">
+                            {exibirConsulta || somenteConsulta ? (
+                              <BotaoAcaoGrade icone="consultar" titulo={`Consultar ${titulo.toLowerCase()}`} onClick={() => abrirConsulta(registro)} />
+                            ) : null}
+                            {!somenteConsulta ? (
+                              <BotaoAcaoGrade icone="editar" titulo={`Editar ${titulo.toLowerCase()}`} onClick={() => abrirEdicao(registro)} />
+                            ) : null}
+                            {!somenteConsulta ? (
+                              <BotaoAcaoGrade icone="inativar" titulo={`Inativar ${titulo.toLowerCase()}`} onClick={() => aoInativar(registro)} />
+                            ) : null}
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={colunas.length + 3} className="mensagemTabelaContatosModal">
+                        Nenhum registro cadastrado.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+
+        {modalFormularioAberto ? (
+          <div className="camadaModalContato" role="presentation" onMouseDown={fecharFormularioNoFundo}>
+            <form
+              className="modalContatoCliente"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={`tituloFormulario${titulo}`}
+              onMouseDown={(evento) => evento.stopPropagation()}
+              onSubmit={submeterFormulario}
+            >
+              <div className="cabecalhoModalContato">
+                <h3 id={`tituloFormulario${titulo}`}>
+                  {modoFormulario === 'consulta'
+                    ? `Consultar ${titulo.toLowerCase()}`
+                    : modoFormulario === 'edicao'
+                      ? `Editar ${titulo.toLowerCase()}`
+                      : `Incluir ${titulo.toLowerCase()}`}
+                </h3>
+                <div className="acoesFormularioContatoModal">
+                  <Botao variante="secundario" type="button" onClick={fecharFormulario} disabled={salvando}>
+                    {modoFormulario === 'consulta' ? 'Fechar' : 'Cancelar'}
+                  </Botao>
+                  {modoFormulario !== 'consulta' ? (
+                    <Botao variante="primario" type="submit" disabled={salvando}>
+                      {salvando ? 'Salvando...' : 'Salvar'}
+                    </Botao>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="corpoModalContato">
+                <div className={`gradeCamposModalCliente ${classeFormulario}`.trim()}>
+                  {camposFormulario.map((campo) => (
+                    campo.type === 'select' ? (
+                      <CampoSelect
+                        key={campo.name}
+                        label={campo.label}
+                        name={campo.name}
+                        value={formulario[campo.name]}
+                        onChange={alterarCampo}
+                        options={campo.options || []}
+                        disabled={modoFormulario === 'consulta'}
+                        required={campo.required}
+                      />
+                    ) : campo.type === 'checkbox' ? (
+                      <label key={campo.name} className="campoCheckboxFormulario" htmlFor={campo.name}>
+                        <input
+                          id={campo.name}
+                          type="checkbox"
+                          name={campo.name}
+                          checked={Boolean(formulario[campo.name])}
+                          onChange={alterarCampo}
+                          disabled={modoFormulario === 'consulta'}
+                        />
+                        <span>{campo.label}</span>
+                      </label>
+                    ) : (
+                      <CampoFormulario
+                        key={campo.name}
+                        label={campo.label}
+                        name={campo.name}
+                        type={campo.type || 'text'}
+                        value={formulario[campo.name]}
+                        onChange={alterarCampo}
+                        disabled={modoFormulario === 'consulta'}
+                        required={campo.required}
+                      />
+                    )
+                  ))}
+                </div>
+              </div>
+
+              {mensagemErro ? <p className="mensagemErroFormulario">{mensagemErro}</p> : null}
+            </form>
+          </div>
+        ) : null}
+      </section>
+    </div>
+  );
+}
+
+function CampoFormulario({ label, name, type = 'text', ...props }) {
+  return (
+    <div className="campoFormulario">
+      <label htmlFor={name}>{label}</label>
+      <input id={name} name={name} type={type} className="entradaFormulario" {...props} />
+    </div>
+  );
+}
+
+function CampoSelect({ label, name, options, ...props }) {
+  return (
+    <div className="campoFormulario">
+      <label htmlFor={name}>{label}</label>
+      <select id={name} name={name} className="entradaFormulario" {...props}>
+        <option value="">Selecione</option>
+        {options.map((option) => (
+          <option key={option.valor} value={option.valor}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function criarFormularioVazio(camposFormulario) {
+  return camposFormulario.reduce((acumulador, campo) => ({
+    ...acumulador,
+    [campo.name]: campo.type === 'checkbox'
+      ? Boolean(campo.defaultValue ?? true)
+      : String(campo.defaultValue ?? '')
+  }), {});
+}
+
+function criarFormularioRegistro(registro, camposFormulario) {
+  return camposFormulario.reduce((acumulador, campo) => ({
+    ...acumulador,
+    [campo.name]: campo.type === 'checkbox'
+      ? Boolean(registro[campo.name])
+      : String(registro[campo.name] ?? '')
+  }), {});
+}

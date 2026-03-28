@@ -1,7 +1,13 @@
 import { Botao } from '../../componentes/comuns/botao';
 import { CampoPesquisa } from '../../componentes/comuns/campoPesquisa';
 
-export function CabecalhoClientes({ pesquisa, aoAlterarPesquisa }) {
+export function CabecalhoClientes({
+  pesquisa,
+  aoAlterarPesquisa,
+  aoAbrirFiltros,
+  aoNovoCliente,
+  filtrosAtivos = false
+}) {
   return (
     <header className="cabecalhoPagina">
       <div>
@@ -16,9 +22,23 @@ export function CabecalhoClientes({ pesquisa, aoAlterarPesquisa }) {
           placeholder="Pesquisar clientes"
           ariaLabel="Pesquisar clientes"
         />
-        <Botao variante="secundario" icone="filtro" somenteIcone title="Filtrar" aria-label="Filtrar" />
+        <Botao
+          variante={filtrosAtivos ? 'primario' : 'secundario'}
+          icone="filtro"
+          somenteIcone
+          title="Filtrar"
+          aria-label="Filtrar"
+          onClick={aoAbrirFiltros}
+        />
         <Botao variante="secundario" icone="importar" somenteIcone title="Importar" aria-label="Importar" />
-        <Botao variante="primario" icone="adicionar" somenteIcone title="Novo cliente" aria-label="Novo cliente" />
+        <Botao
+          variante="primario"
+          icone="adicionar"
+          somenteIcone
+          title="Novo cliente"
+          aria-label="Novo cliente"
+          onClick={aoNovoCliente}
+        />
       </div>
     </header>
   );

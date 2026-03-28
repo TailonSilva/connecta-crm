@@ -35,6 +35,160 @@ const entidades = [
     camposPermitidos: ['descricao', 'status']
   },
   {
+    nome: 'localAgenda',
+    rota: '/api/locaisAgenda',
+    chavePrimaria: 'idLocal',
+    camposObrigatorios: ['descricao'],
+    camposPermitidos: ['descricao', 'status']
+  },
+  {
+    nome: 'tipoRecurso',
+    rota: '/api/tiposRecurso',
+    chavePrimaria: 'idTipoRecurso',
+    camposObrigatorios: ['descricao'],
+    camposPermitidos: ['descricao', 'status']
+  },
+  {
+    nome: 'recurso',
+    rota: '/api/recursos',
+    chavePrimaria: 'idRecurso',
+    camposObrigatorios: ['sigla', 'descricao', 'idTipoRecurso'],
+    camposPermitidos: ['sigla', 'descricao', 'idTipoRecurso', 'status']
+  },
+  {
+    nome: 'agendamento',
+    rota: '/api/agendamentos',
+    chavePrimaria: 'idAgendamento',
+    camposObrigatorios: [
+      'data',
+      'assunto',
+      'horaInicio',
+      'horaFim',
+      'idUsuario',
+      'idTipoAgenda',
+      'idStatusVisita'
+    ],
+    camposPermitidos: [
+      'data',
+      'assunto',
+      'horaInicio',
+      'horaFim',
+      'idLocal',
+      'idRecurso',
+      'idCliente',
+      'idContato',
+      'idUsuario',
+      'tipo',
+      'idTipoAgenda',
+      'idStatusVisita',
+      'status'
+    ]
+  },
+  {
+    nome: 'tipoAgenda',
+    rota: '/api/tiposAgenda',
+    chavePrimaria: 'idTipoAgenda',
+    camposObrigatorios: ['descricao', 'cor'],
+    camposPermitidos: [
+      'descricao',
+      'cor',
+      'obrigarCliente',
+      'obrigarLocal',
+      'obrigarRecurso',
+      'status'
+    ]
+  },
+  {
+    nome: 'statusVisita',
+    rota: '/api/statusVisita',
+    chavePrimaria: 'idStatusVisita',
+    camposObrigatorios: ['descricao'],
+    camposPermitidos: ['descricao', 'icone', 'status']
+  },
+  {
+    nome: 'metodoPagamento',
+    rota: '/api/metodosPagamento',
+    chavePrimaria: 'idMetodoPagamento',
+    camposObrigatorios: ['descricao'],
+    camposPermitidos: ['descricao', 'status']
+  },
+  {
+    nome: 'prazoPagamento',
+    rota: '/api/prazosPagamento',
+    chavePrimaria: 'idPrazoPagamento',
+    camposObrigatorios: ['idMetodoPagamento', 'prazo1'],
+    camposPermitidos: [
+      'descricao',
+      'idMetodoPagamento',
+      'prazo1',
+      'prazo2',
+      'prazo3',
+      'prazo4',
+      'prazo5',
+      'prazo6',
+      'status'
+    ]
+  },
+  {
+    nome: 'motivoPerda',
+    rota: '/api/motivosPerda',
+    chavePrimaria: 'idMotivo',
+    camposObrigatorios: ['descricao'],
+    camposPermitidos: ['descricao', 'status']
+  },
+  {
+    nome: 'etapaPedido',
+    rota: '/api/etapasPedido',
+    chavePrimaria: 'idEtapa',
+    camposObrigatorios: ['abreviacao', 'descricao', 'cor'],
+    camposPermitidos: ['abreviacao', 'descricao', 'cor', 'status']
+  },
+  {
+    nome: 'etapaOrcamento',
+    rota: '/api/etapasOrcamento',
+    chavePrimaria: 'idEtapaOrcamento',
+    camposObrigatorios: ['abreviacao', 'descricao', 'cor'],
+    camposPermitidos: ['abreviacao', 'descricao', 'cor', 'status']
+  },
+  {
+    nome: 'empresa',
+    rota: '/api/empresas',
+    chavePrimaria: 'idEmpresa',
+    camposObrigatorios: ['razaoSocial', 'nomeFantasia', 'tipo', 'cnpj'],
+    camposPermitidos: [
+      'razaoSocial',
+      'nomeFantasia',
+      'slogan',
+      'tipo',
+      'cnpj',
+      'inscricaoEstadual',
+      'email',
+      'telefone',
+      'horaInicioManha',
+      'horaFimManha',
+      'horaInicioTarde',
+      'horaFimTarde',
+      'trabalhaSabado',
+      'horaInicioSabado',
+      'horaFimSabado',
+      'logradouro',
+      'numero',
+      'complemento',
+      'bairro',
+      'cidade',
+      'estado',
+      'cep',
+      'imagem'
+    ]
+  },
+  {
+    nome: 'usuario',
+    rota: '/api/usuarios',
+    chavePrimaria: 'idUsuario',
+    camposObrigatorios: ['nome', 'usuario', 'senha', 'tipo'],
+    camposPermitidos: ['nome', 'usuario', 'senha', 'tipo', 'ativo', 'imagem', 'idVendedor']
+  },
+  {
     nome: 'cliente',
     rota: '/api/clientes',
     chavePrimaria: 'idCliente',
@@ -47,6 +201,7 @@ const entidades = [
       'cnpj'
     ],
     camposPermitidos: [
+      'idCliente',
       'idVendedor',
       'idRamo',
       'razaoSocial',
@@ -97,6 +252,7 @@ const entidades = [
       'preco'
     ],
     camposPermitidos: [
+      'idProduto',
       'referencia',
       'descricao',
       'idGrupo',

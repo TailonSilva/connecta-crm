@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { Botao } from '../comuns/botao';
+import { listarEmpresas } from '../../servicos/empresa';
 import { BotaoMenu } from './botaoMenu';
 
 function IconeMenu({ tipo }) {
@@ -8,6 +10,9 @@ function IconeMenu({ tipo }) {
     ),
     agenda: (
       <path d="M7 3.5V6m10-2.5V6M5.5 8.5h13M6.5 5h11A1.5 1.5 0 0 1 19 6.5v11a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 17.5v-11A1.5 1.5 0 0 1 6.5 5Zm1.5 6h3v3H8Z" />
+    ),
+    atendimentos: (
+      <path d="M7 5.5h10A1.5 1.5 0 0 1 18.5 7v12L15 16.5H7A1.5 1.5 0 0 1 5.5 15V7A1.5 1.5 0 0 1 7 5.5Zm2.5 3h5m-5 3h6m-6 3h3" />
     ),
     clientes: (
       <path d="M12 12.5a4.25 4.25 0 1 0-4.25-4.25A4.25 4.25 0 0 0 12 12.5Zm0 2c-4.7 0-8.5 2.35-8.5 5.25V21h17v-1.25c0-2.9-3.8-5.25-8.5-5.25Z" />
@@ -36,17 +41,52 @@ function IconeMenu({ tipo }) {
 export function BarraLateral({
   itens,
   paginaAtiva,
-  aoSelecionarPagina
+  usuarioLogado,
+  aoSelecionarPagina,
+  aoSair
 }) {
+  const [empresa, definirEmpresa] = useState(null);
+
+  useEffect(() => {
+    carregarEmpresa();
+
+    function tratarEmpresaAtualizada() {
+      carregarEmpresa();
+    }
+
+    window.addEventListener('empresa-atualizada', tratarEmpresaAtualizada);
+
+    return () => {
+      window.removeEventListener('empresa-atualizada', tratarEmpresaAtualizada);
+    };
+  }, []);
+
+  async function carregarEmpresa() {
+    try {
+      const empresas = await listarEmpresas();
+      definirEmpresa(empresas[0] || null);
+    } catch (_erro) {
+      definirEmpresa(null);
+    }
+  }
+
   return (
     <aside className="barraLateral">
       <div className="marcaLateral">
         <div className="logoLateral" aria-hidden="true">
-          <span className="logoLateralSimbolo" />
+          {empresa?.imagem ? (
+            <img
+              className="logoLateralImagem"
+              src={empresa.imagem}
+              alt={empresa.nomeFantasia || empresa.razaoSocial || 'Empresa'}
+            />
+          ) : (
+            <span className="logoLateralSimbolo" />
+          )}
         </div>
         <div className="textoMarcaLateral">
-          <strong>Nome da Empresa</strong>
-          <p>Gestao simples para vendas inteligentes</p>
+          <strong>{empresa?.nomeFantasia || empresa?.razaoSocial || 'Nome da Empresa'}</strong>
+          <p>{empresa?.slogan || 'Gestao simples para vendas inteligentes'}</p>
         </div>
       </div>
 
@@ -66,16 +106,24 @@ export function BarraLateral({
       <div className="rodapeLateral">
         <div className="usuarioLateral">
           <div className="fotoUsuario" aria-hidden="true">
-            <span />
+            {usuarioLogado?.imagem ? (
+              <img
+                className="fotoUsuarioImagem"
+                src={usuarioLogado.imagem}
+                alt={usuarioLogado.nome || 'Usuario'}
+              />
+            ) : (
+              <span />
+            )}
           </div>
 
           <div className="dadosUsuario">
-            <strong>Maria Oliveira</strong>
-            <p>Administrador</p>
+            <strong>{usuarioLogado?.nome || 'Usuario'}</strong>
+            <p>{usuarioLogado?.tipo || 'Sem perfil'}</p>
           </div>
         </div>
 
-        <Botao variante="complementar" className="botaoComplementar" icone="sair">
+        <Botao variante="complementar" className="botaoComplementar" icone="sair" onClick={aoSair}>
           Sair
         </Botao>
       </div>

@@ -6,23 +6,27 @@ function normalizarTexto(valor) {
     .trim();
 }
 
-function formatarPrecoPesquisa(valor) {
-  const numero = Number(valor || 0);
+import { normalizarPreco } from './normalizarPreco';
 
-  return numero.toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
-  });
-}
-
-export function filtrarProdutos(produtos, pesquisa) {
+export function filtrarProdutos(produtos, pesquisa, filtros = {}) {
   const termo = normalizarTexto(pesquisa);
 
-  if (!termo) {
-    return produtos;
-  }
-
   return produtos.filter((produto) => {
+    const passouFiltros = (
+      (!filtros.idGrupo || String(produto.idGrupo) === String(filtros.idGrupo)) &&
+      (!filtros.idMarca || String(produto.idMarca) === String(filtros.idMarca)) &&
+      (!filtros.idUnidade || String(produto.idUnidade) === String(filtros.idUnidade)) &&
+      (!filtros.status || String(Number(Boolean(produto.status))) === String(filtros.status))
+    );
+
+    if (!passouFiltros) {
+      return false;
+    }
+
+    if (!termo) {
+      return true;
+    }
+
     const camposPesquisa = [
       produto.idProduto,
       produto.referencia,
@@ -30,7 +34,7 @@ export function filtrarProdutos(produtos, pesquisa) {
       produto.nomeGrupo,
       produto.nomeMarca,
       produto.nomeUnidade,
-      formatarPrecoPesquisa(produto.preco),
+      normalizarPreco(produto.preco),
       produto.status ? 'ativo' : 'inativo'
     ];
 

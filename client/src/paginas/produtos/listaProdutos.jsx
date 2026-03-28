@@ -5,7 +5,11 @@ import { LinhaProduto } from './linhaProduto';
 export function ListaProdutos({
   produtos,
   carregando,
-  mensagemErro
+  mensagemErro,
+  aoConsultarProduto,
+  aoEditarProduto,
+  aoInativarProduto,
+  somenteConsulta = false
 }) {
   return (
     <GradePadrao
@@ -17,7 +21,14 @@ export function ListaProdutos({
       mensagemVazia="Nenhum produto encontrado."
     >
       {produtos.map((produto) => (
-        <LinhaProduto key={produto.idProduto} produto={produto} />
+        <LinhaProduto
+          key={produto.idProduto}
+          produto={produto}
+          aoConsultar={() => aoConsultarProduto(produto)}
+          aoEditar={() => aoEditarProduto(produto)}
+          aoInativar={() => aoInativarProduto(produto)}
+          somenteConsulta={somenteConsulta}
+        />
       ))}
     </GradePadrao>
   );

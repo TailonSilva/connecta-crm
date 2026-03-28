@@ -1,7 +1,14 @@
 import { Botao } from '../../componentes/comuns/botao';
 import { CampoPesquisa } from '../../componentes/comuns/campoPesquisa';
 
-export function CabecalhoProdutos({ pesquisa, aoAlterarPesquisa }) {
+export function CabecalhoProdutos({
+  pesquisa,
+  aoAlterarPesquisa,
+  aoAbrirFiltros,
+  aoNovoProduto,
+  filtrosAtivos = false,
+  somenteConsulta = false
+}) {
   return (
     <header className="cabecalhoPagina">
       <div>
@@ -16,9 +23,31 @@ export function CabecalhoProdutos({ pesquisa, aoAlterarPesquisa }) {
           placeholder="Pesquisar produtos"
           ariaLabel="Pesquisar produtos"
         />
-        <Botao variante="secundario" icone="filtro" somenteIcone title="Filtrar" aria-label="Filtrar" />
-        <Botao variante="secundario" icone="importar" somenteIcone title="Importar" aria-label="Importar" />
-        <Botao variante="primario" icone="adicionar" somenteIcone title="Novo produto" aria-label="Novo produto" />
+        <Botao
+          variante={filtrosAtivos ? 'primario' : 'secundario'}
+          icone="filtro"
+          somenteIcone
+          title="Filtrar"
+          aria-label="Filtrar"
+          onClick={aoAbrirFiltros}
+        />
+        <Botao
+          variante="secundario"
+          icone="importar"
+          somenteIcone
+          title="Importar"
+          aria-label="Importar"
+          disabled={somenteConsulta}
+        />
+        <Botao
+          variante="primario"
+          icone="adicionar"
+          somenteIcone
+          title="Novo produto"
+          aria-label="Novo produto"
+          disabled={somenteConsulta}
+          onClick={aoNovoProduto}
+        />
       </div>
     </header>
   );

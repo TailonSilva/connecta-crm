@@ -14,6 +14,13 @@ export const paginasPainel = [
     icone: 'agenda'
   },
   {
+    id: 'atendimentos',
+    rotulo: 'Atendimentos',
+    titulo: 'Pagina de atendimentos',
+    descricao: 'Espaco reservado para registrar atendimentos, historicos e evolucoes.',
+    icone: 'atendimentos'
+  },
+  {
     id: 'clientes',
     rotulo: 'Clientes',
     titulo: 'Pagina de clientes',

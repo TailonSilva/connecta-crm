@@ -1,0 +1,434 @@
+import { useEffect, useState } from 'react';
+import { Botao } from '../../componentes/comuns/botao';
+import { CampoImagemPadrao } from '../../componentes/comuns/campoImagemPadrao';
+import { buscarCep } from '../../servicos/empresa';
+import { normalizarTelefone } from '../../utilitarios/normalizarTelefone';
+
+const abasModalEmpresa = [
+  { id: 'dadosGerais', label: 'Dados gerais' },
+  { id: 'endereco', label: 'Endereco' },
+  { id: 'agenda', label: 'Agenda' }
+];
+
+const estadoInicialFormulario = {
+  razaoSocial: '',
+  nomeFantasia: '',
+  slogan: '',
+  tipo: 'Pessoa juridica',
+  cnpj: '',
+  inscricaoEstadual: '',
+  email: '',
+  telefone: '',
+  horaInicioManha: '08:00',
+  horaFimManha: '12:00',
+  horaInicioTarde: '13:00',
+  horaFimTarde: '18:00',
+  trabalhaSabado: false,
+  horaInicioSabado: '08:00',
+  horaFimSabado: '12:00',
+  logradouro: '',
+  numero: '',
+  complemento: '',
+  bairro: '',
+  cidade: '',
+  estado: '',
+  cep: '',
+  imagem: ''
+};
+
+export function ModalEmpresa({
+  aberto,
+  empresa,
+  modo = 'edicao',
+  aoFechar,
+  aoSalvar
+}) {
+  const [formulario, definirFormulario] = useState(estadoInicialFormulario);
+  const [abaAtiva, definirAbaAtiva] = useState(abasModalEmpresa[0].id);
+  const [salvando, definirSalvando] = useState(false);
+  const [mensagemErro, definirMensagemErro] = useState('');
+  const [buscandoCep, definirBuscandoCep] = useState(false);
+  const somenteLeitura = modo === 'consulta';
+  const tipoPessoaFisica = formulario.tipo === 'Pessoa fisica';
+  const rotuloDocumento = tipoPessoaFisica ? 'CPF' : 'CNPJ';
+
+  useEffect(() => {
+    if (!aberto) {
+      return;
+    }
+
+    definirFormulario(criarFormularioEmpresa(empresa));
+    definirAbaAtiva(abasModalEmpresa[0].id);
+    definirSalvando(false);
+    definirMensagemErro('');
+    definirBuscandoCep(false);
+  }, [aberto, empresa]);
+
+  useEffect(() => {
+    if (!aberto) {
+      return undefined;
+    }
+
+    function tratarTecla(evento) {
+      if (evento.key === 'Escape' && !salvando) {
+        aoFechar();
+      }
+    }
+
+    window.addEventListener('keydown', tratarTecla);
+
+    return () => {
+      window.removeEventListener('keydown', tratarTecla);
+    };
+  }, [aberto, aoFechar, salvando]);
+
+  if (!aberto) {
+    return null;
+  }
+
+  async function submeterFormulario(evento) {
+    evento.preventDefault();
+
+    if (somenteLeitura) {
+      return;
+    }
+
+    const camposObrigatorios = [
+      ['razaoSocial', 'Informe a razao social.'],
+      ['nomeFantasia', 'Informe o nome fantasia.'],
+      ['tipo', 'Informe o tipo da empresa.'],
+      ['cnpj', `Informe o ${rotuloDocumento}.`]
+    ];
+
+    const mensagemValidacao = camposObrigatorios.find(([campo]) => {
+      const valor = formulario[campo];
+      return valor === '' || valor === null || valor === undefined;
+    });
+
+    if (mensagemValidacao) {
+      definirMensagemErro(mensagemValidacao[1]);
+      return;
+    }
+
+    if (
+      formulario.horaInicioManha &&
+      formulario.horaFimManha &&
+      formulario.horaFimManha <= formulario.horaInicioManha
+    ) {
+      definirMensagemErro('O fim do expediente da manha deve ser maior que o inicio.');
+      return;
+    }
+
+    if (
+      formulario.horaInicioTarde &&
+      formulario.horaFimTarde &&
+      formulario.horaFimTarde <= formulario.horaInicioTarde
+    ) {
+      definirMensagemErro('O fim do expediente da tarde deve ser maior que o inicio.');
+      return;
+    }
+
+    if (
+      formulario.horaFimManha &&
+      formulario.horaInicioTarde &&
+      formulario.horaInicioTarde <= formulario.horaFimManha
+    ) {
+      definirMensagemErro('O inicio da tarde deve ser maior que o fim da manha.');
+      return;
+    }
+
+    if (formulario.trabalhaSabado) {
+      if (!formulario.horaInicioSabado || !formulario.horaFimSabado) {
+        definirMensagemErro('Informe o horario de expediente do sabado.');
+        return;
+      }
+
+      if (formulario.horaFimSabado <= formulario.horaInicioSabado) {
+        definirMensagemErro('O fim do expediente de sabado deve ser maior que o inicio.');
+        return;
+      }
+    }
+
+    definirSalvando(true);
+    definirMensagemErro('');
+
+    try {
+      await aoSalvar(formulario);
+    } catch (erro) {
+      definirMensagemErro(erro.message || 'Nao foi possivel salvar a empresa.');
+      definirSalvando(false);
+    }
+  }
+
+  function alterarCampo(evento) {
+    const { name, value, type, checked } = evento.target;
+
+    definirFormulario((estadoAtual) => ({
+      ...estadoAtual,
+      [name]: type === 'checkbox'
+        ? checked
+        : name === 'telefone'
+          ? normalizarTelefone(value)
+          : value
+    }));
+  }
+
+  async function buscarDadosCep() {
+    if (somenteLeitura) {
+      return;
+    }
+
+    definirBuscandoCep(true);
+    definirMensagemErro('');
+
+    try {
+      const dadosCep = await buscarCep(formulario.cep);
+
+      definirFormulario((estadoAtual) => ({
+        ...estadoAtual,
+        cep: dadosCep.cep || estadoAtual.cep,
+        logradouro: dadosCep.logradouro || estadoAtual.logradouro,
+        complemento: dadosCep.complemento || estadoAtual.complemento,
+        bairro: dadosCep.bairro || estadoAtual.bairro,
+        cidade: dadosCep.localidade || estadoAtual.cidade,
+        estado: dadosCep.uf || estadoAtual.estado
+      }));
+    } catch (erro) {
+      definirMensagemErro(erro.message || 'Nao foi possivel consultar o CEP.');
+      definirAbaAtiva('endereco');
+    } finally {
+      definirBuscandoCep(false);
+    }
+  }
+
+  function fecharAoClicarNoFundo(evento) {
+    if (evento.target === evento.currentTarget && !salvando) {
+      aoFechar();
+    }
+  }
+
+  return (
+    <div className="camadaModal" role="presentation" onMouseDown={fecharAoClicarNoFundo}>
+      <form
+        className="modalCliente"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="tituloModalEmpresa"
+        onMouseDown={(evento) => evento.stopPropagation()}
+        onSubmit={submeterFormulario}
+      >
+        <header className="cabecalhoModalCliente">
+          <h2 id="tituloModalEmpresa">
+            {empresa ? 'Cadastro da empresa' : 'Incluir empresa'}
+          </h2>
+
+          <div className="acoesCabecalhoModalCliente">
+            <Botao
+              variante="secundario"
+              type="button"
+              icone="fechar"
+              somenteIcone
+              title="Fechar"
+              aria-label="Fechar"
+              onClick={aoFechar}
+              disabled={salvando}
+            >
+              Fechar
+            </Botao>
+            {!somenteLeitura ? (
+              <Botao
+                variante="primario"
+                type="submit"
+                icone="confirmar"
+                somenteIcone
+                title={salvando ? 'Salvando...' : 'Salvar'}
+                aria-label={salvando ? 'Salvando...' : 'Salvar'}
+                disabled={salvando}
+              >
+                {salvando ? 'Salvando...' : 'Salvar'}
+              </Botao>
+            ) : null}
+          </div>
+        </header>
+
+        <div className="abasModalCliente" role="tablist" aria-label="Secoes do cadastro da empresa">
+          {abasModalEmpresa.map((aba) => (
+            <button
+              key={aba.id}
+              type="button"
+              role="tab"
+              className={`abaModalCliente ${abaAtiva === aba.id ? 'ativa' : ''}`}
+              aria-selected={abaAtiva === aba.id}
+              onClick={() => definirAbaAtiva(aba.id)}
+            >
+              {aba.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="corpoModalCliente">
+          {abaAtiva === 'dadosGerais' ? (
+            <section className="painelDadosGeraisCliente">
+              <CampoImagemPadrao
+                valor={formulario.imagem}
+                alt={`Imagem de ${formulario.nomeFantasia || formulario.razaoSocial || 'empresa'}`}
+                iniciais={obterIniciaisEmpresa(formulario)}
+                disabled={somenteLeitura}
+                onChange={(imagem) => definirFormulario((estadoAtual) => ({
+                  ...estadoAtual,
+                  imagem: imagem || estadoAtual.imagem
+                }))}
+              />
+
+              <div className="gradeCamposModalCliente">
+                <CampoFormulario label="Razao social" name="razaoSocial" value={formulario.razaoSocial} onChange={alterarCampo} disabled={somenteLeitura} required />
+                <CampoFormulario label="Nome fantasia" name="nomeFantasia" value={formulario.nomeFantasia} onChange={alterarCampo} disabled={somenteLeitura} required />
+                <CampoFormulario label="Slogan" name="slogan" value={formulario.slogan} onChange={alterarCampo} disabled={somenteLeitura} />
+                <CampoSelect label="Tipo" name="tipo" value={formulario.tipo} onChange={alterarCampo} options={[{ valor: 'Pessoa fisica', label: 'Pessoa fisica' }, { valor: 'Pessoa juridica', label: 'Pessoa juridica' }]} disabled={somenteLeitura} required />
+                <CampoFormulario label={rotuloDocumento} name="cnpj" value={formulario.cnpj} onChange={alterarCampo} disabled={somenteLeitura} required />
+                <CampoFormulario label="Inscricao estadual" name="inscricaoEstadual" value={formulario.inscricaoEstadual} onChange={alterarCampo} disabled={somenteLeitura} />
+                <CampoFormulario label="E-mail" name="email" type="email" value={formulario.email} onChange={alterarCampo} disabled={somenteLeitura} />
+                <CampoFormulario label="Telefone" name="telefone" value={formulario.telefone} onChange={alterarCampo} disabled={somenteLeitura} />
+              </div>
+            </section>
+          ) : null}
+
+          {abaAtiva === 'endereco' ? (
+            <section className="gradeCamposModalCliente">
+              <CampoFormularioComAcao label="CEP" name="cep" value={formulario.cep} onChange={alterarCampo} aoAcionar={buscarDadosCep} carregando={buscandoCep} rotuloAcao="Buscar CEP" disabled={somenteLeitura} />
+              <CampoFormulario label="Logradouro" name="logradouro" value={formulario.logradouro} onChange={alterarCampo} disabled={somenteLeitura} />
+              <CampoFormulario label="Numero" name="numero" value={formulario.numero} onChange={alterarCampo} disabled={somenteLeitura} />
+              <CampoFormulario label="Complemento" name="complemento" value={formulario.complemento} onChange={alterarCampo} disabled={somenteLeitura} />
+              <CampoFormulario label="Bairro" name="bairro" value={formulario.bairro} onChange={alterarCampo} disabled={somenteLeitura} />
+              <CampoFormulario label="Cidade" name="cidade" value={formulario.cidade} onChange={alterarCampo} disabled={somenteLeitura} />
+              <CampoFormulario label="Estado" name="estado" value={formulario.estado} onChange={alterarCampo} disabled={somenteLeitura} maxLength={2} />
+            </section>
+          ) : null}
+
+          {abaAtiva === 'agenda' ? (
+            <section className="gradeCamposModalCliente">
+              <CampoFormulario label="Inicio da manha" name="horaInicioManha" type="time" value={formulario.horaInicioManha} onChange={alterarCampo} disabled={somenteLeitura} />
+              <CampoFormulario label="Fim da manha" name="horaFimManha" type="time" value={formulario.horaFimManha} onChange={alterarCampo} disabled={somenteLeitura} />
+              <CampoFormulario label="Inicio da tarde" name="horaInicioTarde" type="time" value={formulario.horaInicioTarde} onChange={alterarCampo} disabled={somenteLeitura} />
+              <CampoFormulario label="Fim da tarde" name="horaFimTarde" type="time" value={formulario.horaFimTarde} onChange={alterarCampo} disabled={somenteLeitura} />
+              <CampoCheckbox
+                label="Trabalha aos sabados"
+                name="trabalhaSabado"
+                checked={formulario.trabalhaSabado}
+                onChange={alterarCampo}
+                disabled={somenteLeitura}
+              />
+              {formulario.trabalhaSabado ? (
+                <>
+                  <CampoFormulario label="Inicio do sabado" name="horaInicioSabado" type="time" value={formulario.horaInicioSabado} onChange={alterarCampo} disabled={somenteLeitura} />
+                  <CampoFormulario label="Fim do sabado" name="horaFimSabado" type="time" value={formulario.horaFimSabado} onChange={alterarCampo} disabled={somenteLeitura} />
+                </>
+              ) : null}
+            </section>
+          ) : null}
+        </div>
+
+        {mensagemErro ? <p className="mensagemErroFormulario">{mensagemErro}</p> : null}
+      </form>
+    </div>
+  );
+}
+
+function CampoFormulario({ label, name, type = 'text', ...props }) {
+  return (
+    <div className="campoFormulario">
+      <label htmlFor={name}>{label}</label>
+      <input id={name} name={name} type={type} className="entradaFormulario" {...props} />
+    </div>
+  );
+}
+
+function CampoFormularioComAcao({
+  label,
+  name,
+  aoAcionar,
+  carregando,
+  rotuloAcao,
+  disabled = false,
+  ...props
+}) {
+  return (
+    <div className="campoFormulario">
+      <label htmlFor={name}>{label}</label>
+      <div className="campoComAcao">
+        <input id={name} name={name} type="text" className="entradaFormulario" disabled={disabled} {...props} />
+        <Botao variante="secundario" icone="pesquisa" type="button" className="botaoCampoAcao" onClick={aoAcionar} disabled={carregando || disabled}>
+          {carregando ? 'Buscando...' : rotuloAcao}
+        </Botao>
+      </div>
+    </div>
+  );
+}
+
+function CampoSelect({ label, name, options, ...props }) {
+  return (
+    <div className="campoFormulario">
+      <label htmlFor={name}>{label}</label>
+      <select id={name} name={name} className="entradaFormulario" {...props}>
+        <option value="">Selecione</option>
+        {options.map((option) => (
+          <option key={option.valor} value={option.valor}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function CampoCheckbox({ label, name, ...props }) {
+  return (
+    <div className="campoCheckboxFormulario">
+      <input id={name} name={name} type="checkbox" {...props} />
+      <label htmlFor={name}>{label}</label>
+    </div>
+  );
+}
+
+function criarFormularioEmpresa(empresa) {
+  if (!empresa) {
+    return estadoInicialFormulario;
+  }
+
+  return {
+    razaoSocial: empresa.razaoSocial || '',
+    nomeFantasia: empresa.nomeFantasia || '',
+    slogan: empresa.slogan || '',
+    tipo: empresa.tipo || 'Pessoa juridica',
+    cnpj: empresa.cnpj || '',
+    inscricaoEstadual: empresa.inscricaoEstadual || '',
+    email: empresa.email || '',
+    telefone: empresa.telefone || '',
+    horaInicioManha: empresa.horaInicioManha || '08:00',
+    horaFimManha: empresa.horaFimManha || '12:00',
+    horaInicioTarde: empresa.horaInicioTarde || '13:00',
+    horaFimTarde: empresa.horaFimTarde || '18:00',
+    trabalhaSabado: Boolean(empresa.trabalhaSabado),
+    horaInicioSabado: empresa.horaInicioSabado || '08:00',
+    horaFimSabado: empresa.horaFimSabado || '12:00',
+    logradouro: empresa.logradouro || '',
+    numero: empresa.numero || '',
+    complemento: empresa.complemento || '',
+    bairro: empresa.bairro || '',
+    cidade: empresa.cidade || '',
+    estado: empresa.estado || '',
+    cep: empresa.cep || '',
+    imagem: empresa.imagem || ''
+  };
+}
+
+function obterIniciaisEmpresa(empresa) {
+  const nomeBase = empresa.nomeFantasia || empresa.razaoSocial || 'Empresa';
+
+  return nomeBase
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((parte) => parte[0]?.toUpperCase())
+    .join('');
+}

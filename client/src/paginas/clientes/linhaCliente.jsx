@@ -3,7 +3,7 @@ import { AcoesRegistro } from '../../componentes/comuns/acoesRegistro';
 import { ContatoPrincipalCliente } from './contatoPrincipalCliente';
 import { DetalhesCliente } from './detalhesCliente';
 
-export function LinhaCliente({ cliente }) {
+export function LinhaCliente({ cliente, aoConsultar, aoEditar, aoInativar }) {
   return (
     <tr className="linhaCliente">
       <td><AvatarCliente cliente={cliente} /></td>
@@ -22,6 +22,9 @@ export function LinhaCliente({ cliente }) {
           rotuloConsulta="Consultar cliente"
           rotuloEdicao="Editar cliente"
           rotuloInativacao="Inativar cliente"
+          aoConsultar={aoConsultar}
+          aoEditar={aoEditar}
+          aoInativar={aoInativar}
         />
       </td>
     </tr>
