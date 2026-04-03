@@ -1,0 +1,71 @@
+.modalHistoricoGrade {
+  width: min(1360px, calc(100vw - 24px));
+  max-height: calc(100vh - 24px);
+}
+
+.modalHistoricoGradeCabecalhoTexto {
+  min-width: 0;
+}
+
+.modalHistoricoGrade .acoesCabecalhoModalCliente {
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.modalHistoricoGradeSubtitulo {
+  margin: 6px 0 0;
+  color: var(--corTextoSuave);
+}
+
+.modalHistoricoGradeAbas {
+  padding-top: 0;
+}
+
+.modalHistoricoGradeControlesCabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  min-width: 0;
+}
+
+.modalHistoricoGradeAbasCabecalho {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.modalHistoricoGradeAbasCabecalho .abaModalCliente {
+  flex: 0 0 auto;
+  padding-block: 9px;
+}
+
+.modalHistoricoGradeCorpo {
+  padding-top: 18px;
+}
+
+@media (max-width: 640px) {
+  .modalHistoricoGrade {
+    width: min(100%, calc(100vw - 12px));
+    max-height: calc(100vh - 12px);
+  }
+
+  .modalHistoricoGrade .acoesCabecalhoModalCliente {
+    flex-wrap: wrap;
+  }
+
+  .modalHistoricoGradeControlesCabecalho {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: stretch;
+  }
+
+  .modalHistoricoGradeAbasCabecalho {
+    width: 100%;
+    overflow-x: auto;
+    overflow-x: auto;
+  }
+}

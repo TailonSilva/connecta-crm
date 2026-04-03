@@ -6,6 +6,11 @@ const {
   salvarImagemBase64
 } = require('../utilitarios/imagens');
 const { validarReferenciasAtivasDaEntidade } = require('../utilitarios/validarReferenciasAtivas');
+const {
+  sincronizarGrupoEmpresaDoCliente,
+  sincronizarGrupoEmpresaParaClientesVinculados,
+  sincronizarContatoGrupoParaClientesVinculados
+} = require('../utilitarios/sincronizarGrupoEmpresa');
 
 function montarCampos(payload, camposPermitidos) {
   return Object.entries(payload).filter(
@@ -57,6 +62,8 @@ async function inserirRegistro(entidade, payload) {
     );
   }
 
+  const registro = await consultarRegistroPorId(entidade, resultado.id);
+  await executarHooksPosPersistencia(entidade, registro);
   return consultarRegistroPorId(entidade, resultado.id);
 }
 
@@ -102,6 +109,8 @@ async function atualizarRegistro(entidade, id, payload) {
     removerArquivoImagem(registroAtual.imagem);
   }
 
+  const registroAtualizado = await consultarRegistroPorId(entidade, id);
+  await executarHooksPosPersistencia(entidade, registroAtualizado);
   return consultarRegistroPorId(entidade, id);
 }
 
@@ -185,3 +194,23 @@ module.exports = {
   excluirRegistro,
   montarCampos
 };
+
+async function executarHooksPosPersistencia(entidade, registro) {
+  if (!registro) {
+    return;
+  }
+
+  if (entidade.nome === 'cliente') {
+    await sincronizarGrupoEmpresaDoCliente(registro.idCliente, registro.idGrupoEmpresa || null);
+    return;
+  }
+
+  if (entidade.nome === 'grupoEmpresa') {
+    await sincronizarGrupoEmpresaParaClientesVinculados(registro.idGrupoEmpresa);
+    return;
+  }
+
+  if (entidade.nome === 'contatoGrupoEmpresa') {
+    await sincronizarContatoGrupoParaClientesVinculados(registro.idContatoGrupoEmpresa);
+  }
+}

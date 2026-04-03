@@ -16,6 +16,10 @@ export function ModalManualOrcamentos({
     filtros.idUsuario,
     filtros.idVendedorCliente,
     filtros.idVendedor,
+    filtros.dataInclusaoInicio,
+    filtros.dataInclusaoFim,
+    filtros.dataFechamentoInicio,
+    filtros.dataFechamentoFim,
     ...(Array.isArray(filtros.idsEtapaOrcamento) ? filtros.idsEtapaOrcamento : [])
   ].filter(Boolean).length;
 
@@ -71,7 +75,7 @@ export function ModalManualOrcamentos({
         },
         {
           titulo: 'Mover na grade',
-          descricao: 'A etapa pode ser ajustada pela propria listagem, sem abrir o modal completo, quando a regra permitir.',
+          descricao: 'A etapa pode ser ajustada pela propria listagem, sem abrir o modal completo, quando a regra permitir, adotando a data do fechamento na troca para etapas finais.',
           icone: 'editar'
         },
         {
@@ -91,7 +95,8 @@ export function ModalManualOrcamentos({
           titulo: 'Campos e vinculos do modal',
           itens: [
             'Cliente e contato entram no mesmo fluxo do orcamento e abastecem a proposta comercial.',
-            'Itens e valores definem o total da proposta e alimentam o fechamento em pedido.',
+            'Itens e valores seguem o mesmo padrao visual do pedido, com descricao e imagem preservadas no proprio item.',
+            'A imagem do item pode herdar a foto principal do produto, mas quando o usuario trocar essa imagem no orcamento ela passa a ser exclusiva daquele item e e recortada em 1024 x 1024 px.',
             'Prazos de pagamento podem ser mantidos dentro do modal, respeitando o perfil do usuario.',
             'O modo do modal controla corretamente inclusao, edicao e consulta, inclusive em saida sem salvar.'
           ]
@@ -100,7 +105,7 @@ export function ModalManualOrcamentos({
           tag: 'Grade',
           titulo: 'Como usar a listagem principal',
           itens: [
-            'A pesquisa textual e os filtros ajudam a localizar propostas por cliente, usuario, vendedor e etapa.',
+            'A pesquisa textual e os filtros ajudam a localizar propostas por cliente, usuario, vendedor, etapa e um botao Datas que abre o painel com os periodos de inclusao e fechamento.',
             'A grade mostra rapidamente a etapa atual e permite acao rapida de evolucao do funil.',
             'Registros fechados podem gerar pedido sem perder o contexto do orcamento.',
             'A exclusao depende do perfil e usa confirmacao dedicada antes de remover o registro.'
@@ -121,10 +126,24 @@ export function ModalManualOrcamentos({
           icone: 'pedido'
         },
         {
+          titulo: 'Data de fechamento',
+          descricao: 'Ao entrar nas etapas Fechado, Fechado sem pedido ou Pedido excluido, o orcamento passa a usar uma data de fechamento propria e obrigatoria.',
+          detalhe: 'No modal, a data pode ser ajustada antes do salvamento; no grid, a troca usa a data atual automaticamente.',
+          icone: 'confirmar'
+        },
+        {
           titulo: 'Prazos protegidos',
           descricao: 'Atalhos para prazos de pagamento respeitam o perfil do usuario tambem dentro do modal do orcamento.',
           detalhe: 'Usuario padrao abre configuracoes sensiveis em consulta.',
           icone: 'configuracoes'
+        },
+        {
+          titulo: 'Consulta em etapas finais',
+          descricao: usuarioLogado?.tipo === 'Usuario padrao'
+            ? 'Quando o orcamento entra em Fechado, Fechado sem pedido ou Pedido excluido, Usuario padrao passa a consultar sem editar.'
+            : 'As etapas finais do orcamento mantem o bloqueio de edicao apenas para Usuario padrao.',
+          detalhe: 'A validacao usa sempre os IDs fixos 1, 2 e 3 das etapas obrigatorias do sistema.',
+          icone: 'usuarios'
         }
       ]}
     />

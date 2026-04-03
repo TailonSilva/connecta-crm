@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Botao } from '../../componentes/comuns/botao';
 import { CampoSelecaoMultiplaModal } from '../../componentes/comuns/campoSelecaoMultiplaModal';
+import { normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTextoFormulario';
 
 const estadoInicialFormulario = {
   idAgendamento: '',
@@ -106,11 +107,12 @@ export function ModalAgendamento({
 
   function alterarCampo(evento) {
     const { name, value } = evento.target;
+    const valorNormalizado = normalizarValorEntradaFormulario(evento);
 
     definirFormulario((estadoAtual) => ({
       ...estadoAtual,
       ...(name === 'idCliente' ? { idContato: '' } : {}),
-      [name]: value
+      [name]: valorNormalizado
     }));
   }
 

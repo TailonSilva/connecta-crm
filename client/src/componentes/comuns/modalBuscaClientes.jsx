@@ -1,7 +1,9 @@
 import { ModalBuscaTabela } from './modalBuscaTabela';
+import { formatarCodigoCliente } from '../../utilitarios/codigoCliente';
 
 export function ModalBuscaClientes({
   aberto,
+  empresa = null,
   clientes = [],
   placeholder = 'Pesquisar cliente no grid',
   ariaLabelPesquisa = 'Pesquisar cliente no grid',
@@ -26,7 +28,7 @@ export function ModalBuscaClientes({
         {
           key: 'codigo',
           label: 'Codigo',
-          render: (cliente) => `#${String(cliente.idCliente).padStart(4, '0')}`
+          render: (cliente) => formatarCodigoCliente(cliente, empresa)
         },
         { key: 'razaoSocial', label: 'Razao social', render: (cliente) => cliente.razaoSocial || '-' },
         { key: 'nomeFantasia', label: 'Nome fantasia', render: (cliente) => cliente.nomeFantasia || '-' },
@@ -37,6 +39,7 @@ export function ModalBuscaClientes({
       registros={clientes}
       obterTextoBusca={(cliente) => [
         cliente.idCliente,
+        cliente.codigoAlternativo,
         cliente.razaoSocial,
         cliente.nomeFantasia,
         cliente.cidade,

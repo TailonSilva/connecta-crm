@@ -53,7 +53,7 @@ import { ModalManualAgenda } from './modalManualAgenda';
 const minutosInicioPadrao = 8 * 60;
 const minutosFimPadrao = 18 * 60;
 const intervaloMinutos = 15;
-const alturaLinhaAgenda = 22;
+const alturaLinhaAgenda = 20;
 const espacoVerticalCelulaAgenda = 4;
 const configuracaoExpedientePadrao = {
   horaInicioManha: '08:00',

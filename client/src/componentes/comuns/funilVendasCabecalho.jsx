@@ -16,7 +16,6 @@ export function FunilVendasCabecalho({ totalOrcamentos, totalValor }) {
   return (
     <header className="funilVendasCabecalho">
       <div className="funilVendasCabecalhoConteudo">
-        <span className="funilVendasCabecalhoRotulo">Funil de vendas</span>
         <h2>Visão Por Etapa do Orcamento</h2>
       </div>
 

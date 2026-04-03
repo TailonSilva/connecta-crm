@@ -21,6 +21,29 @@ const entidades = [
     camposPermitidos: ['descricao', 'status']
   },
   {
+    nome: 'grupoEmpresa',
+    rota: '/api/gruposEmpresa',
+    chavePrimaria: 'idGrupoEmpresa',
+    camposObrigatorios: ['descricao'],
+    camposPermitidos: ['descricao', 'status']
+  },
+  {
+    nome: 'contatoGrupoEmpresa',
+    rota: '/api/contatosGruposEmpresa',
+    chavePrimaria: 'idContatoGrupoEmpresa',
+    camposObrigatorios: ['idGrupoEmpresa', 'nome'],
+    camposPermitidos: [
+      'idGrupoEmpresa',
+      'nome',
+      'cargo',
+      'email',
+      'telefone',
+      'whatsapp',
+      'status',
+      'principal'
+    ]
+  },
+  {
     nome: 'tamanho',
     rota: '/api/tamanhos',
     chavePrimaria: 'idTamanho',
@@ -217,6 +240,7 @@ const entidades = [
       'exibirFunilPaginaInicial',
       'diasValidadeOrcamento',
       'diasEntregaPedido',
+      'codigoPrincipalCliente',
       'etapasFiltroPadraoOrcamento',
       'corPrimariaOrcamento',
       'corSecundariaOrcamento',
@@ -254,6 +278,8 @@ const entidades = [
     camposPermitidos: [
       'idCliente',
       'idVendedor',
+      'idGrupoEmpresa',
+      'codigoAlternativo',
       'idRamo',
       'razaoSocial',
       'nomeFantasia',
@@ -363,7 +389,18 @@ const entidades = [
     rota: '/api/itensOrcamento',
     chavePrimaria: 'idItemOrcamento',
     camposObrigatorios: ['idOrcamento', 'idProduto', 'quantidade', 'valorUnitario', 'valorTotal'],
-    camposPermitidos: ['idOrcamento', 'idProduto', 'quantidade', 'valorUnitario', 'valorTotal', 'observacao']
+    camposPermitidos: [
+      'idOrcamento',
+      'idProduto',
+      'quantidade',
+      'valorUnitario',
+      'valorTotal',
+      'imagem',
+      'observacao',
+      'referenciaProdutoSnapshot',
+      'descricaoProdutoSnapshot',
+      'unidadeProdutoSnapshot'
+    ]
   },
   {
     nome: 'valorCampoOrcamento',

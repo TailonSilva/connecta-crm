@@ -1,0 +1,9 @@
+.modalHistoricoAtendimentosClientePainel {
+  height: 100%;
+}
+
+.modalHistoricoAtendimentosClienteGrade {
+  height: 100%;
+  max-height: none;
+  overflow-y: auto;
+}

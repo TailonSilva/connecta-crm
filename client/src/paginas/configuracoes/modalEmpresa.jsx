@@ -4,6 +4,7 @@ import { CampoSelecaoMultiplaModal } from '../../componentes/comuns/campoSelecao
 import { CampoImagemPadrao } from '../../componentes/comuns/campoImagemPadrao';
 import { buscarCep } from '../../servicos/empresa';
 import { normalizarTelefone } from '../../utilitarios/normalizarTelefone';
+import { normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTextoFormulario';
 
 const abasModalEmpresa = [
   { id: 'dadosGerais', label: 'Dados gerais' },
@@ -32,6 +33,7 @@ const estadoInicialFormulario = {
   exibirFunilPaginaInicial: true,
   diasValidadeOrcamento: '7',
   diasEntregaPedido: '7',
+  codigoPrincipalCliente: 'codigo',
   etapasFiltroPadraoOrcamento: [],
   corPrimariaOrcamento: '#111827',
   corSecundariaOrcamento: '#ef4444',
@@ -189,14 +191,15 @@ export function ModalEmpresa({
 
   function alterarCampo(evento) {
     const { name, value, type, checked } = evento.target;
+    const valorNormalizado = normalizarValorEntradaFormulario(evento);
 
     definirFormulario((estadoAtual) => ({
       ...estadoAtual,
       [name]: type === 'checkbox'
         ? checked
         : name === 'telefone'
-          ? normalizarTelefone(value)
-          : value
+          ? normalizarTelefone(valorNormalizado)
+          : valorNormalizado
     }));
   }
 
@@ -380,6 +383,17 @@ export function ModalEmpresa({
             <section className="gradeCamposModalCliente">
               <CampoFormulario label="Validade padrao do orcamento (dias)" name="diasValidadeOrcamento" type="number" min="0" value={formulario.diasValidadeOrcamento} onChange={alterarCampo} disabled={somenteLeitura} />
               <CampoFormulario label="Prazo padrao de entrega do pedido (dias)" name="diasEntregaPedido" type="number" min="0" value={formulario.diasEntregaPedido} onChange={alterarCampo} disabled={somenteLeitura} />
+              <CampoSelect
+                label="Codigo principal do cliente"
+                name="codigoPrincipalCliente"
+                value={formulario.codigoPrincipalCliente}
+                onChange={alterarCampo}
+                options={[
+                  { valor: 'codigo', label: 'Codigo padrao' },
+                  { valor: 'codigoAlternativo', label: 'Codigo alternativo' }
+                ]}
+                disabled={somenteLeitura}
+              />
               <CampoSelecaoMultiplaModal
                 className="campoFormularioIntegral"
                 label="Filtro padrao de status do orcamento"
@@ -490,6 +504,7 @@ function criarFormularioEmpresa(empresa) {
       : Boolean(empresa.exibirFunilPaginaInicial),
     diasValidadeOrcamento: String(empresa.diasValidadeOrcamento ?? 7),
     diasEntregaPedido: String(empresa.diasEntregaPedido ?? 7),
+    codigoPrincipalCliente: normalizarCodigoPrincipalCliente(empresa.codigoPrincipalCliente),
     etapasFiltroPadraoOrcamento: normalizarListaEmpresa(empresa.etapasFiltroPadraoOrcamento),
     corPrimariaOrcamento: empresa.corPrimariaOrcamento || '#111827',
     corSecundariaOrcamento: empresa.corSecundariaOrcamento || '#ef4444',
@@ -508,6 +523,10 @@ function criarFormularioEmpresa(empresa) {
 
 function normalizarDestaqueItemOrcamentoPdf(valor) {
   return String(valor || '').trim() === 'referencia' ? 'referencia' : 'descricao';
+}
+
+function normalizarCodigoPrincipalCliente(valor) {
+  return String(valor || '').trim() === 'codigoAlternativo' ? 'codigoAlternativo' : 'codigo';
 }
 
 function normalizarListaEmpresa(valor) {

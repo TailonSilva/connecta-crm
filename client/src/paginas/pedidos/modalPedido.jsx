@@ -1,20 +1,26 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Botao } from '../../componentes/comuns/botao';
-import { CampoImagemPadrao } from '../../componentes/comuns/campoImagemPadrao';
 import { CodigoRegistro } from '../../componentes/comuns/codigoRegistro';
+import { ModalBuscaClientes } from '../../componentes/comuns/modalBuscaClientes';
+import { ModalBuscaContatos } from '../../componentes/comuns/modalBuscaContatos';
+import { ModalItemProduto } from '../../componentes/comuns/modalItemProduto';
 import { ModalPrazosPagamento } from '../configuracoes/modalPrazosPagamento';
+import { useFormularioItemProduto } from '../../utilitarios/useFormularioItemProduto';
 import {
   converterPrecoParaNumero,
   desformatarPreco,
   normalizarPreco,
   normalizarPrecoDigitado
 } from '../../utilitarios/normalizarPreco';
+import { normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTextoFormulario';
 
 const abasModalPedido = [
   { id: 'dadosGerais', label: 'Dados gerais' },
   { id: 'itens', label: 'Itens' },
   { id: 'campos', label: 'Campos do pedido' }
 ];
+
+const ID_ETAPA_PEDIDO_ENTREGUE = 5;
 
 const estadoInicialFormulario = {
   idOrcamento: '',
@@ -106,6 +112,7 @@ export function ModalPedido({
   usuarioLogado,
   modo = 'consulta',
   somenteConsultaPrazos = false,
+  camadaSecundaria = false,
   aoFechar,
   aoSalvar,
   aoSalvarPrazoPagamento,
@@ -116,11 +123,9 @@ export function ModalPedido({
   const [salvando, definirSalvando] = useState(false);
   const [mensagemErro, definirMensagemErro] = useState('');
   const [confirmandoSaida, definirConfirmandoSaida] = useState(false);
-  const [indiceItemEdicao, definirIndiceItemEdicao] = useState(null);
-  const [itemFormulario, definirItemFormulario] = useState(estadoInicialItem);
-  const [modalItemAberto, definirModalItemAberto] = useState(false);
+  const [modalBuscaClienteAberto, definirModalBuscaClienteAberto] = useState(false);
+  const [modalBuscaContatoAberto, definirModalBuscaContatoAberto] = useState(false);
   const [modalPrazosPagamentoAberto, definirModalPrazosPagamentoAberto] = useState(false);
-  const [mensagemErroItem, definirMensagemErroItem] = useState('');
   const somenteLeitura = modo === 'consulta';
   const modoInclusao = !pedido;
   const registroBase = pedido || dadosIniciais || null;
@@ -146,6 +151,38 @@ export function ModalPedido({
     () => contatosAtivos.filter((contato) => String(contato.idCliente) === String(formulario.idCliente)),
     [contatosAtivos, formulario.idCliente]
   );
+  const {
+    modalItemAberto,
+    modalBuscaProdutoAberto,
+    itemFormulario,
+    mensagemErroItem,
+    definirImagemItem,
+    redefinirItemModal,
+    abrirNovoItem,
+    abrirEdicaoItem,
+    fecharModalItem,
+    abrirModalBuscaProduto,
+    fecharModalBuscaProduto,
+    selecionarProdutoBusca,
+    alterarItemCampo,
+    salvarItem
+  } = useFormularioItemProduto({
+    estadoInicialItem,
+    produtos: produtosAtivos,
+    obterItens: () => formulario.itens,
+    definirItens: (atualizarItens) => definirFormulario((estadoAtual) => ({
+      ...estadoAtual,
+      itens: typeof atualizarItens === 'function'
+        ? atualizarItens(estadoAtual.itens)
+        : atualizarItens
+    })),
+    formatarPrecoInput,
+    calcularTotalItem,
+    normalizarPrecoDigitado,
+    converterPrecoParaNumero,
+    normalizarPreco,
+    normalizarQuantidade: (valor) => Number(String(valor ?? '').replace(',', '.'))
+  });
 
   useEffect(() => {
     if (!aberto) {
@@ -157,11 +194,10 @@ export function ModalPedido({
     definirSalvando(false);
     definirMensagemErro('');
     definirConfirmandoSaida(false);
-    definirIndiceItemEdicao(null);
-    definirItemFormulario(estadoInicialItem);
-    definirModalItemAberto(false);
+    definirModalBuscaClienteAberto(false);
+    definirModalBuscaContatoAberto(false);
     definirModalPrazosPagamentoAberto(false);
-    definirMensagemErroItem('');
+    redefinirItemModal();
   }, [aberto, chaveRegistroBase, usuarioLogado?.idUsuario, quantidadeCamposPedido, chaveEmpresa]);
 
   useEffect(() => {
@@ -175,7 +211,22 @@ export function ModalPedido({
       }
 
       if (modalItemAberto) {
+        if (modalBuscaProdutoAberto) {
+          fecharModalBuscaProduto();
+          return;
+        }
+
         fecharModalItem();
+        return;
+      }
+
+      if (modalBuscaClienteAberto) {
+        fecharModalBuscaCliente();
+        return;
+      }
+
+      if (modalBuscaContatoAberto) {
+        fecharModalBuscaContato();
         return;
       }
 
@@ -197,7 +248,7 @@ export function ModalPedido({
     return () => {
       window.removeEventListener('keydown', tratarTecla);
     };
-  }, [aberto, confirmandoSaida, modalItemAberto, modalPrazosPagamentoAberto, salvando]);
+  }, [aberto, confirmandoSaida, modalBuscaClienteAberto, modalBuscaContatoAberto, modalBuscaProdutoAberto, modalItemAberto, modalPrazosPagamentoAberto, salvando]);
 
   if (!aberto) {
     return null;
@@ -205,15 +256,20 @@ export function ModalPedido({
 
   function alterarCampo(evento) {
     const { name, value } = evento.target;
+    const valorNormalizado = normalizarValorEntradaFormulario(evento);
 
     definirFormulario((estadoAtual) => {
+      const mudouParaEntregue = name === 'idEtapaPedido'
+        && !etapaPedidoEhEntregue(estadoAtual.idEtapaPedido)
+        && etapaPedidoEhEntregue(value);
       const proximoEstado = {
         ...estadoAtual,
         ...(name === 'idCliente' ? { idContato: '' } : {}),
-        [name]: name === 'comissao' ? normalizarPrecoDigitado(value) : value,
+        [name]: name === 'comissao' ? normalizarPrecoDigitado(value) : valorNormalizado,
         ...(name === 'idEtapaPedido'
           ? {
-            nomeEtapaPedidoSnapshot: etapasPedidoNormalizadas.find((etapa) => String(etapa.idEtapaPedido) === String(value))?.descricao || ''
+            nomeEtapaPedidoSnapshot: etapasPedidoNormalizadas.find((etapa) => String(etapa.idEtapaPedido) === String(value))?.descricao || '',
+            ...(mudouParaEntregue ? { dataEntrega: obterDataAtualFormatoInput() } : {})
           }
           : {})
       };
@@ -307,100 +363,6 @@ export function ModalPedido({
     }
   }
 
-  function abrirEdicaoItem(item, indice) {
-    definirIndiceItemEdicao(indice);
-    definirItemFormulario({
-      idProduto: String(item.idProduto || ''),
-      descricaoProdutoSnapshot: item.descricaoProdutoSnapshot || '',
-      referenciaProdutoSnapshot: item.referenciaProdutoSnapshot || '',
-      unidadeProdutoSnapshot: item.unidadeProdutoSnapshot || '',
-      quantidade: String(item.quantidade || '1'),
-      valorUnitario: item.valorUnitario ? desformatarPreco(item.valorUnitario) : '',
-      valorTotal: item.valorTotal ? desformatarPreco(item.valorTotal) : '',
-      imagem: item.imagem || '',
-      observacao: item.observacao || ''
-    });
-    definirMensagemErroItem('');
-    definirModalItemAberto(true);
-  }
-
-  function fecharModalItem() {
-    definirIndiceItemEdicao(null);
-    definirItemFormulario(estadoInicialItem);
-    definirModalItemAberto(false);
-    definirMensagemErroItem('');
-  }
-
-  function alterarItemCampo(evento) {
-    const { name, value } = evento.target;
-
-    definirItemFormulario((estadoAtual) => {
-      const proximoEstado = {
-        ...estadoAtual,
-        [name]: ['valorUnitario', 'valorTotal'].includes(name)
-          ? normalizarPrecoDigitado(value)
-          : value
-      };
-
-      if (name === 'idProduto') {
-        const produto = produtosAtivos.find((item) => String(item.idProduto) === String(value));
-        if (produto) {
-          const precoPadrao = formatarPrecoInput(produto.preco);
-          proximoEstado.descricaoProdutoSnapshot = produto.descricao || '';
-          proximoEstado.referenciaProdutoSnapshot = produto.referencia || '';
-          proximoEstado.unidadeProdutoSnapshot = produto.nomeUnidadeMedida || produto.siglaUnidadeMedida || '';
-          proximoEstado.valorUnitario = precoPadrao;
-          proximoEstado.valorTotal = calcularTotalItem(proximoEstado.quantidade, precoPadrao);
-          proximoEstado.imagem = produto.imagem || estadoAtual.imagem || '';
-        }
-      }
-
-      if (name === 'quantidade' || name === 'valorUnitario') {
-        proximoEstado.valorTotal = calcularTotalItem(
-          name === 'quantidade' ? value : proximoEstado.quantidade,
-          name === 'valorUnitario' ? proximoEstado.valorUnitario : proximoEstado.valorUnitario
-        );
-      }
-
-      return proximoEstado;
-    });
-  }
-
-  function salvarItem(evento) {
-    evento?.preventDefault?.();
-    evento?.stopPropagation?.();
-
-    const quantidade = Number(String(itemFormulario.quantidade || '').replace(',', '.'));
-    const valorUnitario = converterPrecoParaNumero(itemFormulario.valorUnitario);
-
-    if (!quantidade || !valorUnitario) {
-      definirMensagemErroItem('Informe quantidade e valor unitario validos.');
-      return;
-    }
-
-    const itemAtualizado = {
-      ...formulario.itens[indiceItemEdicao],
-      idProduto: itemFormulario.idProduto ? Number(itemFormulario.idProduto) : null,
-      quantidade: String(quantidade),
-      valorUnitario: normalizarPreco(valorUnitario),
-      valorTotal: normalizarPreco(quantidade * valorUnitario),
-      imagem: itemFormulario.imagem || '',
-      observacao: itemFormulario.observacao || '',
-      descricaoProdutoSnapshot: itemFormulario.descricaoProdutoSnapshot || formulario.itens[indiceItemEdicao]?.descricaoProdutoSnapshot || '',
-      referenciaProdutoSnapshot: itemFormulario.referenciaProdutoSnapshot || formulario.itens[indiceItemEdicao]?.referenciaProdutoSnapshot || '',
-      unidadeProdutoSnapshot: itemFormulario.unidadeProdutoSnapshot || formulario.itens[indiceItemEdicao]?.unidadeProdutoSnapshot || ''
-    };
-
-    definirFormulario((estadoAtual) => ({
-      ...estadoAtual,
-      itens: indiceItemEdicao === null
-        ? [...estadoAtual.itens, itemAtualizado]
-        : estadoAtual.itens.map((item, indice) => (indice === indiceItemEdicao ? itemAtualizado : item))
-    }));
-
-    fecharModalItem();
-  }
-
   function fecharAoClicarNoFundo(evento) {
     if (evento.target === evento.currentTarget && !salvando) {
       tentarFecharModal();
@@ -424,6 +386,67 @@ export function ModalPedido({
   function confirmarSaida() {
     definirConfirmandoSaida(false);
     aoFechar();
+  }
+
+  function abrirModalBuscaCliente() {
+    if (somenteLeitura || salvando || !modoInclusao) {
+      return;
+    }
+
+    definirModalBuscaClienteAberto(true);
+  }
+
+  function fecharModalBuscaCliente() {
+    definirModalBuscaClienteAberto(false);
+  }
+
+  function abrirModalBuscaContato() {
+    if (somenteLeitura || salvando || !modoInclusao || !formulario.idCliente) {
+      return;
+    }
+
+    definirModalBuscaContatoAberto(true);
+  }
+
+  function fecharModalBuscaContato() {
+    definirModalBuscaContatoAberto(false);
+  }
+
+  function selecionarCliente(cliente) {
+    if (!cliente) {
+      return;
+    }
+
+    definirFormulario((estadoAtual) => {
+      const vendedor = vendedoresAtivos.find((item) => String(item.idVendedor) === String(cliente.idVendedor));
+
+      return {
+        ...estadoAtual,
+        idCliente: String(cliente.idCliente),
+        idContato: '',
+        nomeClienteSnapshot: cliente.nomeFantasia || cliente.razaoSocial || '',
+        nomeContatoSnapshot: '',
+        idVendedor: cliente.idVendedor ? String(cliente.idVendedor) : '',
+        nomeVendedorSnapshot: vendedor?.nome || '',
+        comissao: vendedor ? formatarPercentualInput(vendedor.comissaoPadrao) : '0,00'
+      };
+    });
+
+    fecharModalBuscaCliente();
+  }
+
+  function selecionarContato(contato) {
+    if (!contato) {
+      return;
+    }
+
+    definirFormulario((estadoAtual) => ({
+      ...estadoAtual,
+      idContato: String(contato.idContato),
+      nomeContatoSnapshot: contato.nome || ''
+    }));
+
+    fecharModalBuscaContato();
   }
 
   function abrirModalPrazosPagamento() {
@@ -452,7 +475,7 @@ export function ModalPedido({
   }
 
   return (
-    <div className="camadaModal" role="presentation" onMouseDown={fecharAoClicarNoFundo}>
+    <div className={`camadaModal ${camadaSecundaria ? 'camadaModalSecundaria' : ''}`} role="presentation" onMouseDown={fecharAoClicarNoFundo}>
       <form
         className="modalCliente modalClienteComAbas modalOrcamento modalPedido"
         role="dialog"
@@ -534,6 +557,20 @@ export function ModalPedido({
                         label: cliente.nomeFantasia || cliente.razaoSocial
                       }))}
                       disabled={somenteLeitura}
+                      acaoExtra={!somenteLeitura ? (
+                        <Botao
+                          variante="secundario"
+                          type="button"
+                          icone="pesquisa"
+                          className="botaoCampoAcao"
+                          somenteIcone
+                          title="Buscar cliente"
+                          aria-label="Buscar cliente"
+                          onClick={abrirModalBuscaCliente}
+                        >
+                          Buscar cliente
+                        </Botao>
+                      ) : null}
                     />
                     <CampoSelect
                       label="Contato"
@@ -545,6 +582,20 @@ export function ModalPedido({
                         label: contato.nome
                       }))}
                       disabled={somenteLeitura || !formulario.idCliente}
+                      acaoExtra={!somenteLeitura && formulario.idCliente ? (
+                        <Botao
+                          variante="secundario"
+                          type="button"
+                          icone="pesquisa"
+                          className="botaoCampoAcao"
+                          somenteIcone
+                          title="Buscar contato"
+                          aria-label="Buscar contato"
+                          onClick={abrirModalBuscaContato}
+                        >
+                          Buscar contato
+                        </Botao>
+                      ) : null}
                     />
                   </>
                 ) : (
@@ -636,10 +687,7 @@ export function ModalPedido({
                   <h3>Itens do pedido</h3>
                   {!somenteLeitura ? (
                     <Botao variante="secundario" type="button" onClick={() => {
-                      definirIndiceItemEdicao(null);
-                      definirItemFormulario(estadoInicialItem);
-                      definirMensagemErroItem('');
-                      definirModalItemAberto(true);
+                      abrirNovoItem();
                     }}>
                       Adicionar item
                     </Botao>
@@ -775,83 +823,38 @@ export function ModalPedido({
           </div>
         ) : null}
 
-        {modalItemAberto ? (
-          <div className="camadaModalContato" role="presentation" onMouseDown={fecharModalItem}>
-            <div
-              className="modalContatoCliente modalItemOrcamento"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="tituloModalItemPedido"
-              onMouseDown={(evento) => evento.stopPropagation()}
-            >
-              <div className="cabecalhoModalContato">
-                <h3 id="tituloModalItemPedido">{somenteLeitura ? 'Consultar item do pedido' : 'Editar item do pedido'}</h3>
+        <ModalItemProduto
+          aberto={modalItemAberto}
+          titulo={somenteLeitura ? 'Consultar item do pedido' : 'Editar item do pedido'}
+          somenteLeitura={somenteLeitura}
+          itemFormulario={itemFormulario}
+          produtos={produtosAtivos}
+          mensagemErro={mensagemErroItem}
+          modalBuscaProdutoAberto={modalBuscaProdutoAberto}
+          onFechar={fecharModalItem}
+          onSalvar={salvarItem}
+          onAlterarCampo={alterarItemCampo}
+          onAlterarImagem={definirImagemItem}
+          onAbrirBuscaProduto={abrirModalBuscaProduto}
+          onFecharBuscaProduto={fecharModalBuscaProduto}
+          onSelecionarProduto={selecionarProdutoBusca}
+          obterIniciais={obterIniciaisItemPedido}
+        />
 
-                <div className="acoesFormularioContatoModal">
-                  <Botao variante="secundario" type="button" onClick={fecharModalItem}>
-                    {somenteLeitura ? 'Fechar' : 'Cancelar'}
-                  </Botao>
-                  {!somenteLeitura ? (
-                    <Botao variante="primario" type="button" onClick={salvarItem}>
-                      Salvar
-                    </Botao>
-                  ) : null}
-                </div>
-              </div>
+        <ModalBuscaClientes
+          aberto={modalBuscaClienteAberto}
+          empresa={empresa}
+          clientes={clientesAtivos}
+          aoSelecionar={selecionarCliente}
+          aoFechar={fecharModalBuscaCliente}
+        />
 
-              <div className="corpoModalContato">
-                <div className="layoutModalOrcamento">
-                  <CampoImagemPadrao
-                    valor={itemFormulario.imagem}
-                    alt={itemFormulario.descricaoProdutoSnapshot || 'Item do pedido'}
-                    iniciais={obterIniciaisItemPedido(itemFormulario)}
-                    disabled={somenteLeitura}
-                    onChange={(imagem) => definirItemFormulario((estadoAtual) => ({
-                      ...estadoAtual,
-                      imagem: imagem || ''
-                    }))}
-                  />
-
-                  <div className="colunaPrincipalModalOrcamento">
-                    {somenteLeitura ? (
-                      <CampoFormulario label="Produto" name="descricaoProdutoSnapshot" value={itemFormulario.descricaoProdutoSnapshot} disabled />
-                    ) : (
-                      <CampoSelect
-                        label="Produto"
-                        name="idProduto"
-                        value={itemFormulario.idProduto}
-                        onChange={alterarItemCampo}
-                        options={produtosAtivos.map((produto) => ({
-                          valor: String(produto.idProduto),
-                          label: produto.descricao || produto.referencia || `Produto ${produto.idProduto}`
-                        }))}
-                        disabled={somenteLeitura}
-                      />
-                    )}
-                    <div className="linhaUsuarioCanalOrigemAtendimento">
-                      <CampoFormulario label="Quantidade" name="quantidade" value={itemFormulario.quantidade} onChange={alterarItemCampo} disabled={somenteLeitura} />
-                      <CampoFormulario label="Valor unitario" name="valorUnitario" value={itemFormulario.valorUnitario} onChange={alterarItemCampo} disabled={somenteLeitura} />
-                      <CampoFormulario label="Valor total" name="valorTotal" value={itemFormulario.valorTotal} onChange={alterarItemCampo} disabled />
-                    </div>
-                    <div className="campoFormulario campoFormularioIntegral">
-                      <label htmlFor="observacaoItemPedido">Observacao do item</label>
-                      <textarea
-                        id="observacaoItemPedido"
-                        name="observacao"
-                        className="entradaFormulario entradaFormularioTextoLongo"
-                        rows={4}
-                        value={itemFormulario.observacao}
-                        onChange={alterarItemCampo}
-                        disabled={somenteLeitura}
-                      />
-                    </div>
-                  </div>
-                </div>
-                {mensagemErroItem ? <p className="mensagemErroFormulario">{mensagemErroItem}</p> : null}
-              </div>
-            </div>
-          </div>
-        ) : null}
+        <ModalBuscaContatos
+          aberto={modalBuscaContatoAberto}
+          contatos={contatosDoCliente}
+          aoSelecionar={selecionarContato}
+          aoFechar={fecharModalBuscaContato}
+        />
 
         <ModalPrazosPagamento
           aberto={modalPrazosPagamentoAberto}
@@ -1015,6 +1018,10 @@ function obterDataAtualFormatoInput() {
   const dia = String(hoje.getDate()).padStart(2, '0');
 
   return `${ano}-${mes}-${dia}`;
+}
+
+function etapaPedidoEhEntregue(idEtapaPedido) {
+  return Number(idEtapaPedido) === ID_ETAPA_PEDIDO_ENTREGUE;
 }
 
 function somarDiasNaData(dataBase, dias) {

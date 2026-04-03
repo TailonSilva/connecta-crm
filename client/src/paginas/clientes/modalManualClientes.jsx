@@ -5,6 +5,7 @@ export function ModalManualClientes({
   aoFechar,
   clientes = [],
   contatos = [],
+  gruposEmpresa = [],
   vendedores = [],
   ramosAtividade = [],
   filtros = {},
@@ -46,6 +47,12 @@ export function ModalManualClientes({
           icone: 'cadastro'
         },
         {
+          titulo: 'Grupos empresariais',
+          descricao: `${gruposEmpresa.length} grupo(s) de empresa disponivel(is) para vinculo.`,
+          detalhe: 'Os contatos do grupo podem ser herdados pelos clientes vinculados.',
+          icone: 'empresa'
+        },
+        {
           titulo: 'Filtros ativos',
           descricao: filtrosAtivos > 0
             ? `${filtrosAtivos} filtro(s) aplicados na tela.`
@@ -62,13 +69,18 @@ export function ModalManualClientes({
         },
         {
           titulo: 'Manter contatos',
-          descricao: 'Os contatos do cliente sao registrados no mesmo modal e podem marcar quem e o principal da empresa.',
+          descricao: 'Os contatos diretos do cliente sao registrados no mesmo modal; contatos do grupo vinculado aparecem como herdados para consulta.',
           icone: 'mensagem'
         },
         {
           titulo: 'Consultar ou editar',
           descricao: 'A grade permite abrir o registro em consulta ou edicao, conforme o perfil e o fluxo desejado.',
           icone: 'consultar'
+        },
+        {
+          titulo: 'Abrir historicos amplos',
+          descricao: 'Atendimento e Vendas agora abrem modais amplos separados para priorizar a leitura dos grids sem comprimir o restante do cadastro.',
+          icone: 'pedido'
         },
         {
           titulo: 'Inativar sem perder historico',
@@ -82,9 +94,13 @@ export function ModalManualClientes({
           titulo: 'Informacoes importantes do formulario',
           itens: [
             'O codigo sugerido do cliente e calculado automaticamente a partir do primeiro codigo disponivel.',
+            'O cadastro agora aceita um Codigo alternativo numerico e opcional para identificacao comercial adicional.',
             'O vendedor pode vir bloqueado para Usuario padrao quando a carteira e restrita ao proprio vendedor.',
-            'O cadastro de contatos e salvo junto com o cliente, mantendo o vinculo por idCliente.',
-            'Ramos de atividade podem ser mantidos sem sair do modal, respeitando a permissao do perfil.'
+            'O cliente pode ser vinculado a um Grupo de empresa, herdando os contatos cadastrados nesse grupo.',
+            'O cadastro de contatos diretos e salvo junto com o cliente, mantendo o vinculo por idCliente.',
+            'Ramos de atividade e grupos de empresa podem ser mantidos sem sair do modal, sem perder o preenchimento ja feito no cliente.',
+            'Ao concluir um novo ramo ou grupo pelo atalho do campo, o registro criado volta selecionado automaticamente no formulario do cliente.',
+            'Quando a empresa estiver configurada para usar o Codigo alternativo como principal, os grids que exibem codigo passam a priorizar esse valor e usam o codigo padrao como fallback se o alternativo estiver vazio.'
           ]
         },
         {
@@ -92,9 +108,11 @@ export function ModalManualClientes({
           titulo: 'Como a listagem ajuda na operacao',
           itens: [
             'A pesquisa textual filtra rapidamente a grade combinando dados relevantes do cliente.',
-            'Os filtros incluem estado, cidade, ramo, vendedor, tipo e status do cadastro.',
+            'Os filtros incluem estado, cidade, grupo de empresa, ramo, vendedor, tipo e status do cadastro.',
+            'A busca tambem considera o Codigo alternativo quando ele estiver preenchido.',
             'O contato principal e enriquecido para aparecer diretamente na grade.',
-            'A listagem ja considera a carteira do vendedor quando o perfil e restrito.'
+            'A listagem ja considera a carteira do vendedor quando o perfil e restrito.',
+            'Atendimento e Vendas sairam do corpo principal do cliente e agora abrem modais quase em tela cheia; em Vendas, continuam as duas visoes de Pedidos e Itens do pedido.'
           ]
         }
       ]}
@@ -114,10 +132,16 @@ export function ModalManualClientes({
           icone: 'usuarios'
         },
         {
-          titulo: 'Ramo em consulta',
-          descricao: 'Atalhos internos para ramo de atividade respeitam o perfil e entram em consulta quando a configuracao estiver protegida.',
-          detalhe: 'Isso evita quebrar o fluxo de cadastro com permissoes inconsistentes.',
+          titulo: 'Ramo no proprio fluxo',
+          descricao: 'O atalho interno de ramo de atividade pode incluir e editar registros sem sair do cadastro do cliente, inclusive para Usuario padrao.',
+          detalhe: 'O formulario principal permanece preenchido e o novo ramo retorna selecionado automaticamente.',
           icone: 'configuracoes'
+        },
+        {
+          titulo: 'Grupo no proprio fluxo',
+          descricao: 'O grupo de empresa pode ser cadastrado diretamente do modal do cliente e selecionado sem sair do preenchimento.',
+          detalhe: 'Esse atalho permanece disponivel mesmo para perfis operacionais.',
+          icone: 'empresa'
         }
       ]}
     />

@@ -8,6 +8,7 @@ export function AcoesRegistro({
   exibirConsulta = true,
   exibirEdicao = true,
   exibirInativacao = true,
+  desabilitarEdicao = false,
   aoConsultar,
   aoEditar,
   aoInativar
@@ -18,7 +19,7 @@ export function AcoesRegistro({
         <BotaoAcaoGrade icone="consultar" titulo={rotuloConsulta} onClick={aoConsultar} />
       ) : null}
       {exibirEdicao ? (
-        <BotaoAcaoGrade icone="editar" titulo={rotuloEdicao} onClick={aoEditar} />
+        <BotaoAcaoGrade icone="editar" titulo={rotuloEdicao} onClick={aoEditar} disabled={desabilitarEdicao} />
       ) : null}
       {exibirInativacao ? (
         <BotaoAcaoGrade icone={iconeInativacao} titulo={rotuloInativacao} onClick={aoInativar} />

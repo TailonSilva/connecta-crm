@@ -9,6 +9,7 @@ const {
 const { validarReferenciasAtivasDaEntidade } = require('../utilitarios/validarReferenciasAtivas');
 
 const rotaOrcamentos = express.Router();
+const IDS_ETAPAS_ORCAMENTO_FECHADAS = new Set([1, 2, 3]);
 
 rotaOrcamentos.get('/', async (_requisicao, resposta) => {
   try {
@@ -46,7 +47,7 @@ rotaOrcamentos.get('/:id', async (requisicao, resposta) => {
 
 rotaOrcamentos.post('/', async (requisicao, resposta) => {
   try {
-    const payload = normalizarPayloadOrcamento(requisicao.body);
+    const payload = aplicarAutomacoesFechamentoOrcamento(normalizarPayloadOrcamento(requisicao.body));
     await validarReferenciasAtivasDaEntidade('orcamento', payload);
     const etapaOrcamento = await obterEtapaOrcamento(payload.idEtapaOrcamento);
     const cliente = await obterCliente(payload.idCliente);
@@ -71,8 +72,9 @@ rotaOrcamentos.post('/', async (requisicao, resposta) => {
         idMotivoPerda,
         dataInclusao,
         dataValidade,
+        dataFechamento,
         observacao
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         payload.idCliente,
         payload.idContato,
@@ -84,6 +86,7 @@ rotaOrcamentos.post('/', async (requisicao, resposta) => {
         payload.idMotivoPerda,
         payload.dataInclusao,
         payload.dataValidade,
+        payload.dataFechamento,
         payload.observacao
       ]
     );
@@ -115,10 +118,10 @@ rotaOrcamentos.put('/:id', async (requisicao, resposta) => {
       return;
     }
 
-    const payload = normalizarPayloadOrcamento({
+    const payload = aplicarAutomacoesFechamentoOrcamento(normalizarPayloadOrcamento({
       ...existente,
       ...requisicao.body
-    });
+    }), existente);
     await validarReferenciasAtivasDaEntidade('orcamento', payload);
     const etapaOrcamento = await obterEtapaOrcamento(payload.idEtapaOrcamento);
     const cliente = await obterCliente(payload.idCliente);
@@ -151,6 +154,7 @@ rotaOrcamentos.put('/:id', async (requisicao, resposta) => {
         idMotivoPerda = ?,
         dataInclusao = ?,
         dataValidade = ?,
+        dataFechamento = ?,
         observacao = ?
       WHERE idOrcamento = ?`,
       [
@@ -164,6 +168,7 @@ rotaOrcamentos.put('/:id', async (requisicao, resposta) => {
         payload.idMotivoPerda,
         payload.dataInclusao,
         payload.dataValidade,
+        payload.dataFechamento,
         payload.observacao,
         idOrcamento
       ]
@@ -270,10 +275,25 @@ function normalizarPayloadOrcamento(payload) {
     idMotivoPerda: payload.idMotivoPerda ? Number(payload.idMotivoPerda) : null,
     dataInclusao: limparTexto(payload.dataInclusao),
     dataValidade: limparTexto(payload.dataValidade),
+    dataFechamento: limparTexto(payload.dataFechamento),
     observacao: limparTexto(payload.observacao),
     itens: normalizarItensOrcamento(payload.itens),
     camposExtras: normalizarCamposExtras(payload.camposExtras)
   };
+}
+
+function aplicarAutomacoesFechamentoOrcamento(payload, orcamentoAtual = null) {
+  const proximoPayload = {
+    ...payload
+  };
+  const entrouEmEtapaFechada = !etapaOrcamentoEhFechada(orcamentoAtual?.idEtapaOrcamento)
+    && etapaOrcamentoEhFechada(proximoPayload.idEtapaOrcamento);
+
+  if (entrouEmEtapaFechada && (!proximoPayload.dataFechamento || proximoPayload.dataFechamento === limparTexto(orcamentoAtual?.dataFechamento))) {
+    proximoPayload.dataFechamento = obterDataAtualFormatoInput();
+  }
+
+  return proximoPayload;
 }
 
 function normalizarItensOrcamento(itens) {
@@ -294,7 +314,10 @@ function normalizarItensOrcamento(itens) {
         ? null
         : Number(item.valorTotal),
       imagem: normalizarImagemItemPayload(item.imagem),
-      observacao: limparTexto(item.observacao)
+      observacao: limparTexto(item.observacao),
+      referenciaProdutoSnapshot: limparTexto(item.referenciaProdutoSnapshot),
+      descricaoProdutoSnapshot: limparTexto(item.descricaoProdutoSnapshot),
+      unidadeProdutoSnapshot: limparTexto(item.unidadeProdutoSnapshot)
     }))
     .filter((item) => item.idProduto && item.quantidade && item.valorUnitario !== null);
 }
@@ -329,6 +352,10 @@ function validarPayloadOrcamento(payload, etapaOrcamento) {
     return 'Inclua ao menos um item no orcamento.';
   }
 
+  if (etapaOrcamentoEhFechada(payload.idEtapaOrcamento) && !payload.dataFechamento) {
+    return 'Informe a data de fechamento para orcamentos nas etapas Fechado, Fechado sem pedido ou Pedido excluido.';
+  }
+
   if (etapaOrcamento?.obrigarMotivoPerda && !payload.idMotivoPerda) {
     return 'Selecione o motivo da perda para esta etapa do orcamento.';
   }
@@ -338,6 +365,7 @@ function validarPayloadOrcamento(payload, etapaOrcamento) {
 
 async function salvarItensOrcamento(idOrcamento, itens, cliente) {
   for (const item of itens) {
+    const produto = await obterProduto(item.idProduto);
     const resultado = await executar(
       `INSERT INTO itemOrcamento (
         idOrcamento,
@@ -346,8 +374,11 @@ async function salvarItensOrcamento(idOrcamento, itens, cliente) {
         valorUnitario,
         valorTotal,
         imagem,
-        observacao
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        observacao,
+        referenciaProdutoSnapshot,
+        descricaoProdutoSnapshot,
+        unidadeProdutoSnapshot
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         idOrcamento,
         item.idProduto,
@@ -355,7 +386,10 @@ async function salvarItensOrcamento(idOrcamento, itens, cliente) {
         item.valorUnitario,
         item.valorTotal,
         ehDataUrlImagem(item.imagem) ? null : item.imagem,
-        item.observacao
+        item.observacao,
+        item.referenciaProdutoSnapshot || produto?.referencia || null,
+        item.descricaoProdutoSnapshot || produto?.descricao || null,
+        item.unidadeProdutoSnapshot || produto?.nomeUnidadeMedida || produto?.siglaUnidadeMedida || null
       ]
     );
 
@@ -405,6 +439,14 @@ async function obterCliente(idCliente) {
   }
 
   return consultarUm('SELECT idCliente, nomeFantasia, razaoSocial FROM cliente WHERE idCliente = ?', [idCliente]);
+}
+
+async function obterProduto(idProduto) {
+  if (!idProduto) {
+    return null;
+  }
+
+  return consultarUm('SELECT * FROM produto WHERE idProduto = ?', [idProduto]);
 }
 
 function normalizarImagemItemPayload(valorImagem) {
@@ -466,6 +508,19 @@ function removerImagensItensNaoUtilizadas(imagensAtuais, imagensNovas) {
 function limparTexto(valor) {
   const texto = String(valor || '').trim();
   return texto || null;
+}
+
+function etapaOrcamentoEhFechada(idEtapaOrcamento) {
+  return IDS_ETAPAS_ORCAMENTO_FECHADAS.has(Number(idEtapaOrcamento));
+}
+
+function obterDataAtualFormatoInput() {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+  const dia = String(hoje.getDate()).padStart(2, '0');
+
+  return `${ano}-${mes}-${dia}`;
 }
 
 async function tentarRollback() {

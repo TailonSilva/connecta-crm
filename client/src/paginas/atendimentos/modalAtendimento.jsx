@@ -4,6 +4,8 @@ import { ModalBuscaClientes } from '../../componentes/comuns/modalBuscaClientes'
 import { ModalBuscaContatos } from '../../componentes/comuns/modalBuscaContatos';
 import { ModalCliente } from '../clientes/modalCliente';
 import { ModalOrcamento } from '../orcamentos/modalOrcamento';
+import { formatarCodigoCliente } from '../../utilitarios/codigoCliente';
+import { normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTextoFormulario';
 
 const estadoInicialFormulario = {
   idCliente: '',
@@ -198,12 +200,13 @@ export function ModalAtendimento({
 
   function alterarCampo(evento) {
     const { name, value, type, checked } = evento.target;
+    const valorNormalizado = normalizarValorEntradaFormulario(evento);
 
     definirFormulario((estadoAtual) => {
       const proximoEstado = {
         ...estadoAtual,
         ...(name === 'idCliente' ? { idContato: '', idOrcamento: '', idEtapaOrcamento: '' } : {}),
-        [name]: type === 'checkbox' ? checked : value
+        [name]: type === 'checkbox' ? checked : valorNormalizado
       };
 
       if (name === 'idOrcamento') {
@@ -743,7 +746,7 @@ export function ModalAtendimento({
                   onChange={alterarCampo}
                   options={clientesAtivos.map((cliente) => ({
                     valor: String(cliente.idCliente),
-                    label: montarRotuloCliente(cliente)
+                    label: montarRotuloCliente(cliente, empresa)
                   }))}
                   disabled={somenteLeitura}
                   required
@@ -992,6 +995,7 @@ export function ModalAtendimento({
     <ModalCliente
       aberto={modalClienteAberto}
       cliente={null}
+      empresa={empresa}
       codigoSugerido={null}
       contatos={[]}
       vendedores={vendedores}
@@ -1005,6 +1009,7 @@ export function ModalAtendimento({
 
     <ModalBuscaClientes
       aberto={modalBuscaClienteAberto}
+      empresa={empresa}
       clientes={clientes}
       placeholder="Pesquisar cliente no grid"
       ariaLabelPesquisa="Pesquisar cliente no grid"
@@ -1144,8 +1149,8 @@ function obterValorOrdemEtapa(ordem, fallback) {
   return Number.MAX_SAFE_INTEGER;
 }
 
-function montarRotuloCliente(cliente) {
-  const codigo = `#${String(cliente.idCliente || '').padStart(4, '0')}`;
+function montarRotuloCliente(cliente, empresa) {
+  const codigo = formatarCodigoCliente(cliente, empresa);
   const nome = cliente.nomeFantasia || cliente.razaoSocial || 'Cliente sem nome';
   const localizacao = [cliente.cidade, cliente.estado].filter(Boolean).join('/');
 

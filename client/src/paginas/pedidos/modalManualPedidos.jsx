@@ -9,7 +9,13 @@ export function ModalManualPedidos({
   filtros = {},
   usuarioLogado
 }) {
-  const filtrosAtivos = Object.values(filtros).filter(Boolean).length;
+  const filtrosAtivos = Object.values(filtros).filter((valor) => {
+    if (Array.isArray(valor)) {
+      return valor.length > 0;
+    }
+
+    return Boolean(valor);
+  }).length;
 
   return (
     <ModalManualPagina
@@ -61,12 +67,12 @@ export function ModalManualPedidos({
         },
         {
           titulo: 'Consultar e editar',
-          descricao: 'A grade permite abrir o registro em consulta ou edicao, mantendo o contexto comercial do pedido.',
+          descricao: 'A grade permite consultar o registro e, quando permitido pelo perfil e pela etapa, seguir em edicao mantendo o contexto comercial do pedido.',
           icone: 'consultar'
         },
         {
           titulo: 'Controlar etapa',
-          descricao: 'Cada pedido recebe uma etapa de acompanhamento para leitura operacional do andamento.',
+          descricao: 'Cada pedido recebe uma etapa de acompanhamento e pode ter a etapa alterada direto no grid para agilizar a operacao.',
           icone: 'editar'
         },
         {
@@ -80,8 +86,9 @@ export function ModalManualPedidos({
           tag: 'Formulario',
           titulo: 'O que o modal concentra',
           itens: [
-            'Cliente, contato, usuario do registro e vendedor compoem a base comercial do pedido.',
+            'Cliente, contato, usuario do registro e vendedor compoem a base comercial do pedido, com atalhos de busca para cliente e contato no modo de inclusao.',
             'Itens, valores e pagamento sao herdados do fluxo comercial e podem ser ajustados no modal.',
+            'A imagem do item pode herdar o que veio do orcamento; quando o usuario trocar essa imagem no pedido, ela passa a ser exclusiva daquele item e e recortada em 1024 x 1024 px.',
             'Prazos de pagamento podem ser cadastrados no proprio fluxo, respeitando o perfil.',
             'Campos personalizados do pedido aparecem conforme a configuracao carregada no sistema.'
           ]
@@ -91,8 +98,8 @@ export function ModalManualPedidos({
           titulo: 'Como usar a listagem principal',
           itens: [
             'A pesquisa textual ajuda a localizar rapidamente pedidos por dados do cliente e do registro.',
-            'Os filtros incluem cliente, usuario do registro, vendedor e etapa.',
-            'A grade funciona como consulta operacional do fechamento comercial.',
+            'Os filtros incluem cliente, usuario do registro, vendedor, uma ou mais etapas e um botao Datas que abre o painel com os periodos de inclusao e entrega.',
+            'A grade permite trocar a etapa do pedido sem abrir o modal completo.',
             'Ao reabrir a tela, os filtros anteriores sao restaurados automaticamente.'
           ]
         }
@@ -113,10 +120,24 @@ export function ModalManualPedidos({
           icone: 'usuarios'
         },
         {
+          titulo: 'Etapa entregue automatica',
+          descricao: 'Ao mover o pedido para a etapa Entregue, a data de entrega passa automaticamente para a data atual.',
+          detalhe: 'Dentro do modal do pedido, essa data ainda pode ser ajustada manualmente antes de salvar.',
+          icone: 'confirmar'
+        },
+        {
           titulo: 'Prazos coerentes com o sistema',
           descricao: 'Os atalhos de prazo de pagamento dentro do pedido respeitam o mesmo modelo de permissao adotado em Atendimentos e Orcamentos.',
           detalhe: 'Isso evita diferenca de comportamento entre modais comerciais.',
           icone: 'configuracoes'
+        },
+        {
+          titulo: 'Consulta apos entrega',
+          descricao: usuarioLogado?.tipo === 'Usuario padrao'
+            ? 'Quando o pedido chega em Entregue, o perfil Usuario padrao passa a consultar o registro sem edicao.'
+            : 'A etapa Entregue bloqueia a edicao apenas para Usuario padrao; perfis administrativos seguem com gestao completa.',
+          detalhe: 'A validacao do status operacional usa o identificador fixo da etapa do sistema.',
+          icone: 'pedido'
         }
       ]}
     />

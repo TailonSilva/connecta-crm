@@ -10,6 +10,7 @@ import {
   normalizarPreco,
   normalizarPrecoDigitado
 } from '../../utilitarios/normalizarPreco';
+import { normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTextoFormulario';
 
 const abasModalProduto = [
   { id: 'dadosGerais', label: 'Dados gerais' },
@@ -137,12 +138,13 @@ export function ModalProduto({
 
   function alterarCampo(evento) {
     const { name, value, type, checked } = evento.target;
+    const valorNormalizado = normalizarValorEntradaFormulario(evento);
 
     definirFormulario((estadoAtual) => ({
       ...estadoAtual,
       [name]: type === 'checkbox'
         ? checked
-        : name === 'preco' ? normalizarPrecoDigitado(value) : value
+        : name === 'preco' ? normalizarPrecoDigitado(value) : valorNormalizado
     }));
   }
 
@@ -301,6 +303,8 @@ export function ModalProduto({
                   iniciais={obterIniciaisProduto(formulario)}
                   codigo={produto?.idProduto || codigoSugerido || 0}
                   disabled={somenteLeitura}
+                  tamanhoSaidaImagem={320}
+                  qualidadeSaidaImagem={0.82}
                   onChange={(imagem) => definirFormulario((estadoAtual) => ({
                     ...estadoAtual,
                     imagem: imagem || estadoAtual.imagem

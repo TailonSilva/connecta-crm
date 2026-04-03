@@ -9,6 +9,54 @@ export function listarGruposProdutoConfiguracao(opcoes) {
   return listarCadastroConfiguracao('/gruposProduto', opcoes);
 }
 
+export function listarGruposEmpresaConfiguracao(opcoes) {
+  return listarCadastroConfiguracao('/gruposEmpresa', opcoes);
+}
+
+export function incluirGrupoEmpresa(payload) {
+  return requisitarApi('/gruposEmpresa', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+export function atualizarGrupoEmpresa(idGrupoEmpresa, payload) {
+  return requisitarApi(`/gruposEmpresa/${idGrupoEmpresa}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+export function listarContatosGruposEmpresaConfiguracao(opcoes) {
+  return listarCadastroConfiguracao('/contatosGruposEmpresa', opcoes);
+}
+
+export function incluirContatoGrupoEmpresa(payload) {
+  return requisitarApi('/contatosGruposEmpresa', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+export function atualizarContatoGrupoEmpresa(idContatoGrupoEmpresa, payload) {
+  return requisitarApi(`/contatosGruposEmpresa/${idContatoGrupoEmpresa}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
 export function incluirGrupoProduto(payload) {
   return requisitarApi('/gruposProduto', {
     method: 'POST',

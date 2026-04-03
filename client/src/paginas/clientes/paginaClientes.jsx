@@ -4,15 +4,24 @@ import { CorpoClientes } from './corpoClientes';
 import {
   atualizarCliente,
   atualizarContato,
+  atualizarGrupoEmpresa,
   atualizarRamoAtividade,
+  incluirGrupoEmpresa,
   incluirRamoAtividade,
   incluirCliente,
   incluirContato,
   listarClientes,
   listarContatos,
+  listarGruposEmpresa,
   listarRamosAtividade,
   listarVendedores
 } from '../../servicos/clientes';
+import { listarEmpresas } from '../../servicos/empresa';
+import {
+  atualizarContatoGrupoEmpresa,
+  incluirContatoGrupoEmpresa,
+  listarContatosGruposEmpresaConfiguracao
+} from '../../servicos/configuracoes';
 import { filtrarClientes } from '../../utilitarios/filtrarClientes';
 import { normalizarTelefone } from '../../utilitarios/normalizarTelefone';
 import { obterPrimeiroCodigoDisponivel } from '../../utilitarios/obterPrimeiroCodigoDisponivel';
@@ -24,6 +33,7 @@ import { ModalManualClientes } from './modalManualClientes';
 const filtrosIniciaisClientes = {
   estado: '',
   cidade: '',
+  idGrupoEmpresa: '',
   idRamo: '',
   idVendedor: '',
   tipo: '',
@@ -34,6 +44,9 @@ export function PaginaClientes({ usuarioLogado }) {
   const [pesquisa, definirPesquisa] = useState('');
   const [clientes, definirClientes] = useState([]);
   const [contatos, definirContatos] = useState([]);
+  const [gruposEmpresa, definirGruposEmpresa] = useState([]);
+  const [contatosGruposEmpresa, definirContatosGruposEmpresa] = useState([]);
+  const [empresa, definirEmpresa] = useState(null);
   const [vendedores, definirVendedores] = useState([]);
   const [ramosAtividade, definirRamosAtividade] = useState([]);
   const [carregando, definirCarregando] = useState(true);
@@ -44,7 +57,6 @@ export function PaginaClientes({ usuarioLogado }) {
   const [clienteEmEdicao, definirClienteEmEdicao] = useState(null);
   const [modoModalCliente, definirModoModalCliente] = useState('novo');
   const usuarioSomenteVendedor = usuarioLogado?.tipo === 'Usuario padrao' && usuarioLogado?.idVendedor;
-  const usuarioSomenteConsultaConfiguracao = usuarioLogado?.tipo === 'Usuario padrao';
   const filtrosIniciais = useMemo(() => ({
     ...filtrosIniciaisClientes,
     idVendedor: usuarioSomenteVendedor ? String(usuarioLogado.idVendedor) : ''
@@ -58,6 +70,30 @@ export function PaginaClientes({ usuarioLogado }) {
 
   useEffect(() => {
     carregarDados();
+  }, [usuarioSomenteVendedor, usuarioLogado?.idVendedor]);
+
+  useEffect(() => {
+    function tratarGrupoEmpresaAtualizado() {
+      carregarDados();
+    }
+
+    window.addEventListener('grupo-empresa-atualizado', tratarGrupoEmpresaAtualizado);
+
+    return () => {
+      window.removeEventListener('grupo-empresa-atualizado', tratarGrupoEmpresaAtualizado);
+    };
+  }, [usuarioSomenteVendedor, usuarioLogado?.idVendedor]);
+
+  useEffect(() => {
+    function tratarEmpresaAtualizada() {
+      carregarDados();
+    }
+
+    window.addEventListener('empresa-atualizada', tratarEmpresaAtualizada);
+
+    return () => {
+      window.removeEventListener('empresa-atualizada', tratarEmpresaAtualizada);
+    };
   }, [usuarioSomenteVendedor, usuarioLogado?.idVendedor]);
 
   useEffect(() => {
@@ -88,11 +124,17 @@ export function PaginaClientes({ usuarioLogado }) {
       const [
         clientesCarregados,
         contatosCarregados,
+        gruposEmpresaCarregados,
+        contatosGruposEmpresaCarregados,
+        empresasCarregadas,
         vendedoresCarregados,
         ramosCarregados
       ] = await Promise.all([
         listarClientes(),
         listarContatos(),
+        listarGruposEmpresa({ incluirInativos: true }),
+        listarContatosGruposEmpresaConfiguracao({ incluirInativos: true }),
+        listarEmpresas(),
         listarVendedores(),
         listarRamosAtividade()
       ]);
@@ -102,9 +144,12 @@ export function PaginaClientes({ usuarioLogado }) {
         : clientesCarregados;
 
       definirClientes(
-        enriquecerClientes(clientesVisiveis, contatosCarregados, vendedoresCarregados)
+        enriquecerClientes(clientesVisiveis, contatosCarregados, vendedoresCarregados, gruposEmpresaCarregados)
       );
       definirContatos(contatosCarregados);
+      definirGruposEmpresa(gruposEmpresaCarregados);
+      definirContatosGruposEmpresa(contatosGruposEmpresaCarregados);
+      definirEmpresa(empresasCarregadas[0] || null);
       definirVendedores(vendedoresCarregados);
       definirRamosAtividade(ramosCarregados);
     } catch (erro) {
@@ -158,10 +203,57 @@ export function PaginaClientes({ usuarioLogado }) {
     return ramoSalvo;
   }
 
+  async function salvarGrupoEmpresa(dadosGrupo) {
+    const payloadGrupo = {
+      descricao: String(dadosGrupo.descricao || '').trim(),
+      status: dadosGrupo.status ? 1 : 0
+    };
+
+    let grupoSalvo;
+
+    if (dadosGrupo.idGrupoEmpresa) {
+      grupoSalvo = await atualizarGrupoEmpresa(dadosGrupo.idGrupoEmpresa, payloadGrupo);
+    } else {
+      grupoSalvo = await incluirGrupoEmpresa(payloadGrupo);
+    }
+
+    const idGrupoEmpresa = grupoSalvo?.idGrupoEmpresa || dadosGrupo.idGrupoEmpresa;
+
+    for (const contato of normalizarContatosGrupoEmpresa(dadosGrupo.contatos, idGrupoEmpresa)) {
+      if (contato.idContatoGrupoEmpresa) {
+        await atualizarContatoGrupoEmpresa(contato.idContatoGrupoEmpresa, contato);
+      } else {
+        await incluirContatoGrupoEmpresa(contato);
+      }
+    }
+
+    await carregarDados();
+    window.dispatchEvent(new CustomEvent('grupo-empresa-atualizado'));
+    return grupoSalvo;
+  }
+
   async function inativarRamoAtividadeCliente(registro) {
     await atualizarRamoAtividade(registro.idRamo, { status: 0 });
     const ramosAtualizados = await listarRamosAtividade();
     definirRamosAtividade(ramosAtualizados);
+  }
+
+  async function inativarGrupoEmpresaCliente(registro) {
+    const contatosDoGrupo = contatosGruposEmpresa.filter(
+      (contato) => String(contato.idGrupoEmpresa) === String(registro.idGrupoEmpresa)
+    );
+
+    for (const contato of contatosDoGrupo) {
+      await atualizarContatoGrupoEmpresa(contato.idContatoGrupoEmpresa, {
+        status: 0,
+        principal: 0
+      });
+    }
+
+    await atualizarGrupoEmpresa(registro.idGrupoEmpresa, { status: 0 });
+
+    await carregarDados();
+    window.dispatchEvent(new CustomEvent('grupo-empresa-atualizado'));
   }
 
   function abrirNovoCliente() {
@@ -212,6 +304,7 @@ export function PaginaClientes({ usuarioLogado }) {
         filtrosAtivos={filtrosAtivos}
       />
       <CorpoClientes
+        empresa={empresa}
         clientes={clientesFiltrados}
         carregando={carregando}
         mensagemErro={mensagemErro}
@@ -226,6 +319,14 @@ export function PaginaClientes({ usuarioLogado }) {
         campos={[
           { name: 'estado', label: 'Estado', options: opcoesEstado },
           { name: 'cidade', label: 'Cidade', options: opcoesCidade },
+          {
+            name: 'idGrupoEmpresa',
+            label: 'Grupo de empresa',
+            options: gruposEmpresa.map((grupo) => ({
+              valor: String(grupo.idGrupoEmpresa),
+              label: grupo.descricao
+            }))
+          },
           {
             name: 'idRamo',
             label: 'Ramo de atividade',
@@ -273,14 +374,21 @@ export function PaginaClientes({ usuarioLogado }) {
         usuarioLogado={usuarioLogado}
         codigoSugerido={proximoCodigoCliente}
         contatos={obterContatosDoCliente(contatos, clienteEmEdicao?.idCliente)}
+        contatosEditaveis={obterContatosEditaveisDoCliente(contatos, clienteEmEdicao?.idCliente)}
+        gruposEmpresa={gruposEmpresa}
+        contatosGruposEmpresa={contatosGruposEmpresa}
         vendedores={vendedoresDisponiveis}
         ramosAtividade={ramosAtividade}
         modo={modoModalCliente}
-        somenteConsultaRamos={usuarioSomenteConsultaConfiguracao}
+        empresa={empresa}
+        somenteConsultaRamos={false}
+        somenteConsultaGrupos={false}
         idVendedorBloqueado={usuarioSomenteVendedor ? usuarioLogado.idVendedor : null}
         aoFechar={fecharModalCliente}
         aoSalvarRamoAtividade={salvarRamoAtividade}
         aoInativarRamoAtividade={inativarRamoAtividadeCliente}
+        aoSalvarGrupoEmpresa={salvarGrupoEmpresa}
+        aoInativarGrupoEmpresa={inativarGrupoEmpresaCliente}
         aoSalvar={salvarCliente}
       />
       <ModalManualClientes
@@ -288,6 +396,7 @@ export function PaginaClientes({ usuarioLogado }) {
         aoFechar={() => definirModalManualAberto(false)}
         clientes={clientesFiltrados}
         contatos={contatos}
+        gruposEmpresa={gruposEmpresa}
         vendedores={vendedoresDisponiveis}
         ramosAtividade={ramosAtividade}
         filtros={filtros}
@@ -336,6 +445,9 @@ function enriquecerClientes(clientes, contatos, vendedores) {
   const vendedoresPorId = new Map(
     vendedores.map((vendedor) => [vendedor.idVendedor, vendedor.nome])
   );
+  const gruposEmpresaPorId = new Map(
+    (arguments[3] || []).map((grupo) => [grupo.idGrupoEmpresa, grupo.descricao])
+  );
 
   contatos.forEach((contato) => {
     if (contato.principal) {
@@ -345,6 +457,7 @@ function enriquecerClientes(clientes, contatos, vendedores) {
 
   return clientes.map((cliente) => ({
     ...cliente,
+    nomeGrupoEmpresa: gruposEmpresaPorId.get(cliente.idGrupoEmpresa) || 'Sem grupo',
     nomeVendedor: vendedoresPorId.get(cliente.idVendedor) || 'Nao informado',
     nomeContatoPrincipal:
       contatosPrincipaisPorCliente.get(cliente.idCliente)?.nome || 'Nao informado',
@@ -361,9 +474,15 @@ function obterContatosDoCliente(contatos, idCliente) {
   return contatos.filter((contato) => contato.idCliente === idCliente);
 }
 
+function obterContatosEditaveisDoCliente(contatos, idCliente) {
+  return obterContatosDoCliente(contatos, idCliente)
+    .filter((contato) => !Boolean(contato.contatoVinculadoGrupo));
+}
+
 function normalizarPayloadCliente(dadosCliente) {
   const payload = {
     idVendedor: Number(dadosCliente.idVendedor),
+    idGrupoEmpresa: dadosCliente.idGrupoEmpresa ? Number(dadosCliente.idGrupoEmpresa) : null,
     idRamo: Number(dadosCliente.idRamo),
     razaoSocial: dadosCliente.razaoSocial.trim(),
     nomeFantasia: dadosCliente.nomeFantasia.trim(),
@@ -381,6 +500,7 @@ function normalizarPayloadCliente(dadosCliente) {
     estado: limparTextoOpcional(dadosCliente.estado)?.toUpperCase(),
     cep: limparTextoOpcional(dadosCliente.cep),
     observacao: limparTextoOpcional(dadosCliente.observacao),
+    codigoAlternativo: normalizarCodigoAlternativo(dadosCliente.codigoAlternativo),
     imagem: limparTextoOpcional(dadosCliente.imagem)
   };
 
@@ -396,11 +516,32 @@ function limparTextoOpcional(valor) {
   return texto || null;
 }
 
+function normalizarCodigoAlternativo(valor) {
+  const digitos = String(valor ?? '').replace(/\D/g, '').trim();
+  return digitos ? Number(digitos) : null;
+}
+
 function normalizarContatos(contatos, idCliente) {
   return contatos.map((contato) => ({
     idContato: typeof contato.idContato === 'number' ? contato.idContato : undefined,
     idCliente,
     nome: contato.nome.trim(),
+    cargo: limparTextoOpcional(contato.cargo),
+    email: limparTextoOpcional(contato.email),
+    telefone: limparTextoOpcional(normalizarTelefone(contato.telefone)),
+    whatsapp: limparTextoOpcional(normalizarTelefone(contato.whatsapp)),
+    status: contato.status ? 1 : 0,
+    principal: contato.principal ? 1 : 0
+  }));
+}
+
+function normalizarContatosGrupoEmpresa(contatos, idGrupoEmpresa) {
+  return (contatos || []).map((contato) => ({
+    idContatoGrupoEmpresa: typeof contato.idContatoGrupoEmpresa === 'number'
+      ? contato.idContatoGrupoEmpresa
+      : undefined,
+    idGrupoEmpresa: Number(idGrupoEmpresa),
+    nome: String(contato.nome || '').trim(),
     cargo: limparTextoOpcional(contato.cargo),
     email: limparTextoOpcional(contato.email),
     telefone: limparTextoOpcional(normalizarTelefone(contato.telefone)),

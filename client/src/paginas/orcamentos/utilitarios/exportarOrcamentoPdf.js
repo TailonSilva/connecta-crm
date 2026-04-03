@@ -197,14 +197,12 @@ function formatarComissao(valor) {
 
 function montarNomeArquivoOrcamento(idOrcamento, nomeCliente) {
   const codigo = idOrcamento ? String(idOrcamento).padStart(4, '0') : 'previa';
-  const nomeNormalizado = String(nomeCliente || 'cliente')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-zA-Z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .toLowerCase();
+  const nomeNormalizado = String(nomeCliente || 'Cliente')
+    .replace(/[<>:"/\\|?*]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 
-  return `orcamento-${codigo}-${nomeNormalizado || 'cliente'}.pdf`;
+  return `Orçamento ${codigo} - ${nomeNormalizado || 'Cliente'}.pdf`;
 }
 
 function obterIniciais(nome) {

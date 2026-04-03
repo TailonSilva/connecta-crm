@@ -1,14 +1,22 @@
-export function filtrarPedidosPaginaInicio(pedidos, filtros, produtos) {
+export function filtrarPedidosPaginaInicio(pedidos, filtros, produtos, opcoes = {}) {
   if (!Array.isArray(pedidos) || pedidos.length === 0) {
     return [];
   }
+
+  const nomeInicio = opcoes?.nomeInicio || 'dataInclusaoInicio';
+  const nomeFim = opcoes?.nomeFim || 'dataInclusaoFim';
+  const campoData = opcoes?.campoData || 'dataInclusao';
+  const obterData = typeof opcoes?.obterData === 'function'
+    ? opcoes.obterData
+    : (pedido) => pedido?.[campoData];
+  const exigirData = Boolean(opcoes?.exigirData);
 
   const produtosPorId = new Map(
     (Array.isArray(produtos) ? produtos : []).map((produto) => [String(produto.idProduto), produto])
   );
 
   return pedidos.filter((pedido) => {
-    const atendeData = validarPeriodo(pedido?.dataInclusao, filtros?.dataInicio, filtros?.dataFim);
+    const atendeData = validarPeriodo(obterData(pedido), filtros?.[nomeInicio], filtros?.[nomeFim], exigirData);
     const idsVendedor = normalizarValoresFiltro(filtros?.idVendedor);
     const idsProduto = normalizarValoresFiltro(filtros?.idProduto);
     const idsGrupo = normalizarValoresFiltro(filtros?.idGrupo);
@@ -35,11 +43,11 @@ function normalizarValoresFiltro(valores) {
     : [];
 }
 
-function validarPeriodo(dataValor, dataInicio, dataFim) {
+function validarPeriodo(dataValor, dataInicio, dataFim, exigirData = false) {
   const dataNormalizada = normalizarData(dataValor);
 
   if (!dataInicio && !dataFim) {
-    return true;
+    return exigirData ? Boolean(dataNormalizada) : true;
   }
 
   if (!dataNormalizada) {

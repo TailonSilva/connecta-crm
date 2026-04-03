@@ -21,16 +21,26 @@ import { atualizarPedido, excluirPedido, incluirPedido, listarPedidos } from '..
 import { listarProdutos } from '../../servicos/produtos';
 import { listarUsuarios } from '../../servicos/usuarios';
 import { normalizarPreco } from '../../utilitarios/normalizarPreco';
-import { normalizarFiltrosPorPadrao, useFiltrosPersistidos } from '../../utilitarios/useFiltrosPersistidos';
+import {
+  normalizarFiltrosPorPadrao,
+  normalizarListaFiltroPersistido,
+  useFiltrosPersistidos
+} from '../../utilitarios/useFiltrosPersistidos';
 import { ModalPedido } from './modalPedido';
 import { ModalManualPedidos } from './modalManualPedidos';
+
+const ID_ETAPA_PEDIDO_ENTREGUE = 5;
 
 function criarFiltrosIniciaisPedidos() {
   return {
     idCliente: '',
     idUsuario: '',
     idVendedor: '',
-    idEtapaPedido: ''
+    idEtapaPedido: [],
+    dataInclusaoInicio: '',
+    dataInclusaoFim: '',
+    dataEntregaInicio: '',
+    dataEntregaFim: ''
   };
 }
 
@@ -46,7 +56,32 @@ function normalizarEtapasPedido(etapasPedido) {
 }
 
 function normalizarFiltrosPedidos(filtros, filtrosPadrao) {
-  return normalizarFiltrosPorPadrao(filtros, filtrosPadrao);
+  const filtrosNormalizados = normalizarFiltrosPorPadrao(filtros, filtrosPadrao);
+  const periodoInclusao = normalizarIntervaloDatasFiltros(
+    filtrosNormalizados,
+    filtrosPadrao,
+    'dataInclusaoInicio',
+    'dataInclusaoFim'
+  );
+  const periodoEntrega = normalizarIntervaloDatasFiltros(
+    filtrosNormalizados,
+    filtrosPadrao,
+    'dataEntregaInicio',
+    'dataEntregaFim'
+  );
+
+  return {
+    ...filtrosNormalizados,
+    ...periodoInclusao,
+    ...periodoEntrega,
+    idEtapaPedido: Array.isArray(filtros?.idEtapaPedido)
+      ? normalizarListaFiltroPersistido(filtros.idEtapaPedido)
+      : normalizarListaFiltroPersistido(
+        filtros?.idEtapaPedido
+          ? [filtros.idEtapaPedido]
+          : []
+      )
+  };
 }
 
 export function PaginaPedidos({ usuarioLogado }) {
@@ -81,6 +116,18 @@ export function PaginaPedidos({ usuarioLogado }) {
 
   useEffect(() => {
     carregarDados();
+  }, []);
+
+  useEffect(() => {
+    function tratarGrupoEmpresaAtualizado() {
+      carregarDados();
+    }
+
+    window.addEventListener('grupo-empresa-atualizado', tratarGrupoEmpresaAtualizado);
+
+    return () => {
+      window.removeEventListener('grupo-empresa-atualizado', tratarGrupoEmpresaAtualizado);
+    };
   }, []);
 
   useEffect(() => {
@@ -167,6 +214,11 @@ export function PaginaPedidos({ usuarioLogado }) {
   }
 
   function abrirEdicaoPedido(pedido) {
+    if (pedidoBloqueadoParaUsuarioPadrao(pedido, usuarioLogado)) {
+      abrirConsultaPedido(pedido);
+      return;
+    }
+
     definirPedidoSelecionado(pedido);
     definirModoModal('edicao');
     definirModalAberto(true);
@@ -244,6 +296,29 @@ export function PaginaPedidos({ usuarioLogado }) {
     await carregarDados();
   }
 
+  async function alterarEtapaRapidamente(pedido, proximoIdEtapaPedido) {
+    const valorEtapa = String(proximoIdEtapaPedido || '').trim();
+
+    if (!pedido?.idPedido || String(pedido.idEtapaPedido || '') === valorEtapa) {
+      return;
+    }
+
+    const etapaSelecionada = etapasPedido.find(
+      (etapa) => String(etapa.idEtapaPedido) === valorEtapa
+    );
+    const payload = normalizarPayloadPedido({
+      ...pedido,
+      idEtapaPedido: valorEtapa,
+      nomeEtapaPedidoSnapshot: etapaSelecionada?.descricao || '',
+      dataEntrega: entrouNaEtapaEntregue(pedido.idEtapaPedido, valorEtapa)
+        ? obterDataAtualFormatoInput()
+        : pedido.dataEntrega
+    });
+
+    await atualizarPedido(pedido.idPedido, payload);
+    await carregarDados();
+  }
+
   const pedidosFiltrados = useMemo(
     () => filtrarPedidos(pedidos, pesquisa, filtros),
     [pedidos, pesquisa, filtros]
@@ -297,7 +372,11 @@ export function PaginaPedidos({ usuarioLogado }) {
             <LinhaPedido
               key={pedido.idPedido}
               pedido={pedido}
+              etapasPedido={etapasPedido}
               permitirExcluir={permitirExcluir}
+              permitirEdicao={!pedidoBloqueadoParaUsuarioPadrao(pedido, usuarioLogado)}
+              permitirAlteracaoEtapa={!pedidoBloqueadoParaUsuarioPadrao(pedido, usuarioLogado)}
+              aoAlterarEtapa={(idEtapaPedido) => alterarEtapaRapidamente(pedido, idEtapaPedido)}
               aoConsultar={() => abrirConsultaPedido(pedido)}
               aoEditar={() => abrirEdicaoPedido(pedido)}
               aoExcluir={() => abrirExclusaoPedido(pedido)}
@@ -338,10 +417,35 @@ export function PaginaPedidos({ usuarioLogado }) {
           {
             name: 'idEtapaPedido',
             label: 'Etapa',
+            multiple: true,
+            tituloSelecao: 'Selecionar etapas',
             options: etapasPedido.map((etapa) => ({
               valor: String(etapa.idEtapaPedido),
               label: etapa.descricao
             }))
+          },
+          {
+            name: 'periodosDatasPedido',
+            label: 'Datas',
+            type: 'date-filters-modal',
+            tituloSelecao: 'Filtros de datas do pedido',
+            placeholder: 'Selecionar datas',
+            periodos: [
+              {
+                titulo: 'Data de inclusao',
+                nomeInicio: 'dataInclusaoInicio',
+                nomeFim: 'dataInclusaoFim',
+                labelInicio: 'Inicio da inclusao',
+                labelFim: 'Fim da inclusao'
+              },
+              {
+                titulo: 'Data de entrega',
+                nomeInicio: 'dataEntregaInicio',
+                nomeFim: 'dataEntregaFim',
+                labelInicio: 'Inicio da entrega',
+                labelFim: 'Fim da entrega'
+              }
+            ]
           }
         ]}
         aoFechar={() => definirModalFiltrosAberto(false)}
@@ -429,7 +533,17 @@ function CabecalhoGradePedidos() {
   );
 }
 
-function LinhaPedido({ pedido, permitirExcluir, aoConsultar, aoEditar, aoExcluir }) {
+function LinhaPedido({
+  pedido,
+  etapasPedido,
+  permitirExcluir,
+  permitirEdicao,
+  permitirAlteracaoEtapa,
+  aoAlterarEtapa,
+  aoConsultar,
+  aoEditar,
+  aoExcluir
+}) {
   return (
     <tr className="linhaPedido">
       <td>
@@ -444,26 +558,35 @@ function LinhaPedido({ pedido, permitirExcluir, aoConsultar, aoEditar, aoExcluir
         </div>
       </td>
       <td>
-        {pedido.nomeEtapaPedidoSnapshot ? (
-          <span
-            className="etiquetaEtapaOrcamento"
+        <div className="campoEtapaGridOrcamento">
+          <select
+            className="selectEtapaGridOrcamento"
             style={criarEstiloEtapaPedido(pedido.corEtapaPedido)}
+            value={pedido.idEtapaPedido ? String(pedido.idEtapaPedido) : ''}
+            onChange={(evento) => aoAlterarEtapa(evento.target.value)}
+            aria-label={`Alterar etapa do pedido ${pedido.idPedido}`}
+            disabled={!permitirAlteracaoEtapa}
+            title={!permitirAlteracaoEtapa ? 'Pedido entregue: usuario padrao consulta apenas.' : 'Alterar etapa do pedido'}
           >
-            {pedido.nomeEtapaPedidoSnapshot}
-          </span>
-        ) : (
-          <span className="textoSecundarioRegistro">Sem etapa</span>
-        )}
+            <option value="">Sem etapa</option>
+            {etapasPedido.map((etapa) => (
+              <option key={etapa.idEtapaPedido} value={etapa.idEtapaPedido}>
+                {etapa.descricao}
+              </option>
+            ))}
+          </select>
+        </div>
       </td>
       <td>{pedido.nomeVendedorSnapshot || 'Nao informado'}</td>
       <td>{normalizarPreco(pedido.totalPedido)}</td>
       <td>
         <AcoesRegistro
           rotuloConsulta="Consultar pedido"
-          rotuloEdicao="Editar pedido"
+          rotuloEdicao={permitirEdicao ? 'Editar pedido' : 'Pedido entregue: usuario padrao consulta apenas.'}
           rotuloInativacao="Excluir pedido"
           iconeInativacao="limpar"
           exibirInativacao={permitirExcluir}
+          desabilitarEdicao={!permitirEdicao}
           aoConsultar={aoConsultar}
           aoEditar={aoEditar}
           aoInativar={aoExcluir}
@@ -493,6 +616,9 @@ function enriquecerPedidos(pedidos, etapasPedido) {
 
 function filtrarPedidos(pedidos, pesquisa, filtros) {
   const termo = String(pesquisa || '').trim().toLowerCase();
+  const etapasSelecionadas = Array.isArray(filtros.idEtapaPedido)
+    ? filtros.idEtapaPedido.map(String).filter(Boolean)
+    : [];
 
   return pedidos.filter((pedido) => {
     const atendePesquisa = !termo || [
@@ -510,11 +636,25 @@ function filtrarPedidos(pedidos, pesquisa, filtros) {
       (!filtros.idCliente || String(pedido.idCliente) === String(filtros.idCliente))
       && (!filtros.idUsuario || String(pedido.idUsuario) === String(filtros.idUsuario))
       && (!filtros.idVendedor || String(pedido.idVendedor) === String(filtros.idVendedor))
-      && (!filtros.idEtapaPedido || String(pedido.idEtapaPedido) === String(filtros.idEtapaPedido))
+      && (etapasSelecionadas.length === 0 || etapasSelecionadas.includes(String(pedido.idEtapaPedido)))
+      && validarPeriodoData(pedido.dataInclusao, filtros.dataInclusaoInicio, filtros.dataInclusaoFim)
+      && validarPeriodoData(pedido.dataEntrega, filtros.dataEntregaInicio, filtros.dataEntregaFim)
     );
 
     return atendePesquisa && atendeFiltros;
   });
+}
+
+function pedidoBloqueadoParaUsuarioPadrao(pedido, usuarioLogado) {
+  return usuarioLogado?.tipo === 'Usuario padrao' && etapaPedidoEhEntregue(pedido?.idEtapaPedido);
+}
+
+function entrouNaEtapaEntregue(idEtapaAnterior, idEtapaAtual) {
+  return !etapaPedidoEhEntregue(idEtapaAnterior) && etapaPedidoEhEntregue(idEtapaAtual);
+}
+
+function etapaPedidoEhEntregue(idEtapaPedido) {
+  return Number(idEtapaPedido) === ID_ETAPA_PEDIDO_ENTREGUE;
 }
 
 function normalizarPayloadPedido(dadosPedido) {
@@ -571,6 +711,64 @@ function normalizarPayloadPrazoPagamento(dadosPrazo) {
   });
 
   return payload;
+}
+
+function normalizarIntervaloDatasFiltros(filtros, filtrosPadrao, chaveInicio, chaveFim) {
+  const dataInicio = normalizarDataFiltro(filtros?.[chaveInicio]) || normalizarDataFiltro(filtrosPadrao?.[chaveInicio]);
+  const dataFim = normalizarDataFiltro(filtros?.[chaveFim]) || normalizarDataFiltro(filtrosPadrao?.[chaveFim]);
+
+  if (dataInicio && dataFim && dataInicio > dataFim) {
+    return {
+      [chaveInicio]: dataFim,
+      [chaveFim]: dataInicio
+    };
+  }
+
+  return {
+    [chaveInicio]: dataInicio,
+    [chaveFim]: dataFim
+  };
+}
+
+function validarPeriodoData(valorData, dataInicio, dataFim) {
+  const dataNormalizada = normalizarDataFiltro(valorData);
+
+  if (!dataInicio && !dataFim) {
+    return true;
+  }
+
+  if (!dataNormalizada) {
+    return false;
+  }
+
+  if (dataInicio && dataNormalizada < dataInicio) {
+    return false;
+  }
+
+  if (dataFim && dataNormalizada > dataFim) {
+    return false;
+  }
+
+  return true;
+}
+
+function normalizarDataFiltro(valor) {
+  const texto = String(valor || '').trim();
+
+  if (!texto) {
+    return '';
+  }
+
+  return texto.slice(0, 10);
+}
+
+function obterDataAtualFormatoInput() {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+  const dia = String(hoje.getDate()).padStart(2, '0');
+
+  return `${ano}-${mes}-${dia}`;
 }
 
 function enriquecerPrazosPagamento(prazosPagamento, metodosPagamento = []) {

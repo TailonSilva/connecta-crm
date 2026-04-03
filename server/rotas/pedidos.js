@@ -1,5 +1,10 @@
 const express = require('express');
-const { consultarTodos, consultarUm, executar } = require('../configuracoes/banco');
+const {
+  ID_ETAPA_PEDIDO_ENTREGUE,
+  consultarTodos,
+  consultarUm,
+  executar
+} = require('../configuracoes/banco');
 const {
   ehCaminhoImagemLocal,
   ehDataUrlImagem,
@@ -45,7 +50,7 @@ rotaPedidos.get('/:id', async (requisicao, resposta) => {
 
 rotaPedidos.post('/', async (requisicao, resposta) => {
   try {
-    const payload = normalizarPayloadPedido(requisicao.body || {});
+    const payload = aplicarAutomacoesPedido(normalizarPayloadPedido(requisicao.body || {}));
     await validarReferenciasAtivasDaEntidade('pedido', payload);
     const snapshots = await montarSnapshotsPedido(payload);
     const mensagemValidacao = validarPayloadPedido(payload);
@@ -133,7 +138,10 @@ rotaPedidos.put('/:id', async (requisicao, resposta) => {
       return;
     }
 
-    const payload = normalizarPayloadPedido({ ...existente, ...(requisicao.body || {}) });
+    const payload = aplicarAutomacoesPedido(
+      normalizarPayloadPedido({ ...existente, ...(requisicao.body || {}) }),
+      existente
+    );
     await validarReferenciasAtivasDaEntidade('pedido', payload);
     const snapshots = await montarSnapshotsPedido(payload);
     const itensAtuais = await consultarTodos('SELECT imagem FROM itemPedido WHERE idPedido = ?', [idPedido]);
@@ -305,6 +313,24 @@ function normalizarPayloadPedido(payload = {}) {
     itens: normalizarItensPedido(payload.itens),
     camposExtras: normalizarCamposPedido(payload.camposExtras)
   };
+}
+
+function aplicarAutomacoesPedido(payload, pedidoAtual = null) {
+  const proximoPayload = {
+    ...payload
+  };
+  const entrouNaEtapaEntregue = !etapaPedidoEhEntregue(pedidoAtual?.idEtapaPedido)
+    && etapaPedidoEhEntregue(proximoPayload.idEtapaPedido);
+
+  if (entrouNaEtapaEntregue && (!proximoPayload.dataEntrega || proximoPayload.dataEntrega === limparTexto(pedidoAtual?.dataEntrega))) {
+    proximoPayload.dataEntrega = obterDataAtualFormatoInput();
+  }
+
+  if (etapaPedidoEhEntregue(proximoPayload.idEtapaPedido) && !proximoPayload.dataEntrega) {
+    proximoPayload.dataEntrega = obterDataAtualFormatoInput();
+  }
+
+  return proximoPayload;
 }
 
 function normalizarItensPedido(itens) {
@@ -643,6 +669,19 @@ function desnormalizarCaminhoImagem(valorImagem) {
   }
 
   return valorImagem || null;
+}
+
+function etapaPedidoEhEntregue(idEtapaPedido) {
+  return Number(idEtapaPedido) === ID_ETAPA_PEDIDO_ENTREGUE;
+}
+
+function obterDataAtualFormatoInput() {
+  const hoje = new Date();
+  const ano = hoje.getFullYear();
+  const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+  const dia = String(hoje.getDate()).padStart(2, '0');
+
+  return `${ano}-${mes}-${dia}`;
 }
 
 function removerImagensItensNaoUtilizadas(imagensAtuais, imagensNovas) {

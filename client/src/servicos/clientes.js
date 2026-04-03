@@ -1,5 +1,6 @@
 import { requisitarApi } from './api';
 import { requisitarListaApi } from './listas';
+import { normalizarTextoCapitalizado } from '../utilitarios/normalizarTextoFormulario';
 
 export function listarClientes() {
   return requisitarApi('/clientes');
@@ -15,6 +16,30 @@ export function listarVendedores(opcoes) {
 
 export function listarRamosAtividade(opcoes) {
   return requisitarListaApi('/ramosAtividade', opcoes);
+}
+
+export function listarGruposEmpresa(opcoes) {
+  return requisitarListaApi('/gruposEmpresa', opcoes);
+}
+
+export function incluirGrupoEmpresa(payload) {
+  return requisitarApi('/gruposEmpresa', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+export function atualizarGrupoEmpresa(idGrupoEmpresa, payload) {
+  return requisitarApi(`/gruposEmpresa/${idGrupoEmpresa}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
 }
 
 export function incluirRamoAtividade(payload) {
@@ -108,5 +133,16 @@ export async function buscarCnpj(cnpj) {
     throw new Error(dados.message || 'CNPJ nao encontrado.');
   }
 
-  return dados;
+  return {
+    ...dados,
+    razao_social: normalizarTextoCapitalizado(dados.razao_social),
+    nome_fantasia: normalizarTextoCapitalizado(dados.nome_fantasia),
+    email: String(dados.email || '').toLowerCase(),
+    descricao_tipo_de_logradouro: normalizarTextoCapitalizado(dados.descricao_tipo_de_logradouro),
+    logradouro: normalizarTextoCapitalizado(dados.logradouro),
+    complemento: normalizarTextoCapitalizado(dados.complemento),
+    bairro: normalizarTextoCapitalizado(dados.bairro),
+    municipio: normalizarTextoCapitalizado(dados.municipio),
+    uf: String(dados.uf || '').toUpperCase()
+  };
 }

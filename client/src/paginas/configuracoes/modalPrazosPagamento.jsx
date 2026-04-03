@@ -3,6 +3,7 @@ import { Botao } from '../../componentes/comuns/botao';
 import { BotaoAcaoGrade } from '../../componentes/comuns/botaoAcaoGrade';
 import { CodigoRegistro } from '../../componentes/comuns/codigoRegistro';
 import { ModalFiltros } from '../../componentes/comuns/modalFiltros';
+import { normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTextoFormulario';
 
 const estadoInicialFormulario = {
   descricao: '',
@@ -122,11 +123,12 @@ export function ModalPrazosPagamento({
 
   function alterarCampo(evento) {
     const { name, value, type, checked } = evento.target;
+    const valorNormalizado = normalizarValorEntradaFormulario(evento);
 
     definirFormulario((estadoAtual) => {
       const proximoFormulario = {
         ...estadoAtual,
-        [name]: type === 'checkbox' ? checked : value
+        [name]: type === 'checkbox' ? checked : valorNormalizado
       };
 
       return {

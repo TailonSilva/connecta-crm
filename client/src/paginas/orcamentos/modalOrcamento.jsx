@@ -1,20 +1,22 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Botao } from '../../componentes/comuns/botao';
-import { CampoImagemPadrao } from '../../componentes/comuns/campoImagemPadrao';
 import { CodigoRegistro } from '../../componentes/comuns/codigoRegistro';
 import { ModalBuscaClientes } from '../../componentes/comuns/modalBuscaClientes';
 import { ModalBuscaContatos } from '../../componentes/comuns/modalBuscaContatos';
-import { ModalBuscaTabela } from '../../componentes/comuns/modalBuscaTabela';
+import { ModalItemProduto } from '../../componentes/comuns/modalItemProduto';
 import { PopupAvisos } from '../../componentes/comuns/popupAvisos';
 import { ModalPrazosPagamento } from '../configuracoes/modalPrazosPagamento';
+import { useFormularioItemProduto } from '../../utilitarios/useFormularioItemProduto';
 import {
   converterPrecoParaNumero,
   desformatarPreco,
   normalizarPreco,
   normalizarPrecoDigitado
 } from '../../utilitarios/normalizarPreco';
+import { normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTextoFormulario';
 import { desktopTemExportacaoPdf } from '../../servicos/desktop';
 import { exportarOrcamentoPdf } from './utilitarios/exportarOrcamentoPdf';
+import { formatarCodigoCliente } from '../../utilitarios/codigoCliente';
 
 const abasModalOrcamento = [
   { id: 'dadosGerais', label: 'Dados gerais' },
@@ -23,10 +25,12 @@ const abasModalOrcamento = [
 ];
 
 const ID_ETAPA_ORCAMENTO_FECHAMENTO = 1;
+const IDS_ETAPAS_ORCAMENTO_FECHADAS = new Set([1, 2, 3]);
 
 const estadoInicialFormulario = {
   dataInclusao: '',
   dataValidade: '',
+  dataFechamento: '',
   idCliente: '',
   idContato: '',
   idUsuario: '',
@@ -45,6 +49,9 @@ const estadoInicialFormulario = {
 
 const estadoInicialItem = {
   idProduto: '',
+  descricaoProdutoSnapshot: '',
+  referenciaProdutoSnapshot: '',
+  unidadeProdutoSnapshot: '',
   quantidade: '1',
   valorUnitario: '',
   valorTotal: '',
@@ -89,11 +96,6 @@ export function ModalOrcamento({
   const [modalBuscaClienteAberto, definirModalBuscaClienteAberto] = useState(false);
   const [modalBuscaContatoAberto, definirModalBuscaContatoAberto] = useState(false);
   const [modalPrazosPagamentoAberto, definirModalPrazosPagamentoAberto] = useState(false);
-  const [modalBuscaProdutoAberto, definirModalBuscaProdutoAberto] = useState(false);
-  const [modalItemAberto, definirModalItemAberto] = useState(false);
-  const [indiceItemEdicao, definirIndiceItemEdicao] = useState(null);
-  const [itemFormulario, definirItemFormulario] = useState(estadoInicialItem);
-  const [mensagemErroItem, definirMensagemErroItem] = useState('');
   const somenteLeitura = modo === 'consulta';
   const modoInclusao = modo === 'novo';
   const modoEdicao = modo === 'edicao';
@@ -109,6 +111,47 @@ export function ModalOrcamento({
   const motivosAtivos = motivosPerda.filter((motivo) => motivo.status !== 0);
   const produtosAtivos = produtos.filter((produto) => produto.status !== 0);
   const exportacaoPdfDisponivel = desktopTemExportacaoPdf();
+  const contatosDoCliente = contatosAtivos.filter((contato) => String(contato.idCliente) === String(formulario.idCliente));
+  const etapaSelecionada = etapasAtivas.find((etapa) => String(etapa.idEtapaOrcamento) === String(formulario.idEtapaOrcamento));
+  const etapaAtualEhFechada = etapaOrcamentoEhFechadoPorId(formulario.idEtapaOrcamento);
+  const totalOrcamento = useMemo(
+    () => formulario.itens.reduce((total, item) => total + (converterPrecoParaNumero(item.valorTotal) || 0), 0),
+    [formulario.itens]
+  );
+  const {
+    modalItemAberto,
+    modalBuscaProdutoAberto,
+    itemFormulario,
+    mensagemErroItem,
+    definirImagemItem,
+    redefinirItemModal,
+    abrirNovoItem,
+    abrirEdicaoItem,
+    fecharModalItem,
+    abrirModalBuscaProduto,
+    fecharModalBuscaProduto,
+    selecionarProdutoBusca,
+    alterarItemCampo,
+    salvarItem,
+    removerItem
+  } = useFormularioItemProduto({
+    estadoInicialItem,
+    produtos: produtosAtivos,
+    obterItens: () => formulario.itens,
+    definirItens: (atualizarItens) => definirFormulario((estadoAtual) => ({
+      ...estadoAtual,
+      itens: typeof atualizarItens === 'function'
+        ? atualizarItens(estadoAtual.itens)
+        : atualizarItens
+    })),
+    formatarPrecoInput,
+    calcularTotalItem,
+    normalizarPrecoDigitado,
+    converterPrecoParaNumero,
+    normalizarPreco,
+    normalizarQuantidade,
+    exigirProduto: true
+  });
 
   useEffect(() => {
     if (!aberto) {
@@ -129,11 +172,7 @@ export function ModalOrcamento({
     definirModalBuscaClienteAberto(false);
     definirModalBuscaContatoAberto(false);
     definirModalPrazosPagamentoAberto(false);
-    definirModalBuscaProdutoAberto(false);
-    definirModalItemAberto(false);
-    definirIndiceItemEdicao(null);
-    definirItemFormulario(estadoInicialItem);
-    definirMensagemErroItem('');
+    redefinirItemModal();
   }, [aberto, orcamento, usuarioLogado, camposOrcamento, empresa]);
 
   useEffect(() => {
@@ -161,6 +200,11 @@ export function ModalOrcamento({
       }
 
       if (modalItemAberto) {
+        if (modalBuscaProdutoAberto) {
+          fecharModalBuscaProduto();
+          return;
+        }
+
         fecharModalItem();
         return;
       }
@@ -203,15 +247,7 @@ export function ModalOrcamento({
     return () => {
       window.removeEventListener('keydown', tratarTecla);
     };
-  }, [aberto, confirmandoFechamento, confirmandoSaida, gerandoPdf, modalBuscaClienteAberto, modalBuscaContatoAberto, modalItemAberto, modalPrazosPagamentoAberto, salvando]);
-
-  const contatosDoCliente = contatosAtivos.filter((contato) => String(contato.idCliente) === String(formulario.idCliente));
-  const etapaSelecionada = etapasAtivas.find((etapa) => String(etapa.idEtapaOrcamento) === String(formulario.idEtapaOrcamento));
-  const produtoSelecionadoItem = produtosAtivos.find((produto) => String(produto.idProduto) === String(itemFormulario.idProduto));
-  const totalOrcamento = useMemo(
-    () => formulario.itens.reduce((total, item) => total + (converterPrecoParaNumero(item.valorTotal) || 0), 0),
-    [formulario.itens]
-  );
+  }, [aberto, confirmandoFechamento, confirmandoSaida, gerandoPdf, modalBuscaClienteAberto, modalBuscaContatoAberto, modalBuscaProdutoAberto, modalItemAberto, modalPrazosPagamentoAberto, salvando]);
 
   if (!aberto) {
     return null;
@@ -219,6 +255,7 @@ export function ModalOrcamento({
 
   function alterarCampo(evento) {
     const { name, value } = evento.target;
+    const valorNormalizado = normalizarValorEntradaFormulario(evento);
 
     if (name === 'idEtapaOrcamento') {
       const etapaAtual = etapasAtivas.find((item) => String(item.idEtapaOrcamento) === String(formulario.idEtapaOrcamento || ''));
@@ -238,10 +275,16 @@ export function ModalOrcamento({
     }
 
     definirFormulario((estadoAtual) => {
+      const entrouEmEtapaFechada = name === 'idEtapaOrcamento'
+        && !etapaOrcamentoEhFechadoPorId(estadoAtual.idEtapaOrcamento)
+        && etapaOrcamentoEhFechadoPorId(value);
       const proximoEstado = {
         ...estadoAtual,
         ...(name === 'idCliente' ? { idContato: '' } : {}),
-        [name]: name === 'comissao' ? normalizarPrecoDigitado(value) : value
+        [name]: name === 'comissao' ? normalizarPrecoDigitado(value) : valorNormalizado,
+        ...(entrouEmEtapaFechada && !estadoAtual.dataFechamento
+          ? { dataFechamento: obterDataAtualFormatoInput() }
+          : {})
       };
 
       if (name === 'idCliente') {
@@ -308,6 +351,11 @@ export function ModalOrcamento({
 
     if (formulario.itens.length === 0) {
       definirMensagemErro('Inclua ao menos um item no orcamento.');
+      return;
+    }
+
+    if (etapaAtualEhFechada && !String(formulario.dataFechamento || '').trim()) {
+      definirMensagemErro('Informe a data de fechamento para esta etapa do orcamento.');
       return;
     }
 
@@ -405,6 +453,7 @@ export function ModalOrcamento({
     definirFormulario((estadoAtual) => ({
       ...estadoAtual,
       idEtapaOrcamento: idEtapaPendenteFechamento,
+      dataFechamento: estadoAtual.dataFechamento || obterDataAtualFormatoInput(),
       solicitarPedidoAoSalvar: true
     }));
     definirConfirmandoFechamento(false);
@@ -432,103 +481,6 @@ export function ModalOrcamento({
     if (evento.target === evento.currentTarget && !salvando) {
       tentarFecharModal();
     }
-  }
-
-  function abrirNovoItem() {
-    definirIndiceItemEdicao(null);
-    definirItemFormulario(estadoInicialItem);
-    definirMensagemErroItem('');
-    definirModalItemAberto(true);
-  }
-
-  function abrirEdicaoItem(item, indice) {
-    definirIndiceItemEdicao(indice);
-    definirItemFormulario({
-      idProduto: String(item.idProduto || ''),
-      quantidade: String(item.quantidade || '1'),
-      valorUnitario: item.valorUnitario ? desformatarPreco(item.valorUnitario) : '',
-      valorTotal: item.valorTotal ? desformatarPreco(item.valorTotal) : '',
-      imagem: item.imagem || '',
-      observacao: item.observacao || ''
-    });
-    definirMensagemErroItem('');
-    definirModalItemAberto(true);
-  }
-
-  function fecharModalItem() {
-    definirModalBuscaProdutoAberto(false);
-    definirModalItemAberto(false);
-    definirIndiceItemEdicao(null);
-    definirItemFormulario(estadoInicialItem);
-    definirMensagemErroItem('');
-  }
-
-  function alterarItemCampo(evento) {
-    const { name, value } = evento.target;
-
-    definirItemFormulario((estadoAtual) => {
-      const proximoEstado = {
-        ...estadoAtual,
-        [name]: ['valorUnitario', 'valorTotal'].includes(name)
-          ? normalizarPrecoDigitado(value)
-          : value
-      };
-
-      if (name === 'idProduto') {
-        const produto = produtosAtivos.find((item) => String(item.idProduto) === String(value));
-        if (produto) {
-          const precoPadrao = formatarPrecoInput(produto.preco);
-          proximoEstado.valorUnitario = precoPadrao;
-          proximoEstado.valorTotal = calcularTotalItem(proximoEstado.quantidade, precoPadrao);
-        }
-      }
-
-      if (name === 'quantidade' || name === 'valorUnitario') {
-        proximoEstado.valorTotal = calcularTotalItem(
-          name === 'quantidade' ? value : proximoEstado.quantidade,
-          name === 'valorUnitario' ? proximoEstado[name] : proximoEstado.valorUnitario
-        );
-      }
-
-      return proximoEstado;
-    });
-  }
-
-  function salvarItem(evento) {
-    evento?.preventDefault?.();
-    evento?.stopPropagation?.();
-
-    if (!itemFormulario.idProduto) {
-      definirMensagemErroItem('Selecione o produto do item.');
-      return;
-    }
-
-    const quantidade = normalizarQuantidade(itemFormulario.quantidade);
-    const valorUnitario = converterPrecoParaNumero(itemFormulario.valorUnitario);
-
-    if (!quantidade || !valorUnitario) {
-      definirMensagemErroItem('Informe quantidade e valor unitario validos.');
-      return;
-    }
-
-    const produto = produtosAtivos.find((item) => String(item.idProduto) === String(itemFormulario.idProduto));
-    const itemNormalizado = {
-      idProduto: Number(itemFormulario.idProduto),
-      quantidade: String(quantidade),
-      valorUnitario: normalizarPreco(valorUnitario),
-      valorTotal: normalizarPreco((quantidade * valorUnitario)),
-      imagem: itemFormulario.imagem || '',
-      observacao: itemFormulario.observacao
-    };
-
-    definirFormulario((estadoAtual) => ({
-      ...estadoAtual,
-      itens: indiceItemEdicao === null
-        ? [...estadoAtual.itens, itemNormalizado]
-        : estadoAtual.itens.map((item, indice) => (indice === indiceItemEdicao ? itemNormalizado : item))
-    }));
-
-    fecharModalItem();
   }
 
   function abrirModalBuscaCliente() {
@@ -611,42 +563,6 @@ export function ModalOrcamento({
     fecharModalBuscaContato();
   }
 
-  function abrirModalBuscaProduto() {
-    if (somenteLeitura) {
-      return;
-    }
-
-    definirModalBuscaProdutoAberto(true);
-  }
-
-  function fecharModalBuscaProduto() {
-    definirModalBuscaProdutoAberto(false);
-  }
-
-  function selecionarProdutoBusca(produto) {
-    if (!produto) {
-      return;
-    }
-
-    const precoPadrao = formatarPrecoInput(produto.preco);
-
-    definirItemFormulario((estadoAtual) => ({
-      ...estadoAtual,
-      idProduto: String(produto.idProduto),
-      valorUnitario: precoPadrao,
-      valorTotal: calcularTotalItem(estadoAtual.quantidade, precoPadrao)
-    }));
-
-    fecharModalBuscaProduto();
-  }
-
-  function removerItem(indice) {
-    definirFormulario((estadoAtual) => ({
-      ...estadoAtual,
-      itens: estadoAtual.itens.filter((_, indiceAtual) => indiceAtual !== indice)
-    }));
-  }
-
   return (
     <div className="camadaModal camadaModalSecundaria" role="presentation" onMouseDown={fecharAoClicarNoFundo}>
       <form
@@ -717,12 +633,13 @@ export function ModalOrcamento({
                   required
                 />
                 <CampoFormulario
-                  label="Data de validade"
-                  name="dataValidade"
+                  label={etapaAtualEhFechada ? 'Data de fechamento' : 'Data de validade'}
+                  name={etapaAtualEhFechada ? 'dataFechamento' : 'dataValidade'}
                   type="date"
-                  value={formulario.dataValidade}
+                  value={etapaAtualEhFechada ? formulario.dataFechamento : formulario.dataValidade}
                   onChange={alterarCampo}
                   disabled={somenteLeitura}
+                  required={etapaAtualEhFechada}
                 />
                 <CampoFormulario
                   label="Usuario do registro"
@@ -740,7 +657,7 @@ export function ModalOrcamento({
                   onChange={alterarCampo}
                   options={clientesAtivos.map((cliente) => ({
                     valor: String(cliente.idCliente),
-                    label: montarRotuloCliente(cliente)
+                    label: montarRotuloCliente(cliente, empresa)
                   }))}
                   disabled={somenteLeitura}
                   required
@@ -900,21 +817,20 @@ export function ModalOrcamento({
                     </thead>
                     <tbody>
                       {formulario.itens.length > 0 ? formulario.itens.map((item, indice) => {
-                        const produto = produtos.find((registro) => String(registro.idProduto) === String(item.idProduto));
-                        const imagemItem = item.imagem || produto?.imagem || '';
+                        const imagemItem = item.imagem || '';
 
                         return (
-                          <tr key={`${item.idProduto}-${indice}`}>
+                          <tr key={`${item.idItemOrcamento || indice}-${indice}`}>
                             <td>
                               {imagemItem ? (
-                                <img src={imagemItem} alt={produto?.descricao || 'Item do orcamento'} className="miniaturaItemOrcamento" />
+                                <img src={imagemItem} alt={item.descricaoProdutoSnapshot || 'Item do orcamento'} className="miniaturaItemOrcamento" />
                               ) : (
                                 <div className="miniaturaItemOrcamentoPlaceholder">
-                                  {obterIniciaisItemOrcamento(produto)}
+                                  {obterIniciaisItemOrcamento(item)}
                                 </div>
                               )}
                             </td>
-                            <td>{produto?.descricao || 'Produto nao informado'}</td>
+                            <td>{item.descricaoProdutoSnapshot || 'Produto nao informado'}</td>
                             <td>{item.quantidade}</td>
                             <td>{normalizarPreco(item.valorUnitario)}</td>
                             <td>{normalizarPreco(item.valorTotal)}</td>
@@ -948,7 +864,7 @@ export function ModalOrcamento({
                       }) : (
                         <tr>
                           <td colSpan={7} className="mensagemTabelaContatosModal">
-                            Nenhum item incluido.
+                            Nenhum item informado.
                           </td>
                         </tr>
                       )}
@@ -1029,6 +945,7 @@ export function ModalOrcamento({
 
         <ModalBuscaClientes
           aberto={modalBuscaClienteAberto}
+          empresa={empresa}
           clientes={clientes}
           placeholder="Pesquisar clientes"
           ariaLabelPesquisa="Pesquisar clientes"
@@ -1066,141 +983,22 @@ export function ModalOrcamento({
           }}
         />
 
-        {modalItemAberto ? (
-          <div className="camadaModalContato" role="presentation" onMouseDown={fecharModalItem}>
-            <div
-              className="modalContatoCliente modalItemOrcamento"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="tituloModalItemOrcamento"
-              onMouseDown={(evento) => evento.stopPropagation()}
-            >
-              <div className="cabecalhoModalContato">
-                <h3 id="tituloModalItemOrcamento">
-                  {somenteLeitura ? 'Consultar item' : indiceItemEdicao === null ? 'Incluir item' : 'Editar item'}
-                </h3>
-                <div className="acoesFormularioContatoModal">
-                  <Botao variante="secundario" type="button" onClick={fecharModalItem}>
-                    {somenteLeitura ? 'Fechar' : 'Cancelar'}
-                  </Botao>
-                  {!somenteLeitura ? (
-                    <Botao variante="primario" type="button" onClick={salvarItem}>
-                      Salvar
-                    </Botao>
-                  ) : null}
-                </div>
-              </div>
-
-              <div className="corpoModalContato">
-                <div className="layoutModalItemOrcamento">
-                  <CampoImagemPadrao
-                    valor={itemFormulario.imagem || produtoSelecionadoItem?.imagem || ''}
-                    alt={`Imagem de ${produtoSelecionadoItem?.descricao || 'item do orcamento'}`}
-                    iniciais={obterIniciaisItemOrcamento(produtoSelecionadoItem)}
-                    disabled={somenteLeitura}
-                    rotuloBotao="Foto do item"
-                    onChange={(imagem) => definirItemFormulario((estadoAtual) => ({
-                      ...estadoAtual,
-                      imagem: imagem || ''
-                    }))}
-                  />
-
-                  <div className="gradeCamposModalCliente">
-                    <CampoSelect
-                      label="Produto"
-                      name="idProduto"
-                      value={itemFormulario.idProduto}
-                      onChange={alterarItemCampo}
-                      options={produtosAtivos.map((produto) => ({
-                        valor: String(produto.idProduto),
-                        label: produto.descricao
-                      }))}
-                      disabled={somenteLeitura}
-                      required
-                      acaoExtra={!somenteLeitura ? (
-                        <Botao
-                          variante="secundario"
-                          type="button"
-                          icone="pesquisa"
-                          className="botaoCampoAcao"
-                          somenteIcone
-                          title="Buscar produto"
-                          aria-label="Buscar produto"
-                          onClick={abrirModalBuscaProduto}
-                        />
-                      ) : null}
-                    />
-                    <CampoFormulario
-                      label="Quantidade"
-                      name="quantidade"
-                      value={itemFormulario.quantidade}
-                      onChange={alterarItemCampo}
-                      disabled={somenteLeitura}
-                      inputMode="decimal"
-                      required
-                    />
-                    <CampoFormulario
-                      label="Valor unitario"
-                      name="valorUnitario"
-                      value={itemFormulario.valorUnitario}
-                      onChange={alterarItemCampo}
-                      disabled={somenteLeitura}
-                      inputMode="decimal"
-                      required
-                    />
-                    <CampoFormulario
-                      label="Valor total"
-                      name="valorTotal"
-                      value={itemFormulario.valorTotal}
-                      onChange={alterarItemCampo}
-                      disabled
-                    />
-                    <div className="campoFormulario campoFormularioIntegral">
-                      <label htmlFor="observacaoItemOrcamento">Observacao do item</label>
-                      <textarea
-                        id="observacaoItemOrcamento"
-                        name="observacao"
-                        className="entradaFormulario entradaFormularioTextoLongo"
-                        rows={4}
-                        value={itemFormulario.observacao}
-                        onChange={alterarItemCampo}
-                        disabled={somenteLeitura}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {mensagemErroItem ? <p className="mensagemErroFormulario">{mensagemErroItem}</p> : null}
-            </div>
-          </div>
-        ) : null}
-
-        <ModalBuscaTabela
-          aberto={modalBuscaProdutoAberto}
-          titulo="Buscar produto"
-          placeholder="Pesquisar produtos"
-          ariaLabelPesquisa="Pesquisar produtos"
-          colunas={[
-            {
-              key: 'codigo',
-              label: 'Codigo',
-              render: (produto) => `#${String(produto.idProduto).padStart(4, '0')}`
-            },
-            { key: 'referencia', label: 'Referencia', render: (produto) => produto.referencia || '-' },
-            { key: 'descricao', label: 'Descricao', render: (produto) => produto.descricao || '-' },
-            { key: 'preco', label: 'Preco', render: (produto) => normalizarPreco(produto.preco || 0) }
-          ]}
-          registros={produtos}
-          obterTextoBusca={(produto) => [
-            produto.idProduto,
-            produto.referencia,
-            produto.descricao,
-            produto.preco
-          ].join(' ')}
-          obterChaveRegistro={(produto) => produto.idProduto}
-          aoSelecionar={selecionarProdutoBusca}
-          aoFechar={fecharModalBuscaProduto}
+        <ModalItemProduto
+          aberto={modalItemAberto}
+          titulo={somenteLeitura ? 'Consultar item do orcamento' : 'Editar item do orcamento'}
+          somenteLeitura={somenteLeitura}
+          itemFormulario={itemFormulario}
+          produtos={produtosAtivos}
+          mensagemErro={mensagemErroItem}
+          modalBuscaProdutoAberto={modalBuscaProdutoAberto}
+          onFechar={fecharModalItem}
+          onSalvar={salvarItem}
+          onAlterarCampo={alterarItemCampo}
+          onAlterarImagem={definirImagemItem}
+          onAbrirBuscaProduto={abrirModalBuscaProduto}
+          onFecharBuscaProduto={fecharModalBuscaProduto}
+          onSelecionarProduto={selecionarProdutoBusca}
+          obterIniciais={obterIniciaisItemOrcamento}
         />
 
         {modalMotivoPerdaAberto ? (
@@ -1291,6 +1089,10 @@ function etapaOrcamentoEhFechamento(etapa) {
   return Number(etapa?.idEtapaOrcamento) === ID_ETAPA_ORCAMENTO_FECHAMENTO;
 }
 
+function etapaOrcamentoEhFechadoPorId(idEtapaOrcamento) {
+  return IDS_ETAPAS_ORCAMENTO_FECHADAS.has(Number(idEtapaOrcamento));
+}
+
 function CampoFormulario({ label, name, type = 'text', ...props }) {
   return (
     <div className="campoFormulario">
@@ -1344,6 +1146,7 @@ function criarFormularioInicial(orcamento, usuarioLogado, camposOrcamento, empre
         obterDataAtualFormatoInput(),
         Number(empresa?.diasValidadeOrcamento ?? 7)
       ),
+      dataFechamento: '',
       solicitarPedidoAoSalvar: false,
       idUsuario: String(usuarioLogado?.idUsuario || ''),
       nomeUsuario: usuarioLogado?.nome || '',
@@ -1360,6 +1163,7 @@ function criarFormularioInicial(orcamento, usuarioLogado, camposOrcamento, empre
     ...estadoInicialFormulario,
     dataInclusao: orcamento.dataInclusao || obterDataAtualFormatoInput(),
     dataValidade: orcamento.dataValidade || '',
+    dataFechamento: orcamento.dataFechamento || '',
     idCliente: normalizarValorFormulario(orcamento.idCliente),
     idContato: normalizarValorFormulario(orcamento.idContato),
     idUsuario: normalizarValorFormulario(orcamento.idUsuario || usuarioLogado?.idUsuario),
@@ -1373,7 +1177,11 @@ function criarFormularioInicial(orcamento, usuarioLogado, camposOrcamento, empre
     solicitarPedidoAoSalvar: false,
     observacao: orcamento.observacao || '',
     itens: Array.isArray(orcamento.itens) ? orcamento.itens.map((item) => ({
+      idItemOrcamento: item.idItemOrcamento,
       idProduto: item.idProduto,
+      descricaoProdutoSnapshot: item.descricaoProdutoSnapshot || item.nomeProduto || '',
+      referenciaProdutoSnapshot: item.referenciaProdutoSnapshot || '',
+      unidadeProdutoSnapshot: item.unidadeProdutoSnapshot || '',
       quantidade: String(item.quantidade || ''),
       valorUnitario: item.valorUnitario ? normalizarPreco(item.valorUnitario) : '',
       valorTotal: item.valorTotal ? normalizarPreco(item.valorTotal) : '',
@@ -1390,8 +1198,8 @@ function criarFormularioInicial(orcamento, usuarioLogado, camposOrcamento, empre
   };
 }
 
-function montarRotuloCliente(cliente) {
-  const codigo = `#${String(cliente.idCliente || '').padStart(4, '0')}`;
+function montarRotuloCliente(cliente, empresa) {
+  const codigo = formatarCodigoCliente(cliente, empresa);
   const nome = cliente.nomeFantasia || cliente.razaoSocial || 'Cliente sem nome';
   const localizacao = [cliente.cidade, cliente.estado].filter(Boolean).join('/');
 
@@ -1502,8 +1310,8 @@ function calcularTotalItem(quantidade, valorUnitario) {
   return desformatarPreco(numeroQuantidade * numeroValorUnitario);
 }
 
-function obterIniciaisItemOrcamento(produto) {
-  const descricao = produto?.descricao || 'Item';
+function obterIniciaisItemOrcamento(item) {
+  const descricao = item?.descricaoProdutoSnapshot || item?.descricao || 'Item';
   const partes = String(descricao).trim().split(/\s+/).filter(Boolean);
   const iniciais = partes.slice(0, 2).map((parte) => parte[0]).join('');
   return (iniciais || 'IT').toUpperCase();

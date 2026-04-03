@@ -3,6 +3,7 @@ import { CabecalhoGradeClientes } from './cabecalhoGradeClientes';
 import { LinhaCliente } from './linhaCliente';
 
 export function ListaClientes({
+  empresa,
   clientes,
   carregando,
   mensagemErro,
@@ -22,6 +23,7 @@ export function ListaClientes({
       {clientes.map((cliente) => (
         <LinhaCliente
           key={cliente.idCliente}
+          empresa={empresa}
           cliente={cliente}
           aoConsultar={() => aoConsultarCliente(cliente)}
           aoEditar={() => aoEditarCliente(cliente)}

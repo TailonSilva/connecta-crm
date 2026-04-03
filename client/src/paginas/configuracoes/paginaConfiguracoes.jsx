@@ -5,7 +5,9 @@ import '../../recursos/estilos/cabecalhoPagina.css';
 import {
   atualizarEtapaPedido,
   atualizarEtapaOrcamento,
+  atualizarContatoGrupoEmpresa,
   atualizarGrupoProduto,
+  atualizarGrupoEmpresa,
   atualizarCanalAtendimento,
   atualizarCampoOrcamento,
   atualizarCampoPedido,
@@ -24,7 +26,9 @@ import {
   atualizarVendedor,
   incluirEtapaPedido,
   incluirEtapaOrcamento,
+  incluirContatoGrupoEmpresa,
   incluirGrupoProduto,
+  incluirGrupoEmpresa,
   incluirCanalAtendimento,
   incluirCampoOrcamento,
   incluirCampoPedido,
@@ -43,7 +47,9 @@ import {
   incluirVendedor,
   listarEtapasPedidoConfiguracao,
   listarEtapasOrcamentoConfiguracao,
+  listarContatosGruposEmpresaConfiguracao,
   listarGruposProdutoConfiguracao,
+  listarGruposEmpresaConfiguracao,
   listarCanaisAtendimentoConfiguracao,
   listarCamposOrcamentoConfiguracao,
   listarCamposPedidoConfiguracao,
@@ -73,6 +79,7 @@ import { ModalAtualizacaoSistema } from './modalAtualizacaoSistema';
 import { ModalCadastroConfiguracao } from './modalCadastroConfiguracao';
 import { ModalEmpresa } from './modalEmpresa';
 import { ModalGruposProduto } from './modalGruposProduto';
+import { ModalGruposEmpresa } from './modalGruposEmpresa';
 import { ModalLayoutOrcamento } from './modalLayoutOrcamento';
 import { ModalManualConfiguracoes } from './modalManualConfiguracoes';
 import { ModalMarcas } from './modalMarcas';
@@ -106,6 +113,11 @@ const atalhosConfiguracao = [
     id: 'gruposProduto',
     titulo: 'Grupos de produto',
     icone: 'caixa'
+  },
+  {
+    id: 'gruposEmpresa',
+    titulo: 'Grupos de empresa',
+    icone: 'empresa'
   },
   {
     id: 'marcas',
@@ -230,6 +242,7 @@ const secoesConfiguracao = [
     titulo: 'Cadastros',
     atalhos: [
       'ramosAtividade',
+      'gruposEmpresa',
       'gruposProduto',
       'marcas',
       'unidadesMedida',
@@ -253,6 +266,7 @@ const secoesConfiguracao = [
         'canaisAtendimento',
         'origensAtendimento',
         'ramosAtividade',
+        'gruposEmpresa',
         'gruposProduto',
         'marcas',
         'atualizacaoSistema',
@@ -262,6 +276,7 @@ const secoesConfiguracao = [
   }
 ];
 const IDS_STATUS_VISITA_CRITICOS = new Set([1, 2, 3, 4, 5]);
+const IDS_ETAPAS_PEDIDO_OBRIGATORIAS = new Set([5]);
 const IDS_ETAPAS_ORCAMENTO_OBRIGATORIAS = new Set([1, 2, 3]);
 
 function statusVisitaEhCritico(registro) {
@@ -274,10 +289,17 @@ function etapaOrcamentoEhObrigatoria(registro) {
   return Number.isFinite(idEtapaOrcamento) && IDS_ETAPAS_ORCAMENTO_OBRIGATORIAS.has(idEtapaOrcamento);
 }
 
+function etapaPedidoEhObrigatoria(registro) {
+  const idEtapaPedido = Number(registro?.idEtapa);
+  return Number.isFinite(idEtapaPedido) && IDS_ETAPAS_PEDIDO_OBRIGATORIAS.has(idEtapaPedido);
+}
+
 export function PaginaConfiguracoes({ usuarioLogado }) {
   const [empresa, definirEmpresa] = useState(null);
   const [usuarios, definirUsuarios] = useState([]);
   const [gruposProduto, definirGruposProduto] = useState([]);
+  const [gruposEmpresa, definirGruposEmpresa] = useState([]);
+  const [contatosGruposEmpresa, definirContatosGruposEmpresa] = useState([]);
   const [marcas, definirMarcas] = useState([]);
   const [ramosAtividade, definirRamosAtividade] = useState([]);
   const [vendedores, definirVendedores] = useState([]);
@@ -414,6 +436,8 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
   async function carregarCadastrosConfiguracao() {
     const resultados = await Promise.allSettled([
       listarGruposProdutoConfiguracao({ incluirInativos: true }),
+      listarGruposEmpresaConfiguracao({ incluirInativos: true }),
+      listarContatosGruposEmpresaConfiguracao({ incluirInativos: true }),
       listarMarcasConfiguracao({ incluirInativos: true }),
       listarRamosAtividadeConfiguracao({ incluirInativos: true }),
       listarVendedoresConfiguracao({ incluirInativos: true }),
@@ -436,25 +460,27 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
       ]);
 
     definirGruposProduto(obterResultadoLista(resultados[0]));
-    definirMarcas(obterResultadoLista(resultados[1]));
-    definirRamosAtividade(obterResultadoLista(resultados[2]));
-    definirVendedores(obterResultadoLista(resultados[3]));
-    definirUnidadesMedida(obterResultadoLista(resultados[4]));
-    definirMetodosPagamento(obterResultadoLista(resultados[5]));
-    definirPrazosPagamento(obterResultadoLista(resultados[6]));
-    definirLocaisAgenda(obterResultadoLista(resultados[7]));
-    definirTiposRecurso(obterResultadoLista(resultados[8]));
-    definirRecursos(obterResultadoLista(resultados[9]));
-    definirTiposAgenda(ordenarRegistrosPorOrdem(obterResultadoLista(resultados[10]), 'idTipoAgenda'));
-    definirCanaisAtendimento(obterResultadoLista(resultados[11]));
-    definirOrigensAtendimento(obterResultadoLista(resultados[12]));
-    definirStatusVisita(ordenarRegistrosPorOrdem(obterResultadoLista(resultados[13]), 'idStatusVisita'));
-    definirMotivosPerda(obterResultadoLista(resultados[14]));
-    definirEtapasPedido(ordenarRegistrosPorOrdem(obterResultadoLista(resultados[15]), 'idEtapa'));
-    definirEtapasOrcamento(ordenarRegistrosPorOrdem(obterResultadoLista(resultados[16]), 'idEtapaOrcamento'));
-    definirCamposOrcamento(obterResultadoLista(resultados[17]));
-    definirCamposPedido(obterResultadoLista(resultados[18]));
-    definirTamanhos(obterResultadoLista(resultados[19]));
+    definirGruposEmpresa(obterResultadoLista(resultados[1]));
+    definirContatosGruposEmpresa(obterResultadoLista(resultados[2]));
+    definirMarcas(obterResultadoLista(resultados[3]));
+    definirRamosAtividade(obterResultadoLista(resultados[4]));
+    definirVendedores(obterResultadoLista(resultados[5]));
+    definirUnidadesMedida(obterResultadoLista(resultados[6]));
+    definirMetodosPagamento(obterResultadoLista(resultados[7]));
+    definirPrazosPagamento(obterResultadoLista(resultados[8]));
+    definirLocaisAgenda(obterResultadoLista(resultados[9]));
+    definirTiposRecurso(obterResultadoLista(resultados[10]));
+    definirRecursos(obterResultadoLista(resultados[11]));
+    definirTiposAgenda(ordenarRegistrosPorOrdem(obterResultadoLista(resultados[12]), 'idTipoAgenda'));
+    definirCanaisAtendimento(obterResultadoLista(resultados[13]));
+    definirOrigensAtendimento(obterResultadoLista(resultados[14]));
+    definirStatusVisita(ordenarRegistrosPorOrdem(obterResultadoLista(resultados[15]), 'idStatusVisita'));
+    definirMotivosPerda(obterResultadoLista(resultados[16]));
+    definirEtapasPedido(ordenarRegistrosPorOrdem(obterResultadoLista(resultados[17]), 'idEtapa'));
+    definirEtapasOrcamento(ordenarRegistrosPorOrdem(obterResultadoLista(resultados[18]), 'idEtapaOrcamento'));
+    definirCamposOrcamento(obterResultadoLista(resultados[19]));
+    definirCamposPedido(obterResultadoLista(resultados[20]));
+    definirTamanhos(obterResultadoLista(resultados[21]));
   }
 
   async function salvarUsuario(dadosUsuario) {
@@ -499,6 +525,35 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
     }
 
     await carregarCadastrosConfiguracao();
+    return grupoSalvo;
+  }
+
+  async function salvarGrupoEmpresa(dadosGrupo) {
+    const payloadGrupo = {
+      descricao: String(dadosGrupo.descricao || '').trim(),
+      status: dadosGrupo.status ? 1 : 0
+    };
+
+    let grupoSalvo;
+
+    if (dadosGrupo.idGrupoEmpresa) {
+      grupoSalvo = await atualizarGrupoEmpresa(dadosGrupo.idGrupoEmpresa, payloadGrupo);
+    } else {
+      grupoSalvo = await incluirGrupoEmpresa(payloadGrupo);
+    }
+
+    const idGrupoEmpresa = grupoSalvo?.idGrupoEmpresa || dadosGrupo.idGrupoEmpresa;
+
+    for (const contato of normalizarContatosGrupoEmpresa(dadosGrupo.contatos, idGrupoEmpresa)) {
+      if (contato.idContatoGrupoEmpresa) {
+        await atualizarContatoGrupoEmpresa(contato.idContatoGrupoEmpresa, contato);
+      } else {
+        await incluirContatoGrupoEmpresa(contato);
+      }
+    }
+
+    await carregarCadastrosConfiguracao();
+    window.dispatchEvent(new CustomEvent('grupo-empresa-atualizado'));
     return grupoSalvo;
   }
 
@@ -812,6 +867,24 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
     await carregarCadastrosConfiguracao();
   }
 
+  async function inativarGrupoEmpresa(registro) {
+    const contatosDoGrupo = contatosGruposEmpresa.filter(
+      (contato) => String(contato.idGrupoEmpresa) === String(registro.idGrupoEmpresa)
+    );
+
+    for (const contato of contatosDoGrupo) {
+      await atualizarContatoGrupoEmpresa(contato.idContatoGrupoEmpresa, {
+        status: 0,
+        principal: 0
+      });
+    }
+
+    await atualizarGrupoEmpresa(registro.idGrupoEmpresa, { status: 0 });
+
+    await carregarCadastrosConfiguracao();
+    window.dispatchEvent(new CustomEvent('grupo-empresa-atualizado'));
+  }
+
   async function inativarMarca(registro) {
     await atualizarMarca(registro.idMarca, { status: 0 });
     await carregarCadastrosConfiguracao();
@@ -941,6 +1014,7 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
 
     if ([
       'gruposProduto',
+      'gruposEmpresa',
       'etapasPedido',
       'etapasOrcamento',
       'marcas',
@@ -989,8 +1063,7 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
   function obterAtalhosSecao(secao) {
     return secao.atalhos
       .map((idAtalho) => atalhosConfiguracao.find((item) => item.id === idAtalho))
-      .filter(Boolean)
-      .filter((atalho) => atalho.id !== 'atualizacaoSistema' || usuarioAdministrador);
+      .filter(Boolean);
   }
 
   return (
@@ -1022,7 +1095,7 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
                         className="cartaoConfiguracao"
                         title={atalho.titulo}
                         disabled={
-                          (usuarioSomenteConsulta && ['empresa', 'usuarios', 'layoutOrcamento'].includes(atalho.id))
+                          (usuarioSomenteConsulta && ['empresa', 'usuarios', 'layoutOrcamento', 'atualizacaoSistema'].includes(atalho.id))
                           || (atalho.id === 'layoutOrcamento' && !empresa?.idEmpresa)
                         }
                         onClick={() => abrirConfiguracao(atalho)}
@@ -1087,6 +1160,7 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
         secoes={secoesConfiguracao}
         usuarios={usuarios}
         vendedores={vendedores}
+        gruposEmpresa={gruposEmpresa}
         usuarioLogado={usuarioLogado}
       />
         <ModalGruposProduto
@@ -1097,6 +1171,15 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
           aoSalvar={salvarGrupoProduto}
           aoInativar={inativarGrupoProduto}
         />
+      <ModalGruposEmpresa
+        aberto={cadastroConfiguracaoAberto === 'gruposEmpresa'}
+        registros={gruposEmpresa}
+        contatosGruposEmpresa={contatosGruposEmpresa}
+        somenteConsulta={false}
+        aoFechar={fecharCadastroConfiguracao}
+        aoSalvar={salvarGrupoEmpresa}
+        aoInativar={inativarGrupoEmpresa}
+      />
       <ModalCadastroConfiguracao
         aberto={cadastroConfiguracaoAberto === 'tamanhos'}
         titulo="Tamanhos"
@@ -1126,7 +1209,7 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
       <ModalRamosAtividade
         aberto={cadastroConfiguracaoAberto === 'ramosAtividade'}
         registros={ramosAtividade}
-        somenteConsulta={usuarioSomenteConsulta}
+        somenteConsulta={false}
         aoFechar={fecharCadastroConfiguracao}
         aoSalvar={salvarRamoAtividade}
         aoInativar={inativarRamoAtividade}
@@ -1380,11 +1463,18 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
           { name: 'ordem', label: 'Ordem', type: 'number', required: true, defaultValue: 1, min: 1, max: 999, step: 1, inputMode: 'numeric' },
           { name: 'descricao', label: 'Descricao', required: true },
           { name: 'cor', label: 'Cor', type: 'color', required: true, defaultValue: '#0B74D1' },
-          { name: 'status', label: 'Registro ativo', type: 'checkbox', defaultValue: true }
+          {
+            name: 'status',
+            label: 'Registro ativo',
+            type: 'checkbox',
+            defaultValue: true,
+            disabled: ({ registroSelecionado }) => etapaPedidoEhObrigatoria(registroSelecionado)
+          }
         ]}
         aoFechar={fecharCadastroConfiguracao}
         aoSalvar={salvarEtapaPedido}
         aoInativar={inativarEtapaPedido}
+        podeInativarRegistro={(registro) => !etapaPedidoEhObrigatoria(registro)}
       />
       <ModalCadastroConfiguracao
         aberto={cadastroConfiguracaoAberto === 'etapasOrcamento'}
@@ -1492,6 +1582,9 @@ function normalizarPayloadEmpresa(dadosEmpresa) {
     exibirFunilPaginaInicial: dadosEmpresa.exibirFunilPaginaInicial ? 1 : 0,
     diasValidadeOrcamento: normalizarNumeroInteiro(dadosEmpresa.diasValidadeOrcamento, 7),
     diasEntregaPedido: normalizarNumeroInteiro(dadosEmpresa.diasEntregaPedido, 7),
+    codigoPrincipalCliente: String(dadosEmpresa.codigoPrincipalCliente || '').trim() === 'codigoAlternativo'
+      ? 'codigoAlternativo'
+      : 'codigo',
     etapasFiltroPadraoOrcamento: JSON.stringify(
       Array.isArray(dadosEmpresa.etapasFiltroPadraoOrcamento)
         ? dadosEmpresa.etapasFiltroPadraoOrcamento.map(String)
@@ -1517,6 +1610,22 @@ function normalizarPayloadEmpresa(dadosEmpresa) {
 function limparTextoOpcional(valor) {
   const texto = String(valor || '').trim();
   return texto || null;
+}
+
+function normalizarContatosGrupoEmpresa(contatos, idGrupoEmpresa) {
+  return (contatos || []).map((contato) => ({
+    idContatoGrupoEmpresa: typeof contato.idContatoGrupoEmpresa === 'number'
+      ? contato.idContatoGrupoEmpresa
+      : undefined,
+    idGrupoEmpresa: Number(idGrupoEmpresa),
+    nome: String(contato.nome || '').trim(),
+    cargo: limparTextoOpcional(contato.cargo),
+    email: limparTextoOpcional(contato.email),
+    telefone: limparTextoOpcional(normalizarTelefone(contato.telefone)),
+    whatsapp: limparTextoOpcional(normalizarTelefone(contato.whatsapp)),
+    status: contato.status ? 1 : 0,
+    principal: contato.principal ? 1 : 0
+  }));
 }
 
 function normalizarNumeroInteiro(valor, valorPadrao = 0) {

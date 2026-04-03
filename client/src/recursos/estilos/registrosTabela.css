@@ -192,6 +192,11 @@
   color: #c46a06;
 }
 
+.etiquetaGrupoContato {
+  background: rgba(32, 125, 196, 0.14);
+  color: #1f6ea9;
+}
+
 .etiquetaEtapaOrcamento {
   display: inline-flex;
   align-items: center;

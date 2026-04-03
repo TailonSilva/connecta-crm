@@ -13,6 +13,8 @@
   padding: 22px 24px 18px;
   border-bottom: 1px solid rgba(200, 213, 223, 0.55);
   background: linear-gradient(180deg, #fbfdff 0%, #f2f7fb 100%);
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
 }
 
 .cabecalhoAgendaSemana strong {
@@ -27,6 +29,10 @@
 }
 
 .agendaSemanal {
+  position: relative;
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  background: #f4f9fd;
   overflow: visible;
   user-select: none;
   -webkit-user-select: none;
@@ -42,6 +48,22 @@
   top: 0;
   z-index: 30;
   background: #f4f9fd;
+  border-top-left-radius: 24px;
+  border-top-right-radius: 24px;
+  overflow: hidden;
+}
+
+.cabecalhoAgendaGrade > .cabecalhoHorarioAgenda {
+  border-top-left-radius: 24px;
+}
+
+.cabecalhoAgendaGrade > .cabecalhoDiaAgenda:last-child {
+  border-top-right-radius: 24px;
+}
+
+.corpoAgendaGrade {
+  position: relative;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(245, 250, 254, 0.86));
 }
 
 .cabecalhoHorarioAgenda,
@@ -91,7 +113,7 @@
   border-bottom: 1px solid rgba(200, 213, 223, 0.4);
   background: #fbfdff;
   color: var(--corTextoSuave);
-  font-size: 0.74rem;
+  font-size: 0.68rem;
   font-weight: 700;
 }
 
@@ -107,7 +129,7 @@
 
 .linhaAgendaEspaco .colunaHorarioAgendaEspaco,
 .linhaAgendaEspaco .celulaAgendaEspaco {
-  min-height: 11px;
+  min-height: 10px;
   background: transparent;
 }
 
@@ -126,7 +148,7 @@
 }
 
 .celulaAgenda {
-  min-height: 22px;
+  min-height: 20px;
   border: 0;
   border-right: 1px solid rgba(200, 213, 223, 0.42);
   border-bottom: 1px solid rgba(200, 213, 223, 0.42);

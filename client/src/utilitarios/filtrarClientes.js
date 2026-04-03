@@ -13,6 +13,7 @@ export function filtrarClientes(clientes, pesquisa, filtros = {}) {
     const passouFiltros = (
       (!filtros.estado || normalizarTexto(cliente.estado) === normalizarTexto(filtros.estado)) &&
       (!filtros.cidade || normalizarTexto(cliente.cidade) === normalizarTexto(filtros.cidade)) &&
+      (!filtros.idGrupoEmpresa || String(cliente.idGrupoEmpresa) === String(filtros.idGrupoEmpresa)) &&
       (!filtros.idRamo || String(cliente.idRamo) === String(filtros.idRamo)) &&
       (!filtros.idVendedor || String(cliente.idVendedor) === String(filtros.idVendedor)) &&
       (!filtros.tipo || normalizarTexto(cliente.tipo) === normalizarTexto(filtros.tipo)) &&
@@ -29,11 +30,13 @@ export function filtrarClientes(clientes, pesquisa, filtros = {}) {
 
     const camposPesquisa = [
       cliente.idCliente,
+      cliente.codigoAlternativo,
       cliente.nomeFantasia,
       cliente.razaoSocial,
       cliente.cnpj,
       cliente.cidade,
       cliente.estado,
+      cliente.nomeGrupoEmpresa,
       cliente.nomeContatoPrincipal,
       cliente.emailContatoPrincipal,
       cliente.nomeVendedor,

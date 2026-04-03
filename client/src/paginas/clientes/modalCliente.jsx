@@ -15,24 +15,35 @@ import { ModalPedido } from '../pedidos/modalPedido';
 import { listarPedidos } from '../../servicos/pedidos';
 import { listarProdutos } from '../../servicos/produtos';
 import { listarUsuarios } from '../../servicos/usuarios';
-import { normalizarPreco } from '../../utilitarios/normalizarPreco';
 import { normalizarTelefone } from '../../utilitarios/normalizarTelefone';
+import { normalizarTextoCapitalizado, normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTextoFormulario';
 import { normalizarFiltrosPorPadrao, useFiltrosPersistidos } from '../../utilitarios/useFiltrosPersistidos';
 import { ModalAtendimento } from '../atendimentos/modalAtendimento';
+import { ModalGruposEmpresa } from '../configuracoes/modalGruposEmpresa';
 import { ModalRamosAtividade } from '../configuracoes/modalRamosAtividade';
+import { ModalHistoricoAtendimentosCliente } from './modalHistoricoAtendimentosCliente';
+import { ModalHistoricoVendasCliente } from './modalHistoricoVendasCliente';
 import { ModalContatoCliente } from './modalContatoCliente';
+import { obterCodigoPrincipalCliente } from '../../utilitarios/codigoCliente';
 
 const abasModalCliente = [
   { id: 'dadosGerais', label: 'Dados gerais' },
   { id: 'endereco', label: 'Endereco' },
   { id: 'observacoes', label: 'Observacoes' },
   { id: 'contatos', label: 'Contato' },
-  { id: 'atendimento', label: 'Atendimento' },
-  { id: 'vendas', label: 'Vendas' }
+  { id: 'atendimento', label: 'Atendimento', abreModal: 'atendimentos' },
+  { id: 'vendas', label: 'Vendas', abreModal: 'vendas' }
+];
+
+const abasVendasCliente = [
+  { id: 'pedidos', label: 'Pedidos' },
+  { id: 'itens', label: 'Itens do pedido' }
 ];
 
 const estadoInicialFormulario = {
   idVendedor: '',
+  idGrupoEmpresa: '',
+  codigoAlternativo: '',
   idRamo: '',
   razaoSocial: '',
   nomeFantasia: '',
@@ -94,18 +105,25 @@ function criarFiltrosIniciaisVendas() {
 export function ModalCliente({
   aberto,
   cliente,
+  empresa = null,
   usuarioLogado,
   codigoSugerido,
   contatos,
+  contatosEditaveis = [],
+  gruposEmpresa = [],
+  contatosGruposEmpresa = [],
   vendedores,
   ramosAtividade,
   somenteConsultaRamos = false,
+  somenteConsultaGrupos = false,
   classNameCamada = 'camadaModal',
   idVendedorBloqueado,
   modo = 'novo',
   aoFechar,
   aoSalvarRamoAtividade,
   aoInativarRamoAtividade,
+  aoSalvarGrupoEmpresa,
+  aoInativarGrupoEmpresa,
   aoSalvar
 }) {
   const [formulario, definirFormulario] = useState(estadoInicialFormulario);
@@ -126,6 +144,7 @@ export function ModalCliente({
   const [modalFiltrosAtendimentosAberto, definirModalFiltrosAtendimentosAberto] = useState(false);
   const [atendimentoSelecionado, definirAtendimentoSelecionado] = useState(null);
   const [modalAtendimentoAberto, definirModalAtendimentoAberto] = useState(false);
+  const [modalHistoricoAtendimentosAberto, definirModalHistoricoAtendimentosAberto] = useState(false);
   const [pedidosCliente, definirPedidosCliente] = useState([]);
   const [usuariosHistorico, definirUsuariosHistorico] = useState([]);
   const [prazosPagamentoPedidos, definirPrazosPagamentoPedidos] = useState([]);
@@ -137,15 +156,27 @@ export function ModalCliente({
   const [modalFiltrosPedidosAberto, definirModalFiltrosPedidosAberto] = useState(false);
   const [pedidoSelecionado, definirPedidoSelecionado] = useState(null);
   const [modalPedidoAberto, definirModalPedidoAberto] = useState(false);
+  const [modalHistoricoVendasAberto, definirModalHistoricoVendasAberto] = useState(false);
+  const [abaVendasAtiva, definirAbaVendasAtiva] = useState(abasVendasCliente[0].id);
   const [confirmandoSaida, definirConfirmandoSaida] = useState(false);
   const [modalRamosAtividadeAberto, definirModalRamosAtividadeAberto] = useState(false);
+  const [modalGruposEmpresaAberto, definirModalGruposEmpresaAberto] = useState(false);
   const somenteLeitura = modo === 'consulta';
   const modoInclusao = !cliente;
   const vendedorBloqueado = Boolean(idVendedorBloqueado);
   const tipoPessoaFisica = formulario.tipo === 'Pessoa fisica';
   const rotuloDocumento = tipoPessoaFisica ? 'CPF' : 'CNPJ';
   const vendedoresAtivos = vendedores.filter((vendedor) => vendedor.status !== 0);
+  const gruposEmpresaAtivos = gruposEmpresa.filter((grupo) => grupo.status !== 0);
   const ramosAtivos = ramosAtividade.filter((ramo) => ramo.status !== 0);
+  const contatosHerdados = useMemo(
+    () => criarContatosHerdadosFormulario(contatosGruposEmpresa, gruposEmpresa, formulario.idGrupoEmpresa),
+    [contatosGruposEmpresa, formulario.idGrupoEmpresa, gruposEmpresa]
+  );
+  const contatosExibicao = useMemo(
+    () => [...contatosFormulario, ...contatosHerdados],
+    [contatosFormulario, contatosHerdados]
+  );
   const filtrosIniciaisAtendimentos = useMemo(
     () => criarFiltrosIniciaisAtendimentos(),
     [usuarioLogado?.idUsuario]
@@ -173,7 +204,7 @@ export function ModalCliente({
     }
 
     definirFormulario(criarFormularioCliente(cliente, idVendedorBloqueado));
-    definirContatosFormulario(criarContatosFormulario(contatos));
+    definirContatosFormulario(criarContatosFormulario(contatosEditaveis));
     definirFormularioContato(estadoInicialContato);
     definirModoContato('novo');
     definirModalContatoAberto(false);
@@ -197,13 +228,17 @@ export function ModalCliente({
     definirCarregandoPedidos(false);
     definirMensagemErroPedidos('');
     definirModalFiltrosPedidosAberto(false);
+    definirModalHistoricoAtendimentosAberto(false);
+    definirAbaVendasAtiva(abasVendasCliente[0].id);
     definirAtendimentoSelecionado(null);
     definirModalAtendimentoAberto(false);
     definirPedidoSelecionado(null);
     definirModalPedidoAberto(false);
+    definirModalHistoricoVendasAberto(false);
     definirConfirmandoSaida(false);
     definirModalRamosAtividadeAberto(false);
-  }, [aberto, cliente, idVendedorBloqueado]);
+    definirModalGruposEmpresaAberto(false);
+  }, [aberto, cliente?.idCliente, idVendedorBloqueado]);
 
   useEffect(() => {
     if (!aberto || !cliente?.idCliente) {
@@ -297,6 +332,16 @@ export function ModalCliente({
     }
 
     function tratarTecla(evento) {
+      if (evento.key === 'Escape' && modalHistoricoAtendimentosAberto) {
+        definirModalHistoricoAtendimentosAberto(false);
+        return;
+      }
+
+      if (evento.key === 'Escape' && modalHistoricoVendasAberto) {
+        definirModalHistoricoVendasAberto(false);
+        return;
+      }
+
       if (evento.key === 'Escape' && modalContatoAberto) {
         definirModalContatoAberto(false);
         definirModoContato('novo');
@@ -323,7 +368,7 @@ export function ModalCliente({
     return () => {
       window.removeEventListener('keydown', tratarTecla);
     };
-  }, [aberto, aoFechar, salvando, modalContatoAberto, modalFiltrosAtendimentosAberto, modalFiltrosPedidosAberto]);
+  }, [aberto, aoFechar, salvando, modalContatoAberto, modalFiltrosAtendimentosAberto, modalFiltrosPedidosAberto, modalHistoricoAtendimentosAberto, modalHistoricoVendasAberto]);
 
   async function submeterFormulario(evento) {
     evento.preventDefault();
@@ -367,23 +412,29 @@ export function ModalCliente({
 
   function alterarCampo(evento) {
     const { name, value, type, checked } = evento.target;
+    const valorNormalizado = normalizarValorEntradaFormulario(evento);
 
     definirFormulario((estadoAtual) => ({
       ...estadoAtual,
       [name]: type === 'checkbox'
         ? checked
-        : name === 'telefone' ? normalizarTelefone(value) : value
+        : name === 'telefone'
+          ? normalizarTelefone(valorNormalizado)
+          : name === 'codigoAlternativo'
+            ? valorNormalizado.replace(/\D/g, '')
+            : valorNormalizado
     }));
   }
 
   function alterarCampoContato(evento) {
     const { name, value, type, checked } = evento.target;
+    const valorNormalizado = normalizarValorEntradaFormulario(evento);
 
     definirFormularioContato((estadoAtual) => ({
       ...estadoAtual,
       [name]: type === 'checkbox'
         ? checked
-        : ['telefone', 'whatsapp'].includes(name) ? normalizarTelefone(value) : value
+        : ['telefone', 'whatsapp'].includes(name) ? normalizarTelefone(valorNormalizado) : valorNormalizado
     }));
   }
 
@@ -559,6 +610,26 @@ export function ModalCliente({
     definirModalRamosAtividadeAberto(false);
   }
 
+  function abrirModalGruposEmpresa() {
+    if (somenteLeitura || typeof aoSalvarGrupoEmpresa !== 'function') {
+      return;
+    }
+
+    definirModalGruposEmpresaAberto(true);
+    definirMensagemErro('');
+  }
+
+  function fecharModalGruposEmpresa() {
+    definirModalGruposEmpresaAberto(false);
+  }
+
+  function selecionarGrupoEmpresa(registro) {
+    definirFormulario((estadoAtual) => ({
+      ...estadoAtual,
+      idGrupoEmpresa: String(registro?.idGrupoEmpresa || '')
+    }));
+  }
+
   function selecionarRamo(registro) {
     definirFormulario((estadoAtual) => ({
       ...estadoAtual,
@@ -576,6 +647,36 @@ export function ModalCliente({
     definirModalPedidoAberto(false);
   }
 
+  function abrirModalHistoricoAtendimentos() {
+    definirModalHistoricoAtendimentosAberto(true);
+  }
+
+  function fecharModalHistoricoAtendimentos() {
+    definirModalHistoricoAtendimentosAberto(false);
+  }
+
+  function abrirModalHistoricoVendas() {
+    definirModalHistoricoVendasAberto(true);
+  }
+
+  function fecharModalHistoricoVendas() {
+    definirModalHistoricoVendasAberto(false);
+  }
+
+  function selecionarAbaCliente(aba) {
+    if (aba.abreModal === 'atendimentos') {
+      abrirModalHistoricoAtendimentos();
+      return;
+    }
+
+    if (aba.abreModal === 'vendas') {
+      abrirModalHistoricoVendas();
+      return;
+    }
+
+    definirAbaAtiva(aba.id);
+  }
+
   const atendimentosFiltrados = useMemo(
     () => filtrarAtendimentosCliente(atendimentosCliente, filtrosAtendimentos),
     [atendimentosCliente, filtrosAtendimentos]
@@ -583,6 +684,10 @@ export function ModalCliente({
   const pedidosFiltrados = useMemo(
     () => filtrarPedidosCliente(pedidosCliente, filtrosPedidos),
     [pedidosCliente, filtrosPedidos]
+  );
+  const itensPedidosFiltrados = useMemo(
+    () => criarItensPedidosCliente(pedidosFiltrados),
+    [pedidosFiltrados]
   );
   const filtrosAtendimentosAtivos = filtrosHistoricoEstaoAtivos(filtrosAtendimentos, filtrosIniciaisAtendimentos);
   const filtrosPedidosAtivos = filtrosHistoricoEstaoAtivos(filtrosPedidos, filtrosIniciaisPedidos);
@@ -624,24 +729,27 @@ export function ModalCliente({
             <button
               key={aba.id}
               type="button"
-              role="tab"
               className={`abaModalCliente ${abaAtiva === aba.id ? 'ativa' : ''}`}
-              aria-selected={abaAtiva === aba.id}
-              onClick={() => definirAbaAtiva(aba.id)}
+              role={aba.abreModal ? undefined : 'tab'}
+              aria-selected={aba.abreModal ? undefined : abaAtiva === aba.id}
+              onClick={() => selecionarAbaCliente(aba)}
             >
               {aba.label}
             </button>
           ))}
         </div>
 
-        <div className={`corpoModalCliente ${['atendimento', 'vendas'].includes(abaAtiva) ? 'corpoModalClienteSemRolagem' : ''}`.trim()}>
+        <div className="corpoModalCliente">
           {abaAtiva === 'dadosGerais' ? (
             <section className="painelDadosGeraisCliente">
               <CampoImagemPadrao
                 valor={formulario.imagem}
                 alt={`Imagem de ${formulario.nomeFantasia || formulario.razaoSocial || 'cliente'}`}
                 iniciais={obterIniciaisCliente(formulario)}
-                codigo={cliente?.idCliente || codigoSugerido || 0}
+                codigo={obterCodigoPrincipalCliente({
+                  idCliente: cliente?.idCliente || codigoSugerido || 0,
+                  codigoAlternativo: formulario.codigoAlternativo
+                }, empresa) || 0}
                 disabled={somenteLeitura}
                 onChange={(imagem) => definirFormulario((estadoAtual) => ({
                   ...estadoAtual,
@@ -652,6 +760,7 @@ export function ModalCliente({
               <div className="gradeCamposModalCliente">
                 <CampoFormulario label="Razao social" name="razaoSocial" value={formulario.razaoSocial} onChange={alterarCampo} disabled={somenteLeitura} required />
                 <CampoFormulario label="Nome fantasia" name="nomeFantasia" value={formulario.nomeFantasia} onChange={alterarCampo} disabled={somenteLeitura} required />
+                <CampoFormulario label="Codigo alternativo" name="codigoAlternativo" value={formulario.codigoAlternativo} onChange={alterarCampo} disabled={somenteLeitura} inputMode="numeric" />
                 <CampoFormularioComAcao
                   label={rotuloDocumento}
                   name="cnpj"
@@ -678,6 +787,28 @@ export function ModalCliente({
                 />
                 <CampoFormulario label="Inscricao estadual" name="inscricaoEstadual" value={formulario.inscricaoEstadual} onChange={alterarCampo} disabled={somenteLeitura} />
                 <CampoSelect label="Vendedor" name="idVendedor" value={formulario.idVendedor} onChange={alterarCampo} options={vendedoresAtivos.map((vendedor) => ({ valor: String(vendedor.idVendedor), label: vendedor.nome }))} disabled={somenteLeitura || vendedorBloqueado} required />
+                <CampoSelect
+                  label="Grupo de empresa"
+                  name="idGrupoEmpresa"
+                  value={formulario.idGrupoEmpresa}
+                  onChange={alterarCampo}
+                  options={gruposEmpresaAtivos.map((grupo) => ({ valor: String(grupo.idGrupoEmpresa), label: grupo.descricao }))}
+                  disabled={somenteLeitura}
+                  acaoExtra={!somenteLeitura ? (
+                    <Botao
+                      variante="secundario"
+                      icone="adicionar"
+                      type="button"
+                      className="botaoCampoAcao"
+                      onClick={abrirModalGruposEmpresa}
+                      somenteIcone
+                      title="Abrir grupos de empresa"
+                      aria-label="Abrir grupos de empresa"
+                    >
+                      Abrir grupos de empresa
+                    </Botao>
+                  ) : null}
+                />
                 <CampoSelect
                   label="Ramo de atividade"
                   name="idRamo"
@@ -735,6 +866,9 @@ export function ModalCliente({
               <div className="cabecalhoGradeContatosModal">
                 <div>
                   <h3>Contatos cadastrados</h3>
+                  {formulario.idGrupoEmpresa ? (
+                    <p className="descricaoSecaoModalCliente">Contatos do grupo selecionado aparecem com a etiqueta Grupo e ficam somente para consulta.</p>
+                  ) : null}
                 </div>
                 <Botao
                   variante={somenteLeitura ? 'secundario' : 'primario'}
@@ -757,9 +891,9 @@ export function ModalCliente({
                     </tr>
                   </thead>
                   <tbody>
-                    {contatosFormulario.length > 0 ? (
-                      contatosFormulario.map((contato) => (
-                        <tr key={contato.idContato}>
+                    {contatosExibicao.length > 0 ? (
+                      contatosExibicao.map((contato) => (
+                        <tr key={contato.idContato || contato.idContatoGrupoEmpresa || contato.idTemporario}>
                           <td>
                             <div className="celulaContatoModal">
                               <strong>{contato.nome}</strong>
@@ -791,12 +925,20 @@ export function ModalCliente({
                               {contato.principal ? (
                                 <span className="etiquetaStatus etiquetaPrincipal">Principal</span>
                               ) : null}
+                              {contato.contatoVinculadoGrupo ? (
+                                <span className="etiquetaStatus etiquetaGrupoContato">Grupo</span>
+                              ) : null}
                             </div>
                           </td>
                           <td>
                             <div className="acoesContatoModal">
-                              <BotaoAcaoGrade icone="editar" titulo="Editar contato" onClick={() => editarContato(contato)} disabled={somenteLeitura} />
-                              <BotaoAcaoGrade icone="inativar" titulo="Inativar contato" onClick={() => inativarContato(contato.idContato)} disabled={somenteLeitura} />
+                              <BotaoAcaoGrade icone="consultar" titulo="Consultar contato" onClick={() => consultarContato(contato)} />
+                              {!contato.contatoVinculadoGrupo ? (
+                                <>
+                                  <BotaoAcaoGrade icone="editar" titulo="Editar contato" onClick={() => editarContato(contato)} disabled={somenteLeitura} />
+                                  <BotaoAcaoGrade icone="inativar" titulo="Inativar contato" onClick={() => inativarContato(contato.idContato)} disabled={somenteLeitura} />
+                                </>
+                              ) : null}
                             </div>
                           </td>
                         </tr>
@@ -814,173 +956,6 @@ export function ModalCliente({
             </section>
           ) : null}
 
-          {abaAtiva === 'atendimento' ? (
-            <section className="painelContatosModalCliente painelAtendimentosCliente">
-              <div className="cabecalhoGradeContatosModal">
-                <div>
-                  <h3>Ultimos Atendimentos</h3>
-                </div>
-                <Botao
-                  variante={filtrosAtendimentosAtivos ? 'primario' : 'secundario'}
-                  type="button"
-                  icone="filtro"
-                  somenteIcone
-                  title="Filtrar atendimentos"
-                  aria-label="Filtrar atendimentos"
-                  onClick={() => definirModalFiltrosAtendimentosAberto(true)}
-                />
-              </div>
-
-              <div className="gradeContatosModal gradeAtendimentosCliente">
-                <table className="tabelaContatosModal tabelaAtendimentosCliente">
-                  <thead>
-                    <tr>
-                      <th>Data</th>
-                      <th>Assunto</th>
-                      <th>Canal</th>
-                      <th>Usuario</th>
-                      <th className="cabecalhoAcoesContato">Acoes</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {carregandoAtendimentos ? (
-                      <tr>
-                        <td colSpan={5} className="mensagemTabelaContatosModal">
-                          Carregando atendimentos...
-                        </td>
-                      </tr>
-                    ) : mensagemErroAtendimentos ? (
-                      <tr>
-                        <td colSpan={5} className="mensagemTabelaContatosModal">
-                          {mensagemErroAtendimentos}
-                        </td>
-                      </tr>
-                    ) : !cliente?.idCliente ? (
-                      <tr>
-                        <td colSpan={5} className="mensagemTabelaContatosModal">
-                          Os atendimentos ficarao disponiveis apos salvar o cliente.
-                        </td>
-                      </tr>
-                    ) : atendimentosFiltrados.length > 0 ? (
-                      atendimentosFiltrados.map((atendimento) => (
-                        <tr key={atendimento.idAtendimento}>
-                          <td>{formatarDataAtendimento(atendimento.data)}</td>
-                          <td>
-                            <div className="celulaContatoModal">
-                              <strong>{atendimento.assunto}</strong>
-                              <span>{atendimento.nomeContato || atendimento.descricao || 'Sem detalhes adicionais'}</span>
-                            </div>
-                          </td>
-                          <td>{atendimento.nomeCanalAtendimento}</td>
-                          <td>{atendimento.nomeUsuario}</td>
-                          <td>
-                            <div className="acoesContatoModal">
-                              <BotaoAcaoGrade
-                                icone="consultar"
-                                titulo="Consultar atendimento"
-                                onClick={() => consultarAtendimento(atendimento)}
-                              />
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={5} className="mensagemTabelaContatosModal">
-                          Nenhum atendimento encontrado com os filtros informados.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          ) : null}
-
-          {abaAtiva === 'vendas' ? (
-            <section className="painelContatosModalCliente painelPedidosCliente">
-              <div className="cabecalhoGradeContatosModal">
-                <div>
-                  <h3>Ultimos Pedidos</h3>
-                </div>
-                <Botao
-                  variante={filtrosPedidosAtivos ? 'primario' : 'secundario'}
-                  type="button"
-                  icone="filtro"
-                  somenteIcone
-                  title="Filtrar pedidos"
-                  aria-label="Filtrar pedidos"
-                  onClick={() => definirModalFiltrosPedidosAberto(true)}
-                />
-              </div>
-
-              <div className="gradeContatosModal gradePedidosCliente">
-                <table className="tabelaContatosModal tabelaPedidosCliente">
-                  <thead>
-                    <tr>
-                      <th>Data</th>
-                      <th>Pedido</th>
-                      <th>Etapa</th>
-                      <th>Vendedor</th>
-                      <th>Total</th>
-                      <th className="cabecalhoAcoesContato">Acoes</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {carregandoPedidos ? (
-                      <tr>
-                        <td colSpan={6} className="mensagemTabelaContatosModal">
-                          Carregando pedidos...
-                        </td>
-                      </tr>
-                    ) : mensagemErroPedidos ? (
-                      <tr>
-                        <td colSpan={6} className="mensagemTabelaContatosModal">
-                          {mensagemErroPedidos}
-                        </td>
-                      </tr>
-                    ) : !cliente?.idCliente ? (
-                      <tr>
-                        <td colSpan={6} className="mensagemTabelaContatosModal">
-                          Os pedidos ficarao disponiveis apos salvar o cliente.
-                        </td>
-                      </tr>
-                    ) : pedidosFiltrados.length > 0 ? (
-                      pedidosFiltrados.map((pedido) => (
-                        <tr key={pedido.idPedido}>
-                          <td>{formatarDataAtendimento(pedido.dataInclusao)}</td>
-                          <td>
-                            <div className="celulaContatoModal">
-                              <strong>{`#${String(pedido.idPedido).padStart(4, '0')}`}</strong>
-                              <span>{pedido.nomeContatoSnapshot || 'Sem contato'}</span>
-                            </div>
-                          </td>
-                          <td>{pedido.nomeEtapaPedidoSnapshot || 'Sem etapa'}</td>
-                          <td>{pedido.nomeVendedorSnapshot || 'Nao informado'}</td>
-                          <td>{normalizarPreco(pedido.totalPedido)}</td>
-                          <td>
-                            <div className="acoesContatoModal">
-                              <BotaoAcaoGrade
-                                icone="consultar"
-                                titulo="Consultar pedido"
-                                onClick={() => consultarPedido(pedido)}
-                              />
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={6} className="mensagemTabelaContatosModal">
-                          Nenhum pedido encontrado com os filtros informados.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          ) : null}
         </div>
 
         {mensagemErro ? <p className="mensagemErroFormulario">{mensagemErro}</p> : null}
@@ -1025,6 +1000,33 @@ export function ModalCliente({
         aoSalvar={salvarContatoLocal}
       />
 
+      <ModalHistoricoAtendimentosCliente
+        aberto={modalHistoricoAtendimentosAberto}
+        cliente={cliente}
+        carregando={carregandoAtendimentos}
+        mensagemErro={mensagemErroAtendimentos}
+        atendimentos={atendimentosFiltrados}
+        filtrosAtivos={filtrosAtendimentosAtivos}
+        onFechar={fecharModalHistoricoAtendimentos}
+        onAbrirFiltros={() => definirModalFiltrosAtendimentosAberto(true)}
+        onConsultarAtendimento={consultarAtendimento}
+      />
+
+      <ModalHistoricoVendasCliente
+        aberto={modalHistoricoVendasAberto}
+        cliente={cliente}
+        abaAtiva={abaVendasAtiva}
+        onSelecionarAba={definirAbaVendasAtiva}
+        carregando={carregandoPedidos}
+        mensagemErro={mensagemErroPedidos}
+        pedidos={pedidosFiltrados}
+        itensPedidos={itensPedidosFiltrados}
+        filtrosAtivos={filtrosPedidosAtivos}
+        onFechar={fecharModalHistoricoVendas}
+        onAbrirFiltros={() => definirModalFiltrosPedidosAberto(true)}
+        onConsultarPedido={consultarPedido}
+      />
+
       <ModalRamosAtividade
         aberto={modalRamosAtividadeAberto}
         registros={ramosAtividade}
@@ -1034,6 +1036,18 @@ export function ModalCliente({
         aoSalvar={aoSalvarRamoAtividade}
         aoInativar={aoInativarRamoAtividade}
         aoSelecionarRamo={selecionarRamo}
+      />
+
+      <ModalGruposEmpresa
+        aberto={modalGruposEmpresaAberto}
+        registros={gruposEmpresa}
+        contatosGruposEmpresa={contatosGruposEmpresa}
+        somenteConsulta={somenteConsultaGrupos}
+        fecharAoSalvar
+        aoFechar={fecharModalGruposEmpresa}
+        aoSalvar={aoSalvarGrupoEmpresa}
+        aoInativar={aoInativarGrupoEmpresa}
+        aoSelecionarGrupo={selecionarGrupoEmpresa}
       />
 
       <ModalAtendimento
@@ -1117,6 +1131,7 @@ export function ModalCliente({
         empresa={empresaPedidos}
         usuarioLogado={null}
         modo="consulta"
+        camadaSecundaria
         aoFechar={fecharModalPedido}
         aoSalvar={async () => {}}
       />
@@ -1293,6 +1308,8 @@ function criarFormularioCliente(cliente, idVendedorBloqueado) {
 
   return {
     idVendedor: String(cliente.idVendedor || ''),
+    idGrupoEmpresa: String(cliente.idGrupoEmpresa || ''),
+    codigoAlternativo: String(cliente.codigoAlternativo || ''),
     idRamo: String(cliente.idRamo || ''),
     razaoSocial: cliente.razaoSocial || '',
     nomeFantasia: cliente.nomeFantasia || '',
@@ -1325,6 +1342,31 @@ function criarContatosFormulario(contatos) {
     status: Boolean(contato.status),
     principal: Boolean(contato.principal)
   }));
+}
+
+function criarContatosHerdadosFormulario(contatosGruposEmpresa, gruposEmpresa, idGrupoEmpresa) {
+  if (!idGrupoEmpresa) {
+    return [];
+  }
+
+  const nomeGrupo = (gruposEmpresa || []).find(
+    (grupo) => String(grupo.idGrupoEmpresa) === String(idGrupoEmpresa)
+  )?.descricao;
+
+  return (contatosGruposEmpresa || [])
+    .filter((contato) => String(contato.idGrupoEmpresa) === String(idGrupoEmpresa))
+    .map((contato) => ({
+      idContato: '',
+      idContatoGrupoEmpresa: contato.idContatoGrupoEmpresa,
+      nome: contato.nome || '',
+      cargo: contato.cargo || nomeGrupo || '',
+      email: contato.email || '',
+      telefone: contato.telefone || '',
+      whatsapp: contato.whatsapp || '',
+      status: Boolean(contato.status),
+      principal: Boolean(contato.principal),
+      contatoVinculadoGrupo: true
+    }));
 }
 
 function criarFormularioContato(contato) {
@@ -1384,18 +1426,6 @@ function montarLogradouroCnpj(dadosCnpj) {
   return partes.join(' ');
 }
 
-function normalizarTextoCapitalizado(valor) {
-  if (!valor) {
-    return '';
-  }
-
-  return String(valor)
-    .toLowerCase()
-    .split(' ')
-    .filter(Boolean)
-    .map((parte) => parte.charAt(0).toUpperCase() + parte.slice(1))
-    .join(' ');
-}
 
 function montarLinkWhatsapp(telefone) {
   const digitos = String(telefone || '').replace(/\D/g, '');
@@ -1474,6 +1504,20 @@ function enriquecerPedidosCliente(pedidos, idCliente, usuarios, vendedores, etap
     }));
 }
 
+function criarItensPedidosCliente(pedidos) {
+  return (pedidos || []).flatMap((pedido) => (
+    Array.isArray(pedido.itens) ? pedido.itens.map((item, indice) => ({
+      chave: `${pedido.idPedido || 'pedido'}-${item.idItemPedido || indice}`,
+      idPedido: pedido.idPedido,
+      dataPedido: pedido.dataInclusao,
+      descricaoProduto: item.descricaoProdutoSnapshot || 'Produto nao informado',
+      valorUnitario: Number(item.valorUnitario) || 0,
+      quantidade: item.quantidade || 0,
+      valorTotal: Number(item.valorTotal) || 0
+    })) : []
+  ));
+}
+
 function filtrarAtendimentosCliente(atendimentos, filtros) {
   return (atendimentos || []).filter((atendimento) => {
     const data = String(atendimento.data || '');
@@ -1503,6 +1547,7 @@ function filtrarPedidosCliente(pedidos, filtros) {
     );
   });
 }
+
 
 function filtrosHistoricoEstaoAtivos(filtros, filtrosIniciais) {
   return JSON.stringify(filtros) !== JSON.stringify(filtrosIniciais);

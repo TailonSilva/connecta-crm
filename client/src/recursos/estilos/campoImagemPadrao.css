@@ -62,7 +62,7 @@
 }
 
 .modalRecorteImagem {
-  width: min(860px, 100%);
+  width: min(940px, 100%);
   display: grid;
   gap: 20px;
   padding: 24px;
@@ -97,33 +97,31 @@
 
 .corpoModalRecorteImagem {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 240px;
+  grid-template-columns: max-content 240px;
   gap: 24px;
   align-items: start;
+  justify-content: center;
 }
 
 .areaVisualRecorteImagem {
   display: grid;
   place-items: center;
-  padding: 18px;
-  border: 1px solid rgba(23, 145, 226, 0.12);
-  border-radius: 24px;
-  background:
-    linear-gradient(45deg, rgba(224, 233, 240, 0.82) 25%, transparent 25%),
-    linear-gradient(-45deg, rgba(224, 233, 240, 0.82) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, rgba(224, 233, 240, 0.82) 75%),
-    linear-gradient(-45deg, transparent 75%, rgba(224, 233, 240, 0.82) 75%);
-  background-size: 18px 18px;
-  background-position: 0 0, 0 9px, 9px -9px, -9px 0;
+  padding: 0;
+  overflow: hidden;
+  width: max-content;
+  justify-self: center;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
-.molduraRecorteImagem {
+.quadroRecorteImagem {
   position: relative;
   overflow: hidden;
-  width: 320px;
-  height: 320px;
-  border: 1px solid rgba(23, 145, 226, 0.18);
-  border-radius: 28px;
+  width: 560px;
+  height: 420px;
+  border: 0;
+  border-radius: 24px;
   background: #ffffff;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.72);
 }
@@ -133,6 +131,19 @@
   max-width: none;
   user-select: none;
   -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+.janelaRecorteImagem {
+  position: absolute;
+  inset: 50px 120px;
+  border: 3px dotted rgba(255, 255, 255, 0.98);
+  border-radius: 28px;
+  background: transparent;
+  box-shadow:
+    0 0 0 999px rgba(20, 34, 46, 0.42),
+    0 0 0 1px rgba(13, 120, 200, 0.24),
+    inset 0 0 0 1px rgba(13, 120, 200, 0.1);
   pointer-events: none;
 }
 
@@ -229,8 +240,4 @@
     justify-content: flex-end;
   }
 
-  .molduraRecorteImagem {
-    width: min(320px, calc(100vw - 96px));
-    height: min(320px, calc(100vw - 96px));
-  }
 }

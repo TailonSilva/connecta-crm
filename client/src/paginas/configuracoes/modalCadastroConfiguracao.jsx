@@ -3,6 +3,7 @@ import { Botao } from '../../componentes/comuns/botao';
 import { BotaoAcaoGrade } from '../../componentes/comuns/botaoAcaoGrade';
 import { CodigoRegistro } from '../../componentes/comuns/codigoRegistro';
 import { ModalFiltros } from '../../componentes/comuns/modalFiltros';
+import { normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTextoFormulario';
 
 export function ModalCadastroConfiguracao({
   aberto,
@@ -21,6 +22,12 @@ export function ModalCadastroConfiguracao({
   somenteConsulta = false,
   colunas,
   camposFormulario,
+  transformarPayloadSalvar,
+  renderFormularioExtra,
+  aoAbrirNovoFormulario,
+  aoAbrirEdicaoFormulario,
+  aoAbrirConsultaFormulario,
+  aoFecharFormulario,
   aoFechar,
   aoSalvar,
   aoSalvarConcluido,
@@ -50,7 +57,7 @@ export function ModalCadastroConfiguracao({
     definirMensagemErro('');
     definirModalFiltrosAberto(false);
     definirFiltros(criarFiltrosIniciaisConfiguracao());
-  }, [aberto, camposFormulario]);
+  }, [aberto]);
 
   useEffect(() => {
     if (!aberto) {
@@ -85,6 +92,9 @@ export function ModalCadastroConfiguracao({
     definirModoFormulario('novo');
     definirMensagemErro('');
     definirModalFormularioAberto(true);
+    if (typeof aoAbrirNovoFormulario === 'function') {
+      aoAbrirNovoFormulario();
+    }
   }
 
   function abrirEdicao(registro) {
@@ -93,6 +103,9 @@ export function ModalCadastroConfiguracao({
     definirModoFormulario('edicao');
     definirMensagemErro('');
     definirModalFormularioAberto(true);
+    if (typeof aoAbrirEdicaoFormulario === 'function') {
+      aoAbrirEdicaoFormulario(registro);
+    }
   }
 
   function abrirConsulta(registro) {
@@ -101,6 +114,9 @@ export function ModalCadastroConfiguracao({
     definirModoFormulario('consulta');
     definirMensagemErro('');
     definirModalFormularioAberto(true);
+    if (typeof aoAbrirConsultaFormulario === 'function') {
+      aoAbrirConsultaFormulario(registro);
+    }
   }
 
   function fecharFormulario() {
@@ -110,14 +126,18 @@ export function ModalCadastroConfiguracao({
     definirFormulario(criarFormularioVazio(camposFormulario));
     definirMensagemErro('');
     definirSalvando(false);
+    if (typeof aoFecharFormulario === 'function') {
+      aoFecharFormulario();
+    }
   }
 
   function alterarCampo(evento) {
     const { name, value, type, checked } = evento.target;
+    const valorNormalizado = normalizarValorEntradaFormulario(evento);
 
     definirFormulario((estadoAtual) => ({
       ...estadoAtual,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : valorNormalizado
     }));
   }
 
@@ -141,10 +161,14 @@ export function ModalCadastroConfiguracao({
     definirMensagemErro('');
 
     try {
-      const registroSalvo = await aoSalvar({
+      const payloadBase = {
         [chavePrimaria]: registroSelecionado?.[chavePrimaria],
         ...formulario
-      });
+      };
+      const payload = typeof transformarPayloadSalvar === 'function'
+        ? transformarPayloadSalvar({ registroSelecionado, formulario, payloadBase, modoFormulario })
+        : payloadBase;
+      const registroSalvo = await aoSalvar(payload);
 
       if (typeof aoSalvarConcluido === 'function') {
         await aoSalvarConcluido(registroSalvo);
@@ -170,6 +194,11 @@ export function ModalCadastroConfiguracao({
   }
 
   function renderizarCampo(campo) {
+    const desabilitado = modoFormulario === 'consulta'
+      || (typeof campo.disabled === 'function'
+        ? campo.disabled({ modoFormulario, registroSelecionado, formulario })
+        : Boolean(campo.disabled));
+
     if (campo.type === 'select') {
       return (
         <CampoSelect
@@ -179,7 +208,7 @@ export function ModalCadastroConfiguracao({
           value={formulario[campo.name]}
           onChange={alterarCampo}
           options={campo.options || []}
-          disabled={modoFormulario === 'consulta'}
+          disabled={desabilitado}
           required={campo.required}
           placeholder={campo.placeholder}
         />
@@ -195,7 +224,7 @@ export function ModalCadastroConfiguracao({
             name={campo.name}
             checked={Boolean(formulario[campo.name])}
             onChange={alterarCampo}
-            disabled={modoFormulario === 'consulta'}
+            disabled={desabilitado}
           />
           <span>{campo.label}</span>
         </label>
@@ -211,7 +240,7 @@ export function ModalCadastroConfiguracao({
         type={campo.type || 'text'}
         value={formulario[campo.name]}
         onChange={alterarCampo}
-        disabled={modoFormulario === 'consulta'}
+        disabled={desabilitado}
         required={campo.required}
         maxLength={campo.maxLength}
         min={campo.min}
@@ -420,6 +449,16 @@ export function ModalCadastroConfiguracao({
                     {camposCheckbox.map(renderizarCampo)}
                   </div>
                 ) : null}
+
+                {typeof renderFormularioExtra === 'function'
+                  ? renderFormularioExtra({
+                    modoFormulario,
+                    registroSelecionado,
+                    formulario,
+                    definirFormulario,
+                    salvando
+                  })
+                  : null}
               </div>
 
               {mensagemErro ? <p className="mensagemErroFormulario">{mensagemErro}</p> : null}

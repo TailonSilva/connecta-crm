@@ -7,6 +7,7 @@ export function ModalManualConfiguracoes({
   secoes = [],
   usuarios = [],
   vendedores = [],
+  gruposEmpresa = [],
   usuarioLogado
 }) {
   return (
@@ -26,8 +27,8 @@ export function ModalManualConfiguracoes({
       cardsResumo={[
         {
           titulo: 'Cadastros base',
-          descricao: 'A pagina concentra empresa, usuarios, vendedores e tabelas auxiliares do CRM.',
-          detalhe: 'Esses dados alimentam agenda, atendimentos, produtos, orcamentos e pedidos.',
+          descricao: 'A pagina concentra empresa, usuarios, vendedores, grupos de empresa e tabelas auxiliares do CRM.',
+          detalhe: 'Esses dados alimentam agenda, atendimentos, clientes, produtos, orcamentos e pedidos.',
           icone: 'configuracoes'
         },
         {
@@ -39,13 +40,13 @@ export function ModalManualConfiguracoes({
         {
           titulo: 'Superficie atual',
           descricao: `${totalAtalhos} atalhos estao disponiveis para abrir modais especificos.`,
-          detalhe: 'A secao Pagina inicial hoje funciona como espaco reservado para evolucoes futuras.',
+          detalhe: `${gruposEmpresa.length} grupo(s) de empresa ja carregados para reutilizacao nos clientes.`,
           icone: 'cadastro'
         },
         {
           titulo: 'Perfil atual',
           descricao: usuarioLogado?.tipo === 'Usuario padrao'
-            ? 'Usuario padrao entra com restricoes em configuracoes sensiveis, principalmente empresa, usuarios e layout do orcamento.'
+            ? 'Usuario padrao entra com restricoes em configuracoes sensiveis, principalmente empresa, usuarios, layout do orcamento e atualizacao do sistema.'
             : 'Perfis administrativos podem manter toda a estrutura do sistema.',
           detalhe: 'A permissao tambem e refletida nos atalhos internos de outros modais do CRM.',
           icone: 'usuarios'
@@ -79,7 +80,8 @@ export function ModalManualConfiguracoes({
           titulo: 'O que muda conforme o perfil',
           itens: [
             'Empresa, usuarios e layout do orcamento ficam protegidos para Usuario padrao.',
-            'A atualizacao do sistema so aparece para administrador.',
+            'A atualizacao do sistema aparece para Usuario padrao, mas fica desabilitada fora do perfil administrador.',
+            'Os cadastros de Ramo de atividade e Grupo de empresa seguem liberados tambem na propria pagina de Configuracoes para alimentar o fluxo comercial.',
             'Cadastros auxiliares sensiveis seguem o mesmo principio quando abertos por atalhos internos em outros modais.',
             'Essa consistencia evita que um usuario altere uma tabela protegida por um caminho alternativo.'
           ]
@@ -90,6 +92,8 @@ export function ModalManualConfiguracoes({
           itens: [
             'Locais, recursos, tipos e status alimentam a Agenda.',
             'Canais, origens e motivos de perda entram no fluxo comercial.',
+            'Grupos de empresa e seus contatos abastecem o cadastro de clientes com heranca de contatos.',
+            'A empresa define se o CRM usa o codigo padrao do cliente ou o Codigo alternativo como identificador principal nos grids que exibem codigo.',
             'Metodos, prazos, etapas e campos personalizados abastecem Orcamentos e Pedidos.',
             'Parametros da empresa influenciam layout de PDF, expediente e leitura da pagina inicial.'
           ]
@@ -104,9 +108,15 @@ export function ModalManualConfiguracoes({
         },
         {
           titulo: 'Atualizacao imediata',
-          descricao: 'Ao salvar configuracoes da empresa, o sistema dispara eventos para recarregar telas dependentes, como a pagina inicial.',
+          descricao: 'Ao salvar configuracoes da empresa, o sistema dispara eventos para recarregar telas dependentes, como a pagina inicial e regras de exibicao ligadas ao cadastro de clientes.',
           detalhe: 'Isso reduz inconsistencias entre tela e parametro salvo.',
           icone: 'empresa'
+        },
+        {
+          titulo: 'Contato herdado sincronizado',
+          descricao: 'Quando um grupo de empresa muda, os contatos herdados dos clientes vinculados sao sincronizados automaticamente.',
+          detalhe: 'Isso preserva o reaproveitamento desses contatos no restante do fluxo comercial.',
+          icone: 'mensagem'
         },
         {
           titulo: 'Prazos com dias opcionais',

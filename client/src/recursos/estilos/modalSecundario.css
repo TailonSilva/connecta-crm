@@ -32,6 +32,17 @@
   width: min(430px, calc(100vw - 32px));
 }
 
+.camadaModalFiltroPeriodo {
+  z-index: 81;
+  padding: 20px;
+  background: rgba(22, 40, 56, 0.2);
+  backdrop-filter: blur(4px);
+}
+
+.modalFiltroPeriodo {
+  width: min(560px, calc(100vw - 32px));
+}
+
 .modalSelecaoMultipla {
   width: min(460px, 100%);
 }
@@ -72,6 +83,34 @@
 
 .corpoModalSelecaoMultipla {
   max-height: 360px;
+}
+
+.corpoModalFiltroPeriodo {
+  max-height: none;
+  overflow: visible;
+}
+
+.painelFiltrosPeriodo {
+  display: grid;
+  gap: 16px;
+}
+
+.blocoFiltroPeriodo {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(23, 145, 226, 0.14);
+  border-radius: 18px;
+  background: rgba(245, 250, 255, 0.74);
+}
+
+.cabecalhoBlocoFiltroPeriodo strong {
+  color: var(--corTexto);
+  font-size: 0.92rem;
+}
+
+.gradeFiltroPeriodo {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .painelSelecaoMultipla {
@@ -118,6 +157,15 @@
   background: linear-gradient(180deg, rgba(235, 243, 249, 1), rgba(224, 235, 244, 0.98));
 }
 
+.botaoFiltroPeriodo {
+  width: 100%;
+  min-height: 46px;
+  justify-content: flex-start;
+  padding-inline: 14px;
+  text-align: left;
+  color: var(--corTexto);
+}
+
 .painelContatosModalCliente {
   display: grid;
   gap: 16px;
@@ -133,6 +181,10 @@
 
 .corpoModalUsuariosConfiguracao .painelContatosConfiguracao {
   height: 520px;
+}
+
+.painelContatosGrupoEmpresaFormulario {
+  margin-top: 12px;
 }
 
 .corpoModalUsuariosConfiguracao .painelContatosConfiguracao .gradeContatosModal {
@@ -245,7 +297,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .acoesContatoModal {
@@ -342,6 +394,47 @@
   gap: 14px;
 }
 
+
+.cabecalhoGradeContatosModalAcoes {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.abasSecundariasModalCliente {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.abaSecundariaModalCliente {
+  min-height: 40px;
+  padding: 0 18px;
+  border: 1px solid rgba(23, 145, 226, 0.14);
+  border-radius: 999px;
+  background: linear-gradient(180deg, #f7fbfe 0%, #edf4f8 100%);
+  color: var(--corPrimariaForte);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.abaSecundariaModalCliente:hover {
+  border-color: rgba(23, 145, 226, 0.28);
+  background: linear-gradient(180deg, #fafdff 0%, #e7f2f9 100%);
+}
+
+.abaSecundariaModalCliente.ativa {
+  border-color: transparent;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--corPrimaria) 88%, white), var(--corPrimariaForte));
+  color: #ffffff;
+  box-shadow: 0 10px 20px rgba(23, 145, 226, 0.2);
+}
+
 .subtituloGradeAtendimentoCliente {
   margin: 4px 0 0;
   color: var(--corTextoSuave);
@@ -417,12 +510,53 @@
   width: 112px;
 }
 
+.tabelaItensPedidosCliente th:nth-child(1),
+.tabelaItensPedidosCliente td:nth-child(1) {
+  width: 112px;
+}
+
+.tabelaItensPedidosCliente th:nth-child(2),
+.tabelaItensPedidosCliente td:nth-child(2) {
+  width: 112px;
+}
+
+.tabelaItensPedidosCliente th:nth-child(3),
+.tabelaItensPedidosCliente td:nth-child(3) {
+  width: auto;
+}
+
+.tabelaItensPedidosCliente th:nth-child(4),
+.tabelaItensPedidosCliente td:nth-child(4) {
+  width: 120px;
+}
+
+.tabelaItensPedidosCliente th:nth-child(5),
+.tabelaItensPedidosCliente td:nth-child(5) {
+  width: 110px;
+}
+
+.tabelaItensPedidosCliente th:nth-child(6),
+.tabelaItensPedidosCliente td:nth-child(6) {
+  width: 130px;
+}
+
 @media (max-width: 640px) {
   .cabecalhoGradeContatosModal,
   .cabecalhoModalContato,
   .acoesFormularioContatoModal {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .cabecalhoGradeContatosModalAcoes {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .abasSecundariasModalCliente {
+    display: grid;
+    grid-template-columns: 1fr;
+    flex: 1 1 auto;
   }
 
   .gradeContatosModal {
@@ -443,5 +577,9 @@
 
   .corpoModalUsuariosConfiguracao .painelContatosConfiguracao {
     height: auto;
+  }
+
+  .gradeFiltroPeriodo {
+    grid-template-columns: 1fr;
   }
 }

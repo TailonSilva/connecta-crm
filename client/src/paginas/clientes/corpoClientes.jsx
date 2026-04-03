@@ -2,6 +2,7 @@ import { CorpoPagina } from '../../componentes/layout/corpoPagina';
 import { ListaClientes } from './listaClientes';
 
 export function CorpoClientes({
+  empresa,
   clientes,
   carregando,
   mensagemErro,
@@ -13,6 +14,7 @@ export function CorpoClientes({
     <CorpoPagina>
       <div className="gradePainelClientes">
         <ListaClientes
+          empresa={empresa}
           clientes={clientes}
           carregando={carregando}
           mensagemErro={mensagemErro}

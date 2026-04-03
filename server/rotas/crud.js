@@ -1,4 +1,5 @@
 const express = require('express');
+const { ID_ETAPA_PEDIDO_ENTREGUE } = require('../configuracoes/banco');
 const {
   listarRegistros,
   consultarRegistroPorId,
@@ -24,6 +25,7 @@ function validarCamposObrigatorios(entidade, corpo) {
 }
 
 const etapasCriticasProtegidas = {
+  etapaPedido: new Set([ID_ETAPA_PEDIDO_ENTREGUE]),
   etapaOrcamento: new Set([1, 2, 3]),
   statusVisita: new Set([1, 2, 3, 4, 5])
 };
@@ -58,11 +60,13 @@ function statusSolicitaInativacao(valorStatus) {
 }
 
 function criarMensagemRegraCritica(entidade) {
-  return entidade.nome === 'etapaOrcamento'
-    ? 'As etapas obrigatorias de orcamento nao podem ser inativadas ou excluidas.'
-    : entidade.nome === 'statusVisita'
-      ? 'Os status criticos da agenda nao podem ser inativados ou excluidos.'
-    : 'Este registro critico nao pode ser inativado ou excluido.';
+  return entidade.nome === 'etapaPedido'
+    ? 'A etapa critica de pedido usada pela logica do sistema nao pode ser inativada ou excluida.'
+    : entidade.nome === 'etapaOrcamento'
+      ? 'As etapas obrigatorias de orcamento nao podem ser inativadas ou excluidas.'
+      : entidade.nome === 'statusVisita'
+        ? 'Os status criticos da agenda nao podem ser inativados ou excluidos.'
+        : 'Este registro critico nao pode ser inativado ou excluido.';
 }
 
 function criarRotaCrud(entidade) {

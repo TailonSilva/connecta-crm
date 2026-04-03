@@ -1,0 +1,9 @@
+.modalHistoricoVendasClientePainel {
+  height: 100%;
+}
+
+.modalHistoricoVendasClienteGrade {
+  height: 100%;
+  max-height: none;
+  overflow-y: auto;
+}

@@ -24,6 +24,22 @@ const validacoesPorEntidade = {
       chavePrimaria: 'idRamo',
       colunaAtiva: 'status',
       mensagem: 'Selecione um ramo de atividade ativo.'
+    },
+    {
+      campo: 'idGrupoEmpresa',
+      tabela: 'grupoEmpresa',
+      chavePrimaria: 'idGrupoEmpresa',
+      colunaAtiva: 'status',
+      mensagem: 'Selecione um grupo de empresa ativo.'
+    }
+  ],
+  contatoGrupoEmpresa: [
+    {
+      campo: 'idGrupoEmpresa',
+      tabela: 'grupoEmpresa',
+      chavePrimaria: 'idGrupoEmpresa',
+      colunaAtiva: 'status',
+      mensagem: 'Selecione um grupo de empresa ativo.'
     }
   ],
   contato: [

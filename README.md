@@ -70,12 +70,14 @@ Padroes centralizados no frontend:
 - `GradePadrao`: grades principais com cabecalho fixo e rolagem na lista
 - `AcoesRegistro`: acoes padrao de linha
 - `CodigoRegistro`: selo visual de codigo
-- `CampoImagemPadrao`: upload e preview de imagem
-- `ModalFiltros`: modal generico de filtros
+- `CampoImagemPadrao`: upload, preview e recorte de imagem com resolucao de saida configuravel por contexto e area de corte destacada no modal com moldura pontilhada e cantos arredondados
+- `ModalItemProduto`: modal compartilhado de item para pedido e orcamento
+- `ModalFiltros`: modal generico de filtros, com suporte a um botao unico de datas que abre um modal interno com todos os periodos da tela
 - `CampoSelecaoMultiplaModal`: selecao multipla com botao-resumo e modal com checkbox
 - `ModalBuscaTabela`: base reutilizavel para modais de busca em grade
 - `ModalBuscaClientes`: busca reutilizavel de clientes
 - `ModalBuscaContatos`: busca reutilizavel de contatos
+- `ModalHistoricoGrade`: base reutilizavel para modais amplos de historico em grade, com cabecalho, abas opcionais e acao de filtro
 - `ModalContatoCliente`: formulario reutilizavel de contato
 - `ModalRamosAtividade`: lista e cadastro reutilizavel de ramos
 - `ModalGruposProduto`: lista e cadastro de grupos de produto com botao dedicado para abrir um submodal compacto de selecao de tamanhos e ordem por grupo
@@ -98,6 +100,7 @@ Utilitarios importantes:
 - `normalizarTelefone.js`: padroniza telefone no formato brasileiro
 - `normalizarPreco.js`: trata exibicao e digitacao de preco em real
 - `obterPrimeiroCodigoDisponivel.js`: encontra o primeiro codigo livre para novos registros
+- `codigoCliente.js`: centraliza a escolha e a formatacao do codigo principal do cliente com base na configuracao da empresa
 
 ## Modulos implementados
 
@@ -110,16 +113,9 @@ Utilitarios importantes:
 
 ### Pagina inicial
 
-- Manual visual da pagina inicial acessado por `F1`, com leitura dos indicadores, filtros analiticos e regras do funil
-- Painel inicial com indicadores de:
-  - clientes cadastrados
-  - produtos cadastrados
-  - total de vendas em valores
-  - total de vendas em quantidades
-- A pagina inicial agora possui um botao de filtro proprio para refinar os dados do funil por periodo, com selecao multipla em `Vendedor`, `Produto`, `Grupo de produto` e `Marca`
-- Os mesmos filtros da pagina inicial tambem sao aplicados aos cards de vendas, usando pedidos como base para valor total e quantidade total vendida
-- Quando o usuario logado for `Usuario padrao` com vendedor vinculado, o filtro da pagina inicial ja abre com esse vendedor selecionado e bloqueado
-- Os cards de resumo da pagina inicial usam titulo no topo com tipografia mais contida, valor abaixo e icone ampliado na direita com corte parcial pelo proprio card
+- A pagina inicial foi reduzida ao minimo e agora exibe apenas o titulo `Painel inicial`
+- Todos os cards, graficos, rankings, funil, filtros visuais e conteudos complementares da home foram removidos nesta etapa
+- O restante da infraestrutura do sistema permanece no projeto; apenas a composicao visual da pagina inicial foi zerada
 - Funil de vendas opcional na pagina inicial, controlado pela configuracao da empresa
 - Novas empresas e novas bases passam a vir com o funil habilitado por padrao
 - As barras exibem novamente a descricao da etapa diretamente sobre a propria barra, junto do valor
@@ -173,20 +169,32 @@ Observacao:
 - Tela com grade, pesquisa e filtro
 - Manual visual da pagina de clientes acessado por `F1`, com fluxo do cadastro, carteira e filtros persistidos
 - Modal em abas para incluir, editar e consultar
-- Abas atuais: `Dados gerais`, `Endereco`, `Observacoes`, `Contato`, `Atendimento` e `Vendas`
+- Abas principais do cadastro: `Dados gerais`, `Endereco`, `Observacoes` e `Contato`
+- Os antigos grids de `Atendimento` e `Vendas` agora abrem em modais amplos separados, quase em tela cheia, para facilitar leitura operacional
+- Dentro do modal amplo de `Vendas`, continuam duas visoes: `Pedidos` e `Itens do pedido`
+- O grid de `Pedidos` da aba Vendas nao exibe mais o nome do contato
+- O grid de `Itens do pedido` mostra `Data`, `Pedido`, `Produto`, `Valor`, `Quantidade` e `Valor total`
 - Thumbnail com codigo do cliente
+- O cadastro de cliente aceita um `Codigo alternativo` numerico e opcional
+- A empresa pode definir se o CRM exibe como principal o codigo padrao do cliente ou o `Codigo alternativo`; quando o alternativo estiver vazio, o sistema volta automaticamente ao codigo padrao
 - Integracao publica para consulta de `CEP`
 - Integracao publica para consulta de `CNPJ`
 - Aba de contatos com grade propria
 - Formulario de contato reutilizavel
+- Campo `Grupo de empresa` no modal do cliente, com atalho lateral para cadastrar e selecionar o grupo sem sair do fluxo
+- Cada cliente pode se vincular a no maximo um `Grupo de empresa`, enquanto um grupo pode atender varios clientes
+- Contatos do grupo aparecem como herdados no cadastro do cliente e ficam disponiveis para consulta no proprio modal
 - Abertura do mesmo modal de `Ramo de Atividade` usado em configuracoes
-- Inclusao de novo ramo diretamente do cadastro de cliente, sem sair do fluxo
+- Inclusao e edicao de `Ramo de atividade` diretamente do cadastro de cliente, inclusive para `Usuario padrao`
+- Os atalhos de `Grupo de empresa` e `Ramo de atividade` preservam o formulario do cliente enquanto o cadastro auxiliar e aberto
+- Ao salvar um novo `Grupo de empresa` ou `Ramo de atividade` por esses atalhos, o registro retorna selecionado automaticamente no cliente
 - Inativacao persiste no banco
 
 Filtros de clientes:
 
 - `Estado`
 - `Cidade`
+- `Grupo de empresa`
 - `Ramo de atividade`
 - `Vendedor`
 - `Tipo`
@@ -199,7 +207,7 @@ Filtros de clientes:
 - Modal no mesmo padrao visual de clientes
 - Modos incluir, editar e consultar
 - Codigo automatico ao incluir
-- Upload de imagem no padrao reutilizavel do projeto
+- Upload de imagem no padrao reutilizavel do projeto, com recorte final em 320 x 320 px para a foto principal do produto
 - Campo de preco com mascara e digitacao amigavel em real
 - Campo `Grupo de Produto` com botao de pesquisa para abrir o modal de configuracao
 - O modal de `Grupo de Produto` permite definir quais `Tamanhos` estao disponiveis para cada grupo e em qual ordem devem aparecer
@@ -275,12 +283,22 @@ Filtros da agenda:
 - Pagina propria de orcamentos
 - Manual visual da pagina de orcamentos acessado por `F1`, com fluxo do funil, fechamento, motivos de perda e pedido derivado
 - Modal em abas com `Dados gerais`, `Itens` e `Campos do orcamento`
+- A inclusao e edicao de itens no orcamento seguem o mesmo padrao do pedido, preservando snapshots de descricao, referencia, unidade e imagem no proprio item
+- Pedidos e orcamentos agora reutilizam o mesmo modal de item de produto, inclusive com o preview grande da imagem
+- A logica de estado e manipulacao desses itens tambem foi centralizada em um hook compartilhado para reduzir duplicacao entre fluxos comerciais
+- A imagem principal do produto continua sendo a origem padrao; quando o item do orcamento recebe uma imagem propria, ela fica exclusiva daquele item e e recortada em 1024 x 1024 px
 - Busca reutilizavel de cliente e contato
-- Itens com busca de produto
+- Itens com selecao direta de produto no proprio modal, com atalho de busca para abrir o grid de produtos sem sair do item
 - Controle de etapa do orcamento
+- Ao entrar nas etapas `Fechado`, `Fechado sem pedido` ou `Pedido excluido`, o orcamento passa a registrar `Data de fechamento` em campo proprio
+- A `Data de fechamento` e obrigatoria nas etapas `Fechado`, `Fechado sem pedido` e `Pedido excluido`
 - Motivo da perda obrigatorio quando a etapa exigir
 - Integracao com abertura de pedido ao fechar o orcamento
 - A troca rapida da etapa para `Fechado` no grid tambem oferece a geracao imediata do pedido
+- Quando a troca para uma etapa final acontece pelo grid, a `Data de fechamento` usa automaticamente a data atual
+- Dentro do modal do orcamento, a `Data de fechamento` pode ser ajustada manualmente antes de salvar
+- O filtro da pagina de orcamentos tem um botao unico de `Datas` que abre um modal com os intervalos de `Data de inclusao` e `Data de fechamento`
+- Quando o orcamento esta nas etapas `Fechado`, `Fechado sem pedido` ou `Pedido excluido`, o perfil `Usuario padrao` passa a consultar sem editar
 - Modais de confirmacao do fluxo comercial abrem como sobreposicao fixa acima da pagina, inclusive no lancamento de pedido a partir do grid
 - Campos configuraveis extras para o orcamento
 - Os campos `Prazo de pagamento` nos modais de orcamento e pedido reutilizam o mesmo grid de `Prazos de pagamento` da area de Configuracoes, permitindo cadastrar, editar, inativar e selecionar o prazo sem sair do fluxo
@@ -298,9 +316,16 @@ Filtros da agenda:
 - Pagina propria de pedidos
 - Manual visual da pagina de pedidos acessado por `F1`, com acompanhamento operacional, etapas, pagamento e permissoes
 - Integracao com pedido originado de orcamento
+- No modal de inclusao do pedido, os campos `Cliente` e `Contato` tambem possuem atalho de pesquisa para abrir os grids reutilizaveis sem sair do formulario
+- O modal de filtros da pagina de pedidos permite selecionar multiplas etapas ao mesmo tempo e salva esse recorte por usuario
+- A etapa do pedido pode ser alterada direto no grid, no mesmo padrao visual adotado em Orcamentos
+- O filtro da pagina de pedidos tem um botao unico de `Datas` que abre um modal com os intervalos de `Data de inclusao` e `Data de entrega`
+- Ao mover um pedido para a etapa `Entregue`, a `Data de entrega` passa automaticamente para a data atual; dentro do modal, essa data ainda pode ser ajustada antes de salvar
+- Quando um pedido chega em `Entregue`, o perfil `Usuario padrao` passa a consultar o registro sem edicao nem nova troca de etapa
 - O modal de pedido aberto a partir do fechamento de um orcamento permite fechar direto pelo botao, clique fora ou `Escape`, devolvendo o fluxo ao orcamento
 - Campos extras configuraveis
 - Itens com snapshots de produto para preservar historico comercial
+- O item do pedido herda a imagem do orcamento e, quando o usuario substituir essa imagem no proprio pedido, ela passa a ser exclusiva daquele item com recorte em 1024 x 1024 px
 - Data de entrega baseada nas configuracoes da empresa
 
 ### Configuracoes
@@ -313,6 +338,7 @@ A tela de configuracoes usa cards grandes e modais padrao. Hoje ela cobre:
 - `Empresa`
 - `Usuarios`
 - `Ramos de atividade`
+- `Grupos de empresa`
 - `Vendedores`
 - `Grupos de produto`
 - `Marcas`
@@ -337,19 +363,26 @@ A tela de configuracoes usa cards grandes e modais padrao. Hoje ela cobre:
 
 Regras importantes:
 
+- Campos textuais de formularios passam por normalizacao para capitalizacao automatica, evitando persistencia acidental em caixa alta
+- Dados retornados pela busca de CNPJ tambem sao normalizados antes de preencher o formulario, evitando razao social, nome fantasia e endereco em caixa alta
 - O card de `Atualizacao do sistema` fica apenas na aba `Gerais`
-- O card de `Atualizacao do sistema` fica visivel apenas para `Administrador`
+- O card de `Atualizacao do sistema` fica visivel para todos os perfis, mas permanece desabilitado para `Usuario padrao`
+- `Ramos de atividade` e `Grupos de empresa` tambem ficam liberados para `Usuario padrao` na propria pagina de `Configuracoes`, no mesmo modelo operacional ja adotado dentro do cadastro de clientes
 - O modal de atualizacao permite salvar o link do repositorio GitHub usado para leitura das releases
 - `Etapas do pedido` e `Etapas do orcamento` agora possuem campo `Ordem`; os selects desses status respeitam essa ordem crescente nos formularios
 - O campo `Abreviacao` foi removido das etapas de pedido e orcamento; as regras e exibicao passam a considerar `Descricao`, `Cor`, `Ordem`, `Status` e, para etapas de orcamento, `Considera no Funil de Vendas`
+- A logica operacional de pedidos valida a etapa critica `Entregue` por `idEtapa` fixo (`5`), sem depender da descricao cadastrada
+- A etapa critica de pedido usada pela logica do sistema nao pode ser inativada nem excluida (bloqueio no backend e no modal de Configuracoes)
 - Etapas obrigatorias de orcamento nao podem ser inativadas nem excluidas (regra aplicada no backend e refletida no modal de Configuracoes)
 - Regras obrigatorias das etapas de orcamento sao avaliadas por `idEtapaOrcamento` fixo (`1` Fechado, `2` Fechado sem pedido, `3` Pedido excluido)
+- A data de fechamento do orcamento tambem segue a validacao por `idEtapaOrcamento` fixo (`1`, `2` e `3`), sem depender da descricao da etapa
 - Regras criticas de `Status da visita` sao avaliadas por `idStatusVisita` fixo (`1` Agendado, `2` Confirmado, `3` Realizado, `4` Cancelado, `5` Nao compareceu)
 - Status criticos da agenda podem ser editados, mas nao podem ser inativados nem excluidos (bloqueio no modal de Configuracoes e no backend)
 - `Tipos de agenda` e `Status da visita` agora possuem campo `Ordem`; os selects/imputs da agenda respeitam a ordem crescente definida em Configuracoes
 - `Recursos` nao usam mais `Sigla`; o cadastro e a exibicao passam a considerar `Descricao`, `Tipo` e `Status`
 - `Tamanhos` possuem cadastro proprio em Configuracoes com `Codigo`, `Tamanho` e `Status`
 - Cada `Grupo de Produto` pode vincular varios `Tamanhos`; essa relacao guarda a `Ordem` usada para exibicao no fluxo comercial
+- `Grupos de empresa` possuem cadastro proprio com descricao, status e grade de contatos; qualquer alteracao nesses contatos sincroniza os clientes vinculados
 - Os modais de grid da pagina de `Configuracoes` possuem botao que abre `Modal de filtros`; inicialmente ha filtro de `Ativo` e o estado padrao ao abrir e `somente ativos`
 - Os modais de grid da pagina de `Configuracoes` possuem altura fixa na area de listagem para evitar variacao de tamanho ao trocar filtro ou contexto
 
@@ -361,15 +394,27 @@ O cadastro de empresa tem modal proprio com abas:
 - `Pagina inicial`
 - `Endereco`
 - `Agenda`
-- `Orcamentos/Pedidos`
-
-Campos de destaque:
-
-- `Razao social`
+- Dashboard inicial expandido com rolagem vertical e leitura executiva mais completa
+- Painel heroico com resumo do periodo, carteira aberta, conversao, entregas, ticket medio e agenda futura
+- Grade principal com indicadores de:
+  - clientes da carteira filtrada
+  - contatos ativos
+  - produtos ativos
+  - atendimentos no periodo
+  - orcamentos no recorte
+  - carteira aberta em valor
+  - pedidos no recorte
+  - ticket medio
+  - vendas em valores
+  - itens vendidos
+  - taxa de fechamento
 - `Nome fantasia`
-- `Slogan`
+- Os mesmos filtros da pagina inicial tambem sao aplicados aos cards de vendas, usando pedidos como base para valor total e quantidade total vendida
 - `Documento`
-- `Imagem`
+- O dashboard inclui grafico diario de tendencia para `Atendimentos`, `Orcamentos` e `Pedidos` nos ultimos 7 dias do recorte
+- O dashboard inclui rankings de `Vendedores`, `Produtos`, `Grupos de produto` e `Marcas` com barras comparativas
+- O dashboard inclui painel de agenda dos proximos dias e bloco de saude comercial com conversao, fechamento e entregas
+- Os cards de resumo da pagina inicial usam titulo no topo com tipografia mais contida, valor abaixo, descricao auxiliar e icone ampliado na direita com corte parcial pelo proprio card
 - Endereco completo
 - Horarios de expediente da manha e da tarde
 - Flag para trabalho aos sabados

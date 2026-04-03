@@ -3,11 +3,11 @@ import { AcoesRegistro } from '../../componentes/comuns/acoesRegistro';
 import { ContatoPrincipalCliente } from './contatoPrincipalCliente';
 import { DetalhesCliente } from './detalhesCliente';
 
-export function LinhaCliente({ cliente, aoConsultar, aoEditar, aoInativar }) {
+export function LinhaCliente({ empresa, cliente, aoConsultar, aoEditar, aoInativar }) {
   return (
     <tr className="linhaCliente">
       <td><AvatarCliente cliente={cliente} /></td>
-      <td><DetalhesCliente cliente={cliente} /></td>
+      <td><DetalhesCliente cliente={cliente} empresa={empresa} /></td>
       <td>{cliente.cidade}</td>
       <td>{cliente.estado || 'Nao informado'}</td>
       <td><ContatoPrincipalCliente cliente={cliente} /></td>

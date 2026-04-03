@@ -41,12 +41,17 @@ function criarFiltrosIniciaisOrcamentos(usuarioLogado, empresa = null) {
     idUsuario: '',
     idVendedorCliente: '',
     idVendedor: usuarioLogado?.idVendedor ? String(usuarioLogado.idVendedor) : '',
-    idsEtapaOrcamento: obterEtapasFiltroPadraoOrcamento(empresa)
+    idsEtapaOrcamento: obterEtapasFiltroPadraoOrcamento(empresa),
+    dataInclusaoInicio: '',
+    dataInclusaoFim: '',
+    dataFechamentoInicio: '',
+    dataFechamentoFim: ''
   };
 }
 
   const ID_ETAPA_ORCAMENTO_FECHAMENTO = 1;
   const ID_ETAPA_ORCAMENTO_FECHADO_SEM_PEDIDO = 2;
+  const ID_ETAPA_ORCAMENTO_PEDIDO_EXCLUIDO = 3;
 
 function criarFiltrosLimposOrcamentos(usuarioLogado, empresa = null) {
   return {
@@ -54,7 +59,11 @@ function criarFiltrosLimposOrcamentos(usuarioLogado, empresa = null) {
     idUsuario: '',
     idVendedorCliente: '',
     idVendedor: usuarioLogado?.idVendedor ? String(usuarioLogado.idVendedor) : '',
-    idsEtapaOrcamento: obterEtapasFiltroPadraoOrcamento(empresa)
+    idsEtapaOrcamento: obterEtapasFiltroPadraoOrcamento(empresa),
+    dataInclusaoInicio: '',
+    dataInclusaoFim: '',
+    dataFechamentoInicio: '',
+    dataFechamentoFim: ''
   };
 }
 
@@ -104,6 +113,18 @@ export function PaginaOrcamentos({ usuarioLogado }) {
 
   useEffect(() => {
     carregarDados();
+  }, [usuarioSomenteVendedor, usuarioLogado?.idVendedor]);
+
+  useEffect(() => {
+    function tratarGrupoEmpresaAtualizado() {
+      carregarDados();
+    }
+
+    window.addEventListener('grupo-empresa-atualizado', tratarGrupoEmpresaAtualizado);
+
+    return () => {
+      window.removeEventListener('grupo-empresa-atualizado', tratarGrupoEmpresaAtualizado);
+    };
   }, [usuarioSomenteVendedor, usuarioLogado?.idVendedor]);
 
   useEffect(() => {
@@ -311,7 +332,10 @@ export function PaginaOrcamentos({ usuarioLogado }) {
       {
         ...orcamento,
         idEtapaOrcamento,
-        idMotivoPerda
+        idMotivoPerda,
+        dataFechamento: entrouEmEtapaFechada(orcamento.idEtapaOrcamento, idEtapaOrcamento)
+          ? obterDataAtualFormatoInput()
+          : orcamento.dataFechamento
       },
       usuarioLogado
     );
@@ -407,6 +431,11 @@ export function PaginaOrcamentos({ usuarioLogado }) {
   }
 
   function abrirEdicaoOrcamento(orcamento) {
+    if (orcamentoBloqueadoParaUsuarioPadrao(orcamento, usuarioLogado)) {
+      abrirConsultaOrcamento(orcamento);
+      return;
+    }
+
     definirOrcamentoSelecionado(orcamento);
     definirModoModal('edicao');
     definirModalAberto(true);
@@ -591,6 +620,11 @@ export function PaginaOrcamentos({ usuarioLogado }) {
               orcamento={orcamento}
               etapasOrcamento={etapasOrcamento}
               permitirExcluir={permitirExcluir}
+              permitirEdicao={!orcamentoBloqueadoParaUsuarioPadrao(orcamento, usuarioLogado)}
+              permitirAlteracaoEtapa={
+                !orcamentoBloqueadoParaUsuarioPadrao(orcamento, usuarioLogado)
+                && !orcamento.idPedidoVinculado
+              }
               aoAlterarEtapa={(idEtapaOrcamento) => selecionarEtapaNoGrid(orcamento, idEtapaOrcamento)}
               aoConsultar={() => abrirConsultaOrcamento(orcamento)}
               aoEditar={() => abrirEdicaoOrcamento(orcamento)}
@@ -646,6 +680,29 @@ export function PaginaOrcamentos({ usuarioLogado }) {
               valor: String(etapa.idEtapaOrcamento),
               label: etapa.descricao
             }))
+          },
+          {
+            name: 'periodosDatasOrcamento',
+            label: 'Datas',
+            type: 'date-filters-modal',
+            tituloSelecao: 'Filtros de datas do orcamento',
+            placeholder: 'Selecionar datas',
+            periodos: [
+              {
+                titulo: 'Data de inclusao',
+                nomeInicio: 'dataInclusaoInicio',
+                nomeFim: 'dataInclusaoFim',
+                labelInicio: 'Inicio da inclusao',
+                labelFim: 'Fim da inclusao'
+              },
+              {
+                titulo: 'Data de fechamento',
+                nomeInicio: 'dataFechamentoInicio',
+                nomeFim: 'dataFechamentoFim',
+                labelInicio: 'Inicio do fechamento',
+                labelFim: 'Fim do fechamento'
+              }
+            ]
           }
         ]}
         aoFechar={() => definirModalFiltrosAberto(false)}
@@ -896,6 +953,8 @@ function LinhaOrcamento({
   orcamento,
   etapasOrcamento,
   permitirExcluir,
+  permitirEdicao,
+  permitirAlteracaoEtapa,
   aoAlterarEtapa,
   aoConsultar,
   aoEditar,
@@ -922,7 +981,7 @@ function LinhaOrcamento({
             value={orcamento.idEtapaOrcamento ? String(orcamento.idEtapaOrcamento) : ''}
             onChange={(evento) => aoAlterarEtapa(evento.target.value)}
             aria-label={`Alterar etapa do orcamento ${orcamento.idOrcamento}`}
-            disabled={Boolean(orcamento.idPedidoVinculado)}
+            disabled={!permitirAlteracaoEtapa}
           >
             <option value="">Sem etapa</option>
             {etapasOrcamento.map((etapa) => (
@@ -938,10 +997,11 @@ function LinhaOrcamento({
       <td>
         <AcoesRegistro
           rotuloConsulta="Consultar orcamento"
-          rotuloEdicao="Editar orcamento"
+          rotuloEdicao={permitirEdicao ? 'Editar orcamento' : 'Orcamento fechado: usuario padrao consulta apenas.'}
           rotuloInativacao="Excluir orcamento"
           iconeInativacao="limpar"
           exibirInativacao={permitirExcluir && !orcamento.idPedidoVinculado}
+          desabilitarEdicao={!permitirEdicao}
           aoConsultar={aoConsultar}
           aoEditar={aoEditar}
           aoInativar={aoExcluir}
@@ -952,7 +1012,23 @@ function LinhaOrcamento({
 }
 
 function normalizarFiltrosOrcamentos(filtros, filtrosPadrao) {
-  return normalizarFiltrosPorPadrao(filtros, filtrosPadrao);
+  const filtrosNormalizados = normalizarFiltrosPorPadrao(filtros, filtrosPadrao);
+
+  return {
+    ...filtrosNormalizados,
+    ...normalizarIntervaloDatasFiltros(
+      filtrosNormalizados,
+      filtrosPadrao,
+      'dataInclusaoInicio',
+      'dataInclusaoFim'
+    ),
+    ...normalizarIntervaloDatasFiltros(
+      filtrosNormalizados,
+      filtrosPadrao,
+      'dataFechamentoInicio',
+      'dataFechamentoFim'
+    )
+  };
 }
 
 function filtrarOrcamentos(orcamentos, pesquisa, filtros) {
@@ -980,6 +1056,8 @@ function filtrarOrcamentos(orcamentos, pesquisa, filtros) {
         || filtros.idsEtapaOrcamento.length === 0
         || filtros.idsEtapaOrcamento.includes(String(orcamento.idEtapaOrcamento))
       )
+      && validarPeriodoData(orcamento.dataInclusao, filtros.dataInclusaoInicio, filtros.dataInclusaoFim)
+      && validarPeriodoData(orcamento.dataFechamento, filtros.dataFechamentoInicio, filtros.dataFechamentoFim)
     );
 
     return atendePesquisa && atendeFiltros;
@@ -1001,6 +1079,55 @@ function ordenarEtapasPorOrdem(etapas, chaveId) {
 
     return Number(etapaA?.[chaveId] || 0) - Number(etapaB?.[chaveId] || 0);
   });
+}
+
+function normalizarIntervaloDatasFiltros(filtros, filtrosPadrao, chaveInicio, chaveFim) {
+  const dataInicio = normalizarDataFiltro(filtros?.[chaveInicio]) || normalizarDataFiltro(filtrosPadrao?.[chaveInicio]);
+  const dataFim = normalizarDataFiltro(filtros?.[chaveFim]) || normalizarDataFiltro(filtrosPadrao?.[chaveFim]);
+
+  if (dataInicio && dataFim && dataInicio > dataFim) {
+    return {
+      [chaveInicio]: dataFim,
+      [chaveFim]: dataInicio
+    };
+  }
+
+  return {
+    [chaveInicio]: dataInicio,
+    [chaveFim]: dataFim
+  };
+}
+
+function validarPeriodoData(valorData, dataInicio, dataFim) {
+  const dataNormalizada = normalizarDataFiltro(valorData);
+
+  if (!dataInicio && !dataFim) {
+    return true;
+  }
+
+  if (!dataNormalizada) {
+    return false;
+  }
+
+  if (dataInicio && dataNormalizada < dataInicio) {
+    return false;
+  }
+
+  if (dataFim && dataNormalizada > dataFim) {
+    return false;
+  }
+
+  return true;
+}
+
+function normalizarDataFiltro(valor) {
+  const texto = String(valor || '').trim();
+
+  if (!texto) {
+    return '';
+  }
+
+  return texto.slice(0, 10);
 }
 
 function obterValorOrdemEtapa(ordem, fallback) {
@@ -1126,6 +1253,7 @@ function normalizarPayloadOrcamento(dadosOrcamento, usuarioLogado) {
     idMotivoPerda: dadosOrcamento.idMotivoPerda ? Number(dadosOrcamento.idMotivoPerda) : null,
     dataInclusao: limparTextoOpcional(dadosOrcamento.dataInclusao),
     dataValidade: limparTextoOpcional(dadosOrcamento.dataValidade),
+    dataFechamento: limparTextoOpcional(dadosOrcamento.dataFechamento),
     observacao: limparTextoOpcional(dadosOrcamento.observacao),
     itens: dadosOrcamento.itens.map((item) => ({
       idProduto: Number(item.idProduto),
@@ -1234,6 +1362,22 @@ function etapaAcabouDeFechar(idEtapaAnterior, idEtapaAtual, etapasOrcamento) {
   const etapaAtual = etapasOrcamento.find((etapa) => String(etapa.idEtapaOrcamento) === String(idEtapaAtual || ''));
 
   return !etapaOrcamentoEhFechamento(etapaAnterior) && etapaOrcamentoEhFechamento(etapaAtual);
+}
+
+function etapaOrcamentoEhFechadoPorId(idEtapaOrcamento) {
+  return [
+    ID_ETAPA_ORCAMENTO_FECHAMENTO,
+    ID_ETAPA_ORCAMENTO_FECHADO_SEM_PEDIDO,
+    ID_ETAPA_ORCAMENTO_PEDIDO_EXCLUIDO
+  ].includes(Number(idEtapaOrcamento));
+}
+
+function entrouEmEtapaFechada(idEtapaAnterior, idEtapaAtual) {
+  return !etapaOrcamentoEhFechadoPorId(idEtapaAnterior) && etapaOrcamentoEhFechadoPorId(idEtapaAtual);
+}
+
+function orcamentoBloqueadoParaUsuarioPadrao(orcamento, usuarioLogado) {
+  return usuarioLogado?.tipo === 'Usuario padrao' && etapaOrcamentoEhFechadoPorId(orcamento?.idEtapaOrcamento);
 }
 
 function etapaOrcamentoEhFechamento(etapa) {

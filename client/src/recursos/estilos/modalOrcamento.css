@@ -2,7 +2,7 @@
   width: min(1180px, 100%);
 }
 
-.modalPedido .modalItemOrcamento {
+.modalItemProduto {
   width: min(860px, 100%);
 }
 
@@ -210,30 +210,30 @@
   align-items: start;
 }
 
-.modalPedido .modalItemOrcamento .thumbnailCliente {
+.modalItemProduto .thumbnailCliente {
   position: relative;
   width: 100%;
   min-height: 320px;
   justify-self: stretch;
 }
 
-.modalPedido .modalItemOrcamento .previewThumbnailCliente,
-.modalPedido .modalItemOrcamento .previewThumbnailCliente img {
+.modalItemProduto .previewThumbnailCliente,
+.modalItemProduto .previewThumbnailCliente img {
   width: 100%;
   height: 320px;
 }
 
-.modalPedido .modalItemOrcamento .previewThumbnailCliente {
+.modalItemProduto .previewThumbnailCliente {
   border-radius: 24px;
 }
 
-.modalPedido .modalItemOrcamento .previewThumbnailCliente span {
+.modalItemProduto .previewThumbnailCliente span {
   width: 96px;
   height: 96px;
   font-size: 1.4rem;
 }
 
-.modalPedido .modalItemOrcamento .thumbnailCliente > .botao {
+.modalItemProduto .thumbnailCliente > .botao {
   position: absolute;
   right: 14px;
   bottom: 14px;
@@ -241,11 +241,11 @@
   box-shadow: 0 12px 24px rgba(18, 39, 58, 0.18);
 }
 
-.modalPedido .modalItemOrcamento .botao {
+.modalItemProduto .botao {
   white-space: nowrap;
 }
 
-.modalPedido .modalItemOrcamento .campoFormulario .entradaFormularioTextoLongo {
+.modalItemProduto .campoFormulario .entradaFormularioTextoLongo {
   min-height: 140px;
 }
 

@@ -85,7 +85,7 @@ export function ModalManualProdutos({
           itens: [
             'O codigo do produto e sugerido automaticamente pelo primeiro codigo disponivel.',
             'Preco e convertido para numero antes do salvamento para manter consistencia no backend.',
-            'Imagem e um campo opcional e valores vazios sao normalizados para null.',
+            'Imagem e um campo opcional, com recorte proprio para thumbnail final em 320 x 320 px, e valores vazios sao normalizados para null.',
             'Grupo, marca e unidade podem ser cadastrados no fluxo sem sair do modal, se houver permissao.'
           ]
         },

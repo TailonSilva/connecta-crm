@@ -3,8 +3,13 @@ import { Botao } from './botao';
 import { CodigoRegistro } from './codigoRegistro';
 
 const tamanhoRecorteImagem = 320;
-const tamanhoSaidaImagem = 480;
+const tamanhoSaidaImagemPadrao = 480;
+const qualidadeSaidaImagemPadrao = 0.82;
 const tamanhoMaximoImagemBytes = 5 * 1024 * 1024;
+const larguraAreaVisualRecorte = 560;
+const alturaAreaVisualRecorte = 420;
+const margemHorizontalJanelaRecorte = (larguraAreaVisualRecorte - tamanhoRecorteImagem) / 2;
+const margemVerticalJanelaRecorte = (alturaAreaVisualRecorte - tamanhoRecorteImagem) / 2;
 
 export function CampoImagemPadrao({
   valor,
@@ -13,7 +18,9 @@ export function CampoImagemPadrao({
   onChange,
   disabled = false,
   codigo,
-  rotuloBotao = 'Imagem'
+  rotuloBotao = 'Imagem',
+  tamanhoSaidaImagem = tamanhoSaidaImagemPadrao,
+  qualidadeSaidaImagem = qualidadeSaidaImagemPadrao
 }) {
   const campoArquivoImagem = useRef(null);
   const [modalRecorteAberto, definirModalRecorteAberto] = useState(false);
@@ -96,7 +103,9 @@ export function CampoImagemPadrao({
         posicaoHorizontal,
         posicaoVertical,
         manterImagemInteira,
-        corFundo
+        corFundo,
+        tamanhoSaidaImagem,
+        qualidadeSaidaImagem
       })
     );
     fecharModalRecorte();
@@ -158,7 +167,8 @@ export function CampoImagemPadrao({
             <div className="cabecalhoModalRecorteImagem">
               <div>
                 <h3>Recortar imagem</h3>
-                <p>Escolha a area que sera aproveitada na thumbnail.</p>
+                <p>Posicione a imagem dentro da area pontilhada. A regiao escurecida ficara fora do corte final.</p>
+                <p>Resolucao final: {tamanhoSaidaImagem} x {tamanhoSaidaImagem} px.</p>
               </div>
 
               <div className="acoesCabecalhoRecorteImagem">
@@ -172,14 +182,15 @@ export function CampoImagemPadrao({
             </div>
 
             <div className="corpoModalRecorteImagem">
-                <div className="areaVisualRecorteImagem">
-                <div className="molduraRecorteImagem" style={{ backgroundColor: corFundo }}>
+              <div className="areaVisualRecorteImagem">
+                <div className="quadroRecorteImagem" style={{ backgroundColor: corFundo }}>
                   <img
                     src={imagemTemporaria}
                     alt="Pre-visualizacao da imagem"
                     className="imagemRecorteImagem"
                     style={estiloImagemRecorte}
                   />
+                  <div className="janelaRecorteImagem" />
                 </div>
               </div>
 
@@ -289,8 +300,8 @@ function criarEstiloImagemRecorte(
   return {
     width: `${larguraRenderizada}px`,
     height: `${alturaRenderizada}px`,
-    left: `${posicaoX}px`,
-    top: `${posicaoY}px`
+    left: `${margemHorizontalJanelaRecorte + posicaoX}px`,
+    top: `${margemVerticalJanelaRecorte + posicaoY}px`
   };
 }
 
@@ -301,7 +312,9 @@ async function gerarImagemRecortada({
   posicaoHorizontal,
   posicaoVertical,
   manterImagemInteira,
-  corFundo
+  corFundo,
+  tamanhoSaidaImagem,
+  qualidadeSaidaImagem
 }) {
   const canvas = document.createElement('canvas');
   canvas.width = tamanhoSaidaImagem;
@@ -323,7 +336,7 @@ async function gerarImagemRecortada({
   });
 
   contexto.drawImage(imagem, posicaoX, posicaoY, larguraRenderizada, alturaRenderizada);
-  return canvas.toDataURL('image/jpeg', 0.82);
+  return canvas.toDataURL('image/jpeg', qualidadeSaidaImagem);
 }
 
 function calcularPosicionamentoRecorte({

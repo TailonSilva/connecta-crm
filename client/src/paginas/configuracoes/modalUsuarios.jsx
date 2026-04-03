@@ -4,6 +4,7 @@ import { BotaoAcaoGrade } from '../../componentes/comuns/botaoAcaoGrade';
 import { CampoImagemPadrao } from '../../componentes/comuns/campoImagemPadrao';
 import { CodigoRegistro } from '../../componentes/comuns/codigoRegistro';
 import { ModalFiltros } from '../../componentes/comuns/modalFiltros';
+import { normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTextoFormulario';
 
 const estadoInicialUsuario = {
   imagem: '',
@@ -124,10 +125,11 @@ export function ModalUsuarios({
 
   function alterarCampo(evento) {
     const { name, value, type, checked } = evento.target;
+    const valorNormalizado = normalizarValorEntradaFormulario(evento);
 
     definirFormulario((estadoAtual) => ({
       ...estadoAtual,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : valorNormalizado
     }));
   }
 
