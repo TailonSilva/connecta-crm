@@ -12,56 +12,57 @@
   height: 100%;
   width: 100%;
   max-height: none;
-  overflow-x: auto;
+  overflow-x: hidden;
   overflow-y: auto;
 }
 
 .modalCliente.modalHistoricoAtendimentosCliente .tabelaContatosModal {
-  min-width: 1360px;
+  min-width: 0;
   table-layout: auto;
 }
 
 .modalCliente.modalHistoricoAtendimentosCliente .colunaHistoricoAtendimentoData {
-  width: 120px;
+  width: 108px;
+  white-space: nowrap;
 }
 
 .modalCliente.modalHistoricoAtendimentosCliente .colunaHistoricoAtendimentoHora {
-  width: 96px;
+  width: 84px;
+  white-space: nowrap;
 }
 
 .modalCliente.modalHistoricoAtendimentosCliente .colunaHistoricoAtendimentoAssunto {
-  min-width: 260px;
+  width: auto;
+  min-width: 0;
   white-space: normal;
 }
 
 .modalCliente.modalHistoricoAtendimentosCliente .colunaHistoricoAtendimentoCliente {
-  min-width: 260px;
+  width: auto;
+  min-width: 0;
   white-space: normal;
 }
 
 .modalCliente.modalHistoricoAtendimentosCliente .colunaHistoricoAtendimentoContato {
-  min-width: 240px;
+  width: auto;
+  min-width: 0;
   white-space: normal;
 }
 
 .modalCliente.modalHistoricoAtendimentosCliente .colunaHistoricoAtendimentoCanal {
-  width: 180px;
+  width: 140px;
 }
 
 .modalCliente.modalHistoricoAtendimentosCliente .colunaHistoricoAtendimentoUsuario {
-  width: 200px;
+  width: 156px;
 }
 
 .modalCliente.modalHistoricoAtendimentosCliente .tabelaAtendimentosCliente th.cabecalhoAcoesContato {
-  width: 92px;
+  width: 84px;
 }
 
 @media (max-width: 640px) {
   .modalCliente.modalHistoricoAtendimentosCliente {
     width: min(100%, calc(100vw - 12px));
-  }
-
-  .modalCliente.modalHistoricoAtendimentosCliente .tabelaContatosModal {
-    min-width: 980px;
   }
 }

@@ -73,7 +73,12 @@ import {
   incluirTamanho
 } from '../../servicos/configuracoes';
 import { atualizarEmpresa, incluirEmpresa, listarEmpresas } from '../../servicos/empresa';
+import { normalizarConfiguracoesColunasGridClientes } from '../../utilitarios/colunasGridClientes';
+import { normalizarConfiguracoesColunasGridOrcamentos } from '../../utilitarios/colunasGridOrcamentos';
+import { normalizarConfiguracoesColunasGridProdutos } from '../../utilitarios/colunasGridProdutos';
+import { normalizarConfiguracoesColunasGridPedidos } from '../../utilitarios/colunasGridPedidos';
 import { atualizarUsuario, incluirUsuario, listarUsuarios } from '../../servicos/usuarios';
+import { normalizarConfiguracoesColunasGridAtendimentos } from '../../utilitarios/colunasGridAtendimentos';
 import { normalizarTelefone } from '../../utilitarios/normalizarTelefone';
 import { ModalAtualizacaoSistema } from './modalAtualizacaoSistema';
 import { ModalCadastroConfiguracao } from './modalCadastroConfiguracao';
@@ -81,6 +86,12 @@ import { ModalEmpresa } from './modalEmpresa';
 import { ModalGruposProduto } from './modalGruposProduto';
 import { ModalGruposEmpresa } from './modalGruposEmpresa';
 import { ModalLayoutOrcamento } from './modalLayoutOrcamento';
+import { ModalColunasGridClientes } from './modalColunasGridClientes';
+import { ModalColunasGridOrcamentos } from './modalColunasGridOrcamentos';
+import { ModalColunasGridProdutos } from './modalColunasGridProdutos';
+import { ModalColunasGridPedidos } from './modalColunasGridPedidos';
+import { ModalColunasGridAtendimentos } from './modalColunasGridAtendimentos';
+import { ModalSelecaoColunasGrid } from './modalSelecaoColunasGrid';
 import { ModalManualConfiguracoes } from './modalManualConfiguracoes';
 import { ModalMarcas } from './modalMarcas';
 import { ModalPrazosPagamento } from './modalPrazosPagamento';
@@ -154,6 +165,11 @@ const atalhosConfiguracao = [
     id: 'tiposAgenda',
     titulo: 'Tipos de agenda',
     icone: 'orcamento'
+  },
+  {
+    id: 'colunasGridAtendimentos',
+    titulo: 'Colunas do grid',
+    icone: 'filtro'
   },
   {
     id: 'canaisAtendimento',
@@ -236,7 +252,7 @@ const secoesConfiguracao = [
   {
     id: 'gerais',
     titulo: 'Gerais',
-    atalhos: ['empresa', 'usuarios', 'vendedores', 'atualizacaoSistema']
+    atalhos: ['empresa', 'usuarios', 'vendedores', 'colunasGridAtendimentos', 'atualizacaoSistema']
   },
   {
     id: 'paginaInicial',
@@ -347,6 +363,12 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
   const [modalManualAberto, definirModalManualAberto] = useState(false);
   const [modalEmpresaAberto, definirModalEmpresaAberto] = useState(false);
   const [modalLayoutOrcamentoAberto, definirModalLayoutOrcamentoAberto] = useState(false);
+  const [modalSelecaoColunasGridAberto, definirModalSelecaoColunasGridAberto] = useState(false);
+  const [modalColunasGridClientesAberto, definirModalColunasGridClientesAberto] = useState(false);
+  const [modalColunasGridOrcamentosAberto, definirModalColunasGridOrcamentosAberto] = useState(false);
+  const [modalColunasGridProdutosAberto, definirModalColunasGridProdutosAberto] = useState(false);
+  const [modalColunasGridPedidosAberto, definirModalColunasGridPedidosAberto] = useState(false);
+  const [modalColunasGridAtendimentosAberto, definirModalColunasGridAtendimentosAberto] = useState(false);
   const [modalUsuariosAberto, definirModalUsuariosAberto] = useState(false);
   const [modalAtualizacaoSistemaAberto, definirModalAtualizacaoSistemaAberto] = useState(false);
   const [relatorioConfiguracaoAberto, definirRelatorioConfiguracaoAberto] = useState(null);
@@ -376,6 +398,12 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
         !modalManualAberto
         && !modalEmpresaAberto
         && !modalLayoutOrcamentoAberto
+        && !modalSelecaoColunasGridAberto
+        && !modalColunasGridClientesAberto
+        && !modalColunasGridOrcamentosAberto
+        && !modalColunasGridProdutosAberto
+        && !modalColunasGridPedidosAberto
+        && !modalColunasGridAtendimentosAberto
         && !modalUsuariosAberto
         && !modalAtualizacaoSistemaAberto
         && !relatorioConfiguracaoAberto
@@ -394,6 +422,12 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
     cadastroConfiguracaoAberto,
     relatorioConfiguracaoAberto,
     modalAtualizacaoSistemaAberto,
+    modalSelecaoColunasGridAberto,
+    modalColunasGridClientesAberto,
+    modalColunasGridOrcamentosAberto,
+    modalColunasGridProdutosAberto,
+    modalColunasGridPedidosAberto,
+    modalColunasGridAtendimentosAberto,
     modalEmpresaAberto,
     modalLayoutOrcamentoAberto,
     modalManualAberto,
@@ -434,6 +468,86 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
     await carregarEmpresa();
     window.dispatchEvent(new CustomEvent('empresa-atualizada'));
     definirModalLayoutOrcamentoAberto(false);
+  }
+
+  async function salvarColunasGridAtendimentos(dadosColunas) {
+    if (!empresa?.idEmpresa) {
+      throw new Error('Cadastre a empresa antes de configurar as colunas do grid.');
+    }
+
+    const payload = normalizarPayloadEmpresa({
+      ...empresa,
+      ...dadosColunas
+    });
+
+    await atualizarEmpresa(empresa.idEmpresa, payload);
+    await carregarEmpresa();
+    window.dispatchEvent(new CustomEvent('empresa-atualizada'));
+    definirModalColunasGridAtendimentosAberto(false);
+  }
+
+  async function salvarColunasGridClientes(dadosColunas) {
+    if (!empresa?.idEmpresa) {
+      throw new Error('Cadastre a empresa antes de configurar as colunas do grid.');
+    }
+
+    const payload = normalizarPayloadEmpresa({
+      ...empresa,
+      ...dadosColunas
+    });
+
+    await atualizarEmpresa(empresa.idEmpresa, payload);
+    await carregarEmpresa();
+    window.dispatchEvent(new CustomEvent('empresa-atualizada'));
+    definirModalColunasGridClientesAberto(false);
+  }
+
+  async function salvarColunasGridOrcamentos(dadosColunas) {
+    if (!empresa?.idEmpresa) {
+      throw new Error('Cadastre a empresa antes de configurar as colunas do grid.');
+    }
+
+    const payload = normalizarPayloadEmpresa({
+      ...empresa,
+      ...dadosColunas
+    });
+
+    await atualizarEmpresa(empresa.idEmpresa, payload);
+    await carregarEmpresa();
+    window.dispatchEvent(new CustomEvent('empresa-atualizada'));
+    definirModalColunasGridOrcamentosAberto(false);
+  }
+
+  async function salvarColunasGridProdutos(dadosColunas) {
+    if (!empresa?.idEmpresa) {
+      throw new Error('Cadastre a empresa antes de configurar as colunas do grid.');
+    }
+
+    const payload = normalizarPayloadEmpresa({
+      ...empresa,
+      ...dadosColunas
+    });
+
+    await atualizarEmpresa(empresa.idEmpresa, payload);
+    await carregarEmpresa();
+    window.dispatchEvent(new CustomEvent('empresa-atualizada'));
+    definirModalColunasGridProdutosAberto(false);
+  }
+
+  async function salvarColunasGridPedidos(dadosColunas) {
+    if (!empresa?.idEmpresa) {
+      throw new Error('Cadastre a empresa antes de configurar as colunas do grid.');
+    }
+
+    const payload = normalizarPayloadEmpresa({
+      ...empresa,
+      ...dadosColunas
+    });
+
+    await atualizarEmpresa(empresa.idEmpresa, payload);
+    await carregarEmpresa();
+    window.dispatchEvent(new CustomEvent('empresa-atualizada'));
+    definirModalColunasGridPedidosAberto(false);
   }
 
   async function carregarUsuarios() {
@@ -1017,7 +1131,7 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
   }
 
   function abrirConfiguracao(atalho) {
-    if (usuarioSomenteConsulta && ['empresa', 'usuarios', 'layoutOrcamento'].includes(atalho.id)) {
+    if (usuarioSomenteConsulta && ['empresa', 'usuarios', 'layoutOrcamento', 'colunasGridAtendimentos'].includes(atalho.id)) {
       return;
     }
 
@@ -1033,6 +1147,15 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
       }
 
       definirModalLayoutOrcamentoAberto(true);
+      return;
+    }
+
+    if (atalho.id === 'colunasGridAtendimentos') {
+      if (!empresa?.idEmpresa) {
+        return;
+      }
+
+      definirModalSelecaoColunasGridAberto(true);
       return;
     }
 
@@ -1103,6 +1226,61 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
     definirModalLayoutOrcamentoAberto(false);
   }
 
+  function fecharModalColunasGridAtendimentos() {
+    definirModalColunasGridAtendimentosAberto(false);
+  }
+
+  function fecharModalColunasGridClientes() {
+    definirModalColunasGridClientesAberto(false);
+  }
+
+  function fecharModalColunasGridOrcamentos() {
+    definirModalColunasGridOrcamentosAberto(false);
+  }
+
+  function fecharModalColunasGridProdutos() {
+    definirModalColunasGridProdutosAberto(false);
+  }
+
+  function fecharModalColunasGridPedidos() {
+    definirModalColunasGridPedidosAberto(false);
+  }
+
+  function fecharModalSelecaoColunasGrid() {
+    definirModalSelecaoColunasGridAberto(false);
+  }
+
+  function selecionarModuloColunasGrid(idModulo) {
+    if (idModulo === 'clientes') {
+      definirModalSelecaoColunasGridAberto(false);
+      definirModalColunasGridClientesAberto(true);
+      return;
+    }
+
+    if (idModulo === 'orcamentos') {
+      definirModalSelecaoColunasGridAberto(false);
+      definirModalColunasGridOrcamentosAberto(true);
+      return;
+    }
+
+    if (idModulo === 'produtos') {
+      definirModalSelecaoColunasGridAberto(false);
+      definirModalColunasGridProdutosAberto(true);
+      return;
+    }
+
+    if (idModulo === 'pedidos') {
+      definirModalSelecaoColunasGridAberto(false);
+      definirModalColunasGridPedidosAberto(true);
+      return;
+    }
+
+    if (idModulo === 'atendimentos') {
+      definirModalSelecaoColunasGridAberto(false);
+      definirModalColunasGridAtendimentosAberto(true);
+    }
+  }
+
   function fecharModalAtualizacaoSistema() {
     definirModalAtualizacaoSistemaAberto(false);
   }
@@ -1154,12 +1332,13 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
                             'empresa',
                             'usuarios',
                             'layoutOrcamento',
+                            'colunasGridAtendimentos',
                             'atualizacaoSistema',
                             'relatorioPedidosFechados',
                             'relatorioPedidosEntregues',
                             'relatorioAtendimentos'
                           ].includes(atalho.id))
-                          || (atalho.id === 'layoutOrcamento' && !empresa?.idEmpresa)
+                          || (['layoutOrcamento', 'colunasGridAtendimentos'].includes(atalho.id) && !empresa?.idEmpresa)
                         }
                         onClick={() => abrirConfiguracao(atalho)}
                       >
@@ -1200,6 +1379,46 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
         somenteConsulta={usuarioSomenteConsulta}
         aoFechar={fecharModalLayoutOrcamento}
         aoSalvar={salvarLayoutOrcamento}
+      />
+      <ModalSelecaoColunasGrid
+        aberto={modalSelecaoColunasGridAberto}
+        aoFechar={fecharModalSelecaoColunasGrid}
+        aoSelecionar={selecionarModuloColunasGrid}
+      />
+      <ModalColunasGridClientes
+        aberto={modalColunasGridClientesAberto}
+        empresa={empresa}
+        somenteConsulta={usuarioSomenteConsulta}
+        aoFechar={fecharModalColunasGridClientes}
+        aoSalvar={salvarColunasGridClientes}
+      />
+      <ModalColunasGridOrcamentos
+        aberto={modalColunasGridOrcamentosAberto}
+        empresa={empresa}
+        somenteConsulta={usuarioSomenteConsulta}
+        aoFechar={fecharModalColunasGridOrcamentos}
+        aoSalvar={salvarColunasGridOrcamentos}
+      />
+      <ModalColunasGridProdutos
+        aberto={modalColunasGridProdutosAberto}
+        empresa={empresa}
+        somenteConsulta={usuarioSomenteConsulta}
+        aoFechar={fecharModalColunasGridProdutos}
+        aoSalvar={salvarColunasGridProdutos}
+      />
+      <ModalColunasGridPedidos
+        aberto={modalColunasGridPedidosAberto}
+        empresa={empresa}
+        somenteConsulta={usuarioSomenteConsulta}
+        aoFechar={fecharModalColunasGridPedidos}
+        aoSalvar={salvarColunasGridPedidos}
+      />
+      <ModalColunasGridAtendimentos
+        aberto={modalColunasGridAtendimentosAberto}
+        empresa={empresa}
+        somenteConsulta={usuarioSomenteConsulta}
+        aoFechar={fecharModalColunasGridAtendimentos}
+        aoSalvar={salvarColunasGridAtendimentos}
       />
       <ModalUsuarios
         aberto={modalUsuariosAberto}
@@ -1657,6 +1876,46 @@ function normalizarPayloadEmpresa(dadosEmpresa) {
       Array.isArray(dadosEmpresa.etapasFiltroPadraoOrcamento)
         ? dadosEmpresa.etapasFiltroPadraoOrcamento.map(String)
         : []
+    ),
+    colunasGridClientes: JSON.stringify(
+      normalizarConfiguracoesColunasGridClientes(dadosEmpresa.colunasGridClientes).map((coluna) => ({
+        id: coluna.id,
+        visivel: coluna.obrigatoria ? true : Boolean(coluna.visivel),
+        ordem: coluna.ordem,
+        span: coluna.span
+      }))
+    ),
+    colunasGridOrcamentos: JSON.stringify(
+      normalizarConfiguracoesColunasGridOrcamentos(dadosEmpresa.colunasGridOrcamentos).map((coluna) => ({
+        id: coluna.id,
+        visivel: coluna.obrigatoria ? true : Boolean(coluna.visivel),
+        ordem: coluna.ordem,
+        span: coluna.span
+      }))
+    ),
+    colunasGridProdutos: JSON.stringify(
+      normalizarConfiguracoesColunasGridProdutos(dadosEmpresa.colunasGridProdutos).map((coluna) => ({
+        id: coluna.id,
+        visivel: coluna.obrigatoria ? true : Boolean(coluna.visivel),
+        ordem: coluna.ordem,
+        span: coluna.span
+      }))
+    ),
+    colunasGridPedidos: JSON.stringify(
+      normalizarConfiguracoesColunasGridPedidos(dadosEmpresa.colunasGridPedidos).map((coluna) => ({
+        id: coluna.id,
+        visivel: coluna.obrigatoria ? true : Boolean(coluna.visivel),
+        ordem: coluna.ordem,
+        span: coluna.span
+      }))
+    ),
+    colunasGridAtendimentos: JSON.stringify(
+      normalizarConfiguracoesColunasGridAtendimentos(dadosEmpresa.colunasGridAtendimentos).map((coluna) => ({
+        id: coluna.id,
+        visivel: coluna.obrigatoria ? true : Boolean(coluna.visivel),
+        ordem: coluna.ordem,
+        span: coluna.span
+      }))
     ),
     corPrimariaOrcamento: limparTextoOpcional(dadosEmpresa.corPrimariaOrcamento) || '#111827',
     corSecundariaOrcamento: limparTextoOpcional(dadosEmpresa.corSecundariaOrcamento) || '#ef4444',

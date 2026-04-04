@@ -3,8 +3,11 @@ import '../../recursos/estilos/cabecalhoPagina.css';
 import { AcoesRegistro } from '../../componentes/comuns/acoesRegistro';
 import { Botao } from '../../componentes/comuns/botao';
 import { CampoPesquisa } from '../../componentes/comuns/campoPesquisa';
+import { CodigoRegistro } from '../../componentes/comuns/codigoRegistro';
 import { GradePadrao } from '../../componentes/comuns/gradePadrao';
+import { ModalBuscaClientes } from '../../componentes/comuns/modalBuscaClientes';
 import { ModalFiltros } from '../../componentes/comuns/modalFiltros';
+import { TextoGradeClamp } from '../../componentes/comuns/textoGradeClamp';
 import { CorpoPagina } from '../../componentes/layout/corpoPagina';
 import {
   atualizarAtendimento,
@@ -42,28 +45,45 @@ import {
 import { incluirPedido } from '../../servicos/pedidos';
 import { listarProdutos } from '../../servicos/produtos';
 import { listarUsuarios } from '../../servicos/usuarios';
-import { normalizarFiltrosPorPadrao, useFiltrosPersistidos } from '../../utilitarios/useFiltrosPersistidos';
+import {
+  normalizarFiltrosPorPadrao,
+  normalizarListaFiltroPersistido,
+  useFiltrosPersistidos
+} from '../../utilitarios/useFiltrosPersistidos';
 import { ModalPedido } from '../pedidos/modalPedido';
 import { ModalAtendimento } from './modalAtendimento';
 import { ModalManualAtendimento } from './modalManualAtendimento';
+import {
+  normalizarColunasGridAtendimentos,
+  TOTAL_COLUNAS_GRID_ATENDIMENTOS
+} from '../../utilitarios/colunasGridAtendimentos';
+import { obterValorGrid } from '../../utilitarios/valorPadraoGrid';
 
 function criarFiltrosIniciaisAtendimentos(usuarioLogado) {
   return {
     idCliente: '',
-    idUsuario: usuarioLogado?.idUsuario ? String(usuarioLogado.idUsuario) : '',
-    idVendedorCliente: '',
-    idCanalAtendimento: '',
-    idOrigemAtendimento: ''
+    idUsuario: usuarioLogado?.idUsuario ? [String(usuarioLogado.idUsuario)] : [],
+    idVendedorCliente: [],
+    idCanalAtendimento: [],
+    idOrigemAtendimento: [],
+    dataInicio: '',
+    dataFim: '',
+    horaInicioFiltro: '',
+    horaFimFiltro: ''
   };
 }
 
 function criarFiltrosLimposAtendimentos() {
   return {
     idCliente: '',
-    idUsuario: '',
-    idVendedorCliente: '',
-    idCanalAtendimento: '',
-    idOrigemAtendimento: ''
+    idUsuario: [],
+    idVendedorCliente: [],
+    idCanalAtendimento: [],
+    idOrigemAtendimento: [],
+    dataInicio: '',
+    dataFim: '',
+    horaInicioFiltro: '',
+    horaFimFiltro: ''
   };
 }
 
@@ -96,6 +116,8 @@ export function PaginaAtendimentos({ usuarioLogado }) {
   const [modalAberto, definirModalAberto] = useState(false);
   const [modalManualAberto, definirModalManualAberto] = useState(false);
   const [modalFiltrosAberto, definirModalFiltrosAberto] = useState(false);
+  const [modalBuscaClienteFiltrosAberto, definirModalBuscaClienteFiltrosAberto] = useState(false);
+  const [filtrosEmEdicao, definirFiltrosEmEdicao] = useState(null);
   const [modalPedidoAberto, definirModalPedidoAberto] = useState(false);
   const [atendimentoSelecionado, definirAtendimentoSelecionado] = useState(null);
   const [dadosIniciaisPedido, definirDadosIniciaisPedido] = useState(null);
@@ -427,9 +449,29 @@ export function PaginaAtendimentos({ usuarioLogado }) {
     fecharModal();
   }
 
+  function abrirModalFiltrosAtendimentos() {
+    definirFiltrosEmEdicao({
+      ...filtros,
+      idUsuario: Array.isArray(filtros.idUsuario) ? [...filtros.idUsuario] : [],
+      idVendedorCliente: Array.isArray(filtros.idVendedorCliente) ? [...filtros.idVendedorCliente] : [],
+      idCanalAtendimento: Array.isArray(filtros.idCanalAtendimento) ? [...filtros.idCanalAtendimento] : [],
+      idOrigemAtendimento: Array.isArray(filtros.idOrigemAtendimento) ? [...filtros.idOrigemAtendimento] : []
+    });
+    definirModalFiltrosAberto(true);
+  }
+
+  function fecharModalFiltrosAtendimentos() {
+    definirModalFiltrosAberto(false);
+    definirFiltrosEmEdicao(null);
+  }
+
   const atendimentosFiltrados = useMemo(
     () => filtrarAtendimentos(atendimentos, pesquisa, filtros),
     [atendimentos, pesquisa, filtros]
+  );
+  const colunasVisiveisAtendimentos = useMemo(
+    () => normalizarColunasGridAtendimentos(empresa?.colunasGridAtendimentos),
+    [empresa?.colunasGridAtendimentos]
   );
   const filtrosAtivos = JSON.stringify(filtros) !== JSON.stringify(filtrosIniciais);
 
@@ -454,7 +496,7 @@ export function PaginaAtendimentos({ usuarioLogado }) {
             somenteIcone
             title="Filtrar"
             aria-label="Filtrar"
-            onClick={() => definirModalFiltrosAberto(true)}
+            onClick={abrirModalFiltrosAtendimentos}
           />
           <Botao
             variante="primario"
@@ -469,7 +511,11 @@ export function PaginaAtendimentos({ usuarioLogado }) {
 
       <CorpoPagina>
         <GradePadrao
-          cabecalho={<CabecalhoGradeAtendimentos />}
+          modo="layout"
+          className="gradePadraoPresetAtendimentos"
+          classNameTabela="layoutGradePadraoPresetAtendimentos"
+          totalColunasLayout={TOTAL_COLUNAS_GRID_ATENDIMENTOS}
+          cabecalho={<CabecalhoGradeAtendimentos colunas={colunasVisiveisAtendimentos} />}
           carregando={carregando}
           mensagemErro={mensagemErro}
           temItens={atendimentosFiltrados.length > 0}
@@ -480,6 +526,7 @@ export function PaginaAtendimentos({ usuarioLogado }) {
             <LinhaAtendimento
               key={atendimento.idAtendimento}
               atendimento={atendimento}
+              colunas={colunasVisiveisAtendimentos}
               permitirExcluir={usuarioLogado?.tipo === 'Administrador'}
               aoConsultar={() => abrirConsultaAtendimento(atendimento)}
               aoEditar={() => abrirEdicaoAtendimento(atendimento)}
@@ -492,11 +539,25 @@ export function PaginaAtendimentos({ usuarioLogado }) {
       <ModalFiltros
         aberto={modalFiltrosAberto}
         titulo="Filtros de atendimentos"
-        filtros={filtros}
+        filtros={filtrosEmEdicao || filtros}
         campos={[
           {
             name: 'idCliente',
             label: 'Cliente',
+            acaoExtra: (
+              <Botao
+                variante="secundario"
+                icone="pesquisa"
+                type="button"
+                className="botaoCampoAcao"
+                onClick={() => definirModalBuscaClienteFiltrosAberto(true)}
+                somenteIcone
+                title="Buscar cliente"
+                aria-label="Buscar cliente"
+              >
+                Buscar cliente
+              </Botao>
+            ),
             options: clientes.map((cliente) => ({
               valor: String(cliente.idCliente),
               label: cliente.nomeFantasia || cliente.razaoSocial
@@ -505,6 +566,8 @@ export function PaginaAtendimentos({ usuarioLogado }) {
           {
             name: 'idUsuario',
             label: 'Usuario do registro',
+            multiple: true,
+            placeholder: 'Todos os usuarios',
             options: usuarios.map((usuario) => ({
               valor: String(usuario.idUsuario),
               label: usuario.nome
@@ -513,6 +576,8 @@ export function PaginaAtendimentos({ usuarioLogado }) {
           {
             name: 'idVendedorCliente',
             label: 'Clientes do vendedor',
+            multiple: true,
+            placeholder: 'Todos os vendedores',
             options: vendedores.map((vendedor) => ({
               valor: String(vendedor.idVendedor),
               label: vendedor.nome
@@ -521,6 +586,8 @@ export function PaginaAtendimentos({ usuarioLogado }) {
           {
             name: 'idCanalAtendimento',
             label: 'Canal',
+            multiple: true,
+            placeholder: 'Todos os canais',
             options: canaisAtendimento.map((canal) => ({
               valor: String(canal.idCanalAtendimento),
               label: canal.descricao
@@ -529,18 +596,60 @@ export function PaginaAtendimentos({ usuarioLogado }) {
           {
             name: 'idOrigemAtendimento',
             label: 'Origem',
+            multiple: true,
+            placeholder: 'Todas as origens',
             options: origensAtendimento.map((origem) => ({
               valor: String(origem.idOrigemAtendimento),
               label: origem.descricao
             }))
           },
+          {
+            name: 'periodosDatasAtendimento',
+            label: 'Datas',
+            type: 'date-filters-modal',
+            tituloSelecao: 'Filtros de datas do atendimento',
+            placeholder: 'Selecionar datas',
+            periodos: [
+              {
+                titulo: 'Data do atendimento',
+                nomeInicio: 'dataInicio',
+                nomeFim: 'dataFim',
+                labelInicio: 'Inicio da data',
+                labelFim: 'Fim da data'
+              },
+              {
+                titulo: 'Horario do atendimento',
+                nomeInicio: 'horaInicioFiltro',
+                nomeFim: 'horaFimFiltro',
+                labelInicio: 'Hora inicial',
+                labelFim: 'Hora final',
+                tipoInicio: 'time',
+                tipoFim: 'time'
+              }
+            ]
+          },
         ]}
-        aoFechar={() => definirModalFiltrosAberto(false)}
+        aoFechar={fecharModalFiltrosAtendimentos}
         aoAplicar={(proximosFiltros) => {
           definirFiltros(proximosFiltros);
-          definirModalFiltrosAberto(false);
+          fecharModalFiltrosAtendimentos();
         }}
-        aoLimpar={() => definirFiltros(criarFiltrosLimposAtendimentos())}
+        aoLimpar={() => definirFiltrosEmEdicao(criarFiltrosLimposAtendimentos())}
+      />
+      <ModalBuscaClientes
+        aberto={modalBuscaClienteFiltrosAberto}
+        empresa={empresa}
+        clientes={clientes}
+        placeholder="Pesquisar cliente no filtro"
+        ariaLabelPesquisa="Pesquisar cliente no filtro"
+        aoSelecionar={(cliente) => {
+          definirFiltrosEmEdicao((estadoAtual) => ({
+            ...(estadoAtual || criarFiltrosIniciaisAtendimentos(usuarioLogado)),
+            idCliente: String(cliente.idCliente || '')
+          }));
+          definirModalBuscaClienteFiltrosAberto(false);
+        }}
+        aoFechar={() => definirModalBuscaClienteFiltrosAberto(false)}
       />
 
       <ModalManualAtendimento
@@ -622,44 +731,143 @@ export function PaginaAtendimentos({ usuarioLogado }) {
   );
 }
 
-function CabecalhoGradeAtendimentos() {
+function CabecalhoGradeAtendimentos({ colunas }) {
   return (
-    <tr className="cabecalhoGradeAtendimentos">
-      <th>Data</th>
-      <th>Cliente</th>
-      <th>Assunto</th>
-      <th>Canal</th>
-      <th>Origem</th>
-      <th>Usuario</th>
-      <th>Acoes</th>
-    </tr>
+    <div className="cabecalhoLayoutGradePadrao cabecalhoGradeAtendimentos">
+      {colunas.map((coluna) => (
+        <div
+          key={coluna.id}
+          className={coluna.classe}
+          style={obterEstiloColunaLayout(coluna)}
+        >
+          {coluna.rotulo}
+        </div>
+      ))}
+    </div>
   );
 }
 
-function LinhaAtendimento({ atendimento, permitirExcluir, aoConsultar, aoEditar, aoExcluir }) {
+function LinhaAtendimento({ atendimento, colunas, permitirExcluir, aoConsultar, aoEditar, aoExcluir }) {
   return (
-    <tr className="linhaAtendimento">
-      <td>{formatarData(atendimento.data)}</td>
-      <td>
-        <div className="celulaRegistroDetalhes">
-          <div className="topoRegistroDetalhes">
-            <strong>{atendimento.nomeCliente}</strong>
-          </div>
-          <span className="textoSecundarioRegistro">{atendimento.nomeContato || 'Sem contato'}</span>
-        </div>
-      </td>
-      <td>
-        <div className="celulaRegistroDetalhes">
-          <div className="topoRegistroDetalhes">
-            <strong>{atendimento.assunto}</strong>
-          </div>
-          <span className="textoSecundarioRegistro">{atendimento.descricao || 'Sem descricao inicial'}</span>
-        </div>
-      </td>
-      <td>{atendimento.nomeCanalAtendimento}</td>
-      <td>{atendimento.nomeOrigemAtendimento}</td>
-      <td>{atendimento.nomeUsuario}</td>
-      <td>
+    <div className="linhaLayoutGradePadrao linhaAtendimento">
+      {colunas.map((coluna) => renderizarCelulaAtendimento({
+        coluna,
+        atendimento,
+        permitirExcluir,
+        aoConsultar,
+        aoEditar,
+        aoExcluir
+      }))}
+    </div>
+  );
+}
+
+function renderizarCelulaAtendimento({ coluna, atendimento, permitirExcluir, aoConsultar, aoEditar, aoExcluir }) {
+  const propriedadesCelula = {
+    key: coluna.id,
+    className: `celulaLayoutGradePadrao ${coluna.classe}`.trim(),
+    style: obterEstiloColunaLayout(coluna)
+  };
+
+  if (coluna.id === 'data') {
+    return (
+      <CelulaLayoutAtendimento coluna={coluna} {...propriedadesCelula}>
+        {formatarData(atendimento.data)}
+      </CelulaLayoutAtendimento>
+    );
+  }
+
+  if (coluna.id === 'codigo') {
+    return (
+      <CelulaLayoutAtendimento coluna={coluna} {...propriedadesCelula}>
+        <CodigoRegistro valor={atendimento.idAtendimento || 0} />
+      </CelulaLayoutAtendimento>
+    );
+  }
+
+  if (coluna.id === 'agendamento') {
+    return (
+      <CelulaLayoutAtendimento coluna={coluna} {...propriedadesCelula}>
+        {atendimento.idAgendamento ? <CodigoRegistro valor={atendimento.idAgendamento} /> : '-'}
+      </CelulaLayoutAtendimento>
+    );
+  }
+
+  if (coluna.id === 'horaInicio') {
+    return (
+      <CelulaLayoutAtendimento coluna={coluna} {...propriedadesCelula}>
+        {formatarHoraAtendimento(atendimento.horaInicio)}
+      </CelulaLayoutAtendimento>
+    );
+  }
+
+  if (coluna.id === 'horaFim') {
+    return (
+      <CelulaLayoutAtendimento coluna={coluna} {...propriedadesCelula}>
+        {formatarHoraAtendimento(atendimento.horaFim)}
+      </CelulaLayoutAtendimento>
+    );
+  }
+
+  if (coluna.id === 'cliente') {
+    return (
+      <CelulaLayoutAtendimento coluna={coluna} {...propriedadesCelula}>
+        <TextoGradeClamp>{obterValorGrid(atendimento.nomeCliente)}</TextoGradeClamp>
+      </CelulaLayoutAtendimento>
+    );
+  }
+
+  if (coluna.id === 'contato') {
+    return (
+      <CelulaLayoutAtendimento coluna={coluna} {...propriedadesCelula}>
+        <TextoGradeClamp>{obterValorGrid(atendimento.nomeContato)}</TextoGradeClamp>
+      </CelulaLayoutAtendimento>
+    );
+  }
+
+  if (coluna.id === 'assunto') {
+    return (
+      <CelulaLayoutAtendimento coluna={coluna} {...propriedadesCelula}>
+        <TextoGradeClamp>{obterValorGrid(atendimento.assunto)}</TextoGradeClamp>
+      </CelulaLayoutAtendimento>
+    );
+  }
+
+  if (coluna.id === 'descricao') {
+    return (
+      <CelulaLayoutAtendimento coluna={coluna} {...propriedadesCelula}>
+        <TextoGradeClamp>{obterValorGrid(atendimento.descricao)}</TextoGradeClamp>
+      </CelulaLayoutAtendimento>
+    );
+  }
+
+  if (coluna.id === 'canal') {
+    return (
+      <CelulaLayoutAtendimento coluna={coluna} {...propriedadesCelula}>
+        <TextoGradeClamp>{obterValorGrid(atendimento.nomeCanalAtendimento)}</TextoGradeClamp>
+      </CelulaLayoutAtendimento>
+    );
+  }
+
+  if (coluna.id === 'origem') {
+    return (
+      <CelulaLayoutAtendimento coluna={coluna} {...propriedadesCelula}>
+        <TextoGradeClamp>{obterValorGrid(atendimento.nomeOrigemAtendimento)}</TextoGradeClamp>
+      </CelulaLayoutAtendimento>
+    );
+  }
+
+  if (coluna.id === 'usuario') {
+    return (
+      <CelulaLayoutAtendimento coluna={coluna} {...propriedadesCelula}>
+        <TextoGradeClamp>{obterValorGrid(atendimento.nomeUsuario)}</TextoGradeClamp>
+      </CelulaLayoutAtendimento>
+    );
+  }
+
+  if (coluna.id === 'acoes') {
+    return (
+      <CelulaLayoutAtendimento coluna={coluna} {...propriedadesCelula}>
         <AcoesRegistro
           rotuloConsulta="Consultar atendimento"
           rotuloEdicao="Editar atendimento"
@@ -670,13 +878,41 @@ function LinhaAtendimento({ atendimento, permitirExcluir, aoConsultar, aoEditar,
           aoEditar={aoEditar}
           aoInativar={aoExcluir}
         />
-      </td>
-    </tr>
+      </CelulaLayoutAtendimento>
+    );
+  }
+
+  return null;
+}
+
+function CelulaLayoutAtendimento({ coluna, children, ...propriedades }) {
+  return (
+    <div {...propriedades}>
+      <span className="rotuloCelulaLayoutGradePadrao">{coluna.rotulo}</span>
+      {children}
+    </div>
   );
 }
 
+function obterEstiloColunaLayout(coluna) {
+  return {
+    order: coluna.ordem,
+    gridColumn: `span ${Math.max(1, Number(coluna.span || 1))}`
+  };
+}
+
 function normalizarFiltrosAtendimentos(filtros, filtrosPadrao) {
-  return normalizarFiltrosPorPadrao(filtros, filtrosPadrao);
+  const filtrosNormalizados = normalizarFiltrosPorPadrao(filtros, filtrosPadrao);
+
+  return {
+    ...filtrosNormalizados,
+    idUsuario: normalizarListaFiltroPersistido(filtrosNormalizados.idUsuario),
+    idVendedorCliente: normalizarListaFiltroPersistido(filtrosNormalizados.idVendedorCliente),
+    idCanalAtendimento: normalizarListaFiltroPersistido(filtrosNormalizados.idCanalAtendimento),
+    idOrigemAtendimento: normalizarListaFiltroPersistido(filtrosNormalizados.idOrigemAtendimento),
+    ...normalizarIntervaloAtendimento(filtrosNormalizados, filtrosPadrao, 'dataInicio', 'dataFim', normalizarDataFiltroAtendimento),
+    ...normalizarIntervaloAtendimento(filtrosNormalizados, filtrosPadrao, 'horaInicioFiltro', 'horaFimFiltro', normalizarHoraFiltroAtendimento)
+  };
 }
 
 function filtrarAtendimentos(atendimentos, pesquisa, filtros) {
@@ -696,10 +932,28 @@ function filtrarAtendimentos(atendimentos, pesquisa, filtros) {
 
     const atendeFiltros = (
       (!filtros.idCliente || String(atendimento.idCliente) === String(filtros.idCliente))
-      && (!filtros.idUsuario || String(atendimento.idUsuario) === String(filtros.idUsuario))
-      && (!filtros.idVendedorCliente || String(atendimento.idVendedorCliente) === String(filtros.idVendedorCliente))
-      && (!filtros.idCanalAtendimento || String(atendimento.idCanalAtendimento) === String(filtros.idCanalAtendimento))
-      && (!filtros.idOrigemAtendimento || String(atendimento.idOrigemAtendimento) === String(filtros.idOrigemAtendimento))
+      && (
+        !Array.isArray(filtros.idUsuario)
+        || filtros.idUsuario.length === 0
+        || filtros.idUsuario.map(String).includes(String(atendimento.idUsuario))
+      )
+      && (
+        !Array.isArray(filtros.idVendedorCliente)
+        || filtros.idVendedorCliente.length === 0
+        || filtros.idVendedorCliente.map(String).includes(String(atendimento.idVendedorCliente || ''))
+      )
+      && (
+        !Array.isArray(filtros.idCanalAtendimento)
+        || filtros.idCanalAtendimento.length === 0
+        || filtros.idCanalAtendimento.map(String).includes(String(atendimento.idCanalAtendimento || ''))
+      )
+      && (
+        !Array.isArray(filtros.idOrigemAtendimento)
+        || filtros.idOrigemAtendimento.length === 0
+        || filtros.idOrigemAtendimento.map(String).includes(String(atendimento.idOrigemAtendimento || ''))
+      )
+      && validarPeriodoAtendimento(atendimento.data, filtros.dataInicio, filtros.dataFim, normalizarDataFiltroAtendimento)
+      && validarPeriodoAtendimento(atendimento.horaInicio, filtros.horaInicioFiltro, filtros.horaFimFiltro, normalizarHoraFiltroAtendimento)
     );
 
     return atendePesquisa && atendeFiltros;
@@ -742,13 +996,13 @@ function enriquecerAtendimentos(
 
   return atendimentos.map((atendimento) => ({
     ...atendimento,
-    nomeCliente: clientesPorId.get(atendimento.idCliente)?.nome || 'Nao informado',
+    nomeCliente: obterValorGrid(clientesPorId.get(atendimento.idCliente)?.nome),
     idVendedorCliente: clientesPorId.get(atendimento.idCliente)?.idVendedor || null,
-    nomeContato: contatosPorId.get(atendimento.idContato) || '',
-    nomeUsuario: usuariosPorId.get(atendimento.idUsuario) || 'Nao informado',
-    nomeVendedorCliente: vendedoresPorId.get(clientesPorId.get(atendimento.idCliente)?.idVendedor) || 'Nao informado',
-    nomeCanalAtendimento: canaisPorId.get(atendimento.idCanalAtendimento) || 'Nao informado',
-    nomeOrigemAtendimento: origensPorId.get(atendimento.idOrigemAtendimento) || 'Nao informado'
+    nomeContato: obterValorGrid(contatosPorId.get(atendimento.idContato)),
+    nomeUsuario: obterValorGrid(usuariosPorId.get(atendimento.idUsuario)),
+    nomeVendedorCliente: obterValorGrid(vendedoresPorId.get(clientesPorId.get(atendimento.idCliente)?.idVendedor)),
+    nomeCanalAtendimento: obterValorGrid(canaisPorId.get(atendimento.idCanalAtendimento)),
+    nomeOrigemAtendimento: obterValorGrid(origensPorId.get(atendimento.idOrigemAtendimento))
   }));
 }
 
@@ -819,16 +1073,80 @@ function normalizarContatosClienteAtendimento(contatos, idCliente) {
 
 function formatarData(data) {
   if (!data) {
-    return 'Nao informado';
+    return '-';
   }
 
   const [ano, mes, dia] = String(data).split('T')[0].split('-');
 
   if (!ano || !mes || !dia) {
-    return data;
+    return '-';
   }
 
   return `${dia}/${mes}/${ano}`;
+}
+
+function normalizarIntervaloAtendimento(filtros, filtrosPadrao, chaveInicio, chaveFim, normalizador) {
+  const valorInicio = normalizador(filtros?.[chaveInicio]) || normalizador(filtrosPadrao?.[chaveInicio]);
+  const valorFim = normalizador(filtros?.[chaveFim]) || normalizador(filtrosPadrao?.[chaveFim]);
+
+  if (valorInicio && valorFim && valorInicio > valorFim) {
+    return {
+      [chaveInicio]: valorFim,
+      [chaveFim]: valorInicio
+    };
+  }
+
+  return {
+    [chaveInicio]: valorInicio,
+    [chaveFim]: valorFim
+  };
+}
+
+function validarPeriodoAtendimento(valor, inicio, fim, normalizador) {
+  const valorNormalizado = normalizador(valor);
+
+  if (!inicio && !fim) {
+    return true;
+  }
+
+  if (!valorNormalizado) {
+    return false;
+  }
+
+  if (inicio && valorNormalizado < inicio) {
+    return false;
+  }
+
+  if (fim && valorNormalizado > fim) {
+    return false;
+  }
+
+  return true;
+}
+
+function normalizarDataFiltroAtendimento(valor) {
+  const texto = String(valor || '').trim();
+
+  if (!texto) {
+    return '';
+  }
+
+  return texto.slice(0, 10);
+}
+
+function normalizarHoraFiltroAtendimento(valor) {
+  const texto = String(valor || '').trim();
+
+  if (!texto) {
+    return '';
+  }
+
+  return texto.slice(0, 5);
+}
+
+function formatarHoraAtendimento(hora) {
+  const texto = String(hora || '').trim();
+  return texto || '-';
 }
 
 function obterHoraAtualFormatoInput() {
@@ -868,15 +1186,15 @@ function enriquecerOrcamentosAtendimento(orcamentos, clientes, contatos, usuario
 
     return {
       ...orcamento,
-      nomeCliente: cliente?.nomeFantasia || cliente?.razaoSocial || 'Nao informado',
-      nomeContato: contatosPorId.get(orcamento.idContato) || '',
-      nomeUsuario: usuariosPorId.get(orcamento.idUsuario) || 'Nao informado',
-      nomeVendedor: vendedoresPorId.get(orcamento.idVendedor) || 'Nao informado',
-      nomePrazoPagamento: prazosPorId.get(orcamento.idPrazoPagamento)?.descricaoFormatada || '',
-      nomeEtapaOrcamento: etapasPorId.get(orcamento.idEtapaOrcamento)?.descricao || '',
+      nomeCliente: obterValorGrid(cliente?.nomeFantasia || cliente?.razaoSocial),
+      nomeContato: obterValorGrid(contatosPorId.get(orcamento.idContato)),
+      nomeUsuario: obterValorGrid(usuariosPorId.get(orcamento.idUsuario)),
+      nomeVendedor: obterValorGrid(vendedoresPorId.get(orcamento.idVendedor)),
+      nomePrazoPagamento: obterValorGrid(prazosPorId.get(orcamento.idPrazoPagamento)?.descricaoFormatada),
+      nomeEtapaOrcamento: obterValorGrid(etapasPorId.get(orcamento.idEtapaOrcamento)?.descricao),
       itens: Array.isArray(orcamento.itens) ? orcamento.itens.map((item) => ({
         ...item,
-        nomeProduto: produtosPorId.get(item.idProduto)?.descricao || item.nomeProduto || 'Produto nao informado'
+        nomeProduto: obterValorGrid(produtosPorId.get(item.idProduto)?.descricao || item.nomeProduto)
       })) : []
     };
   });

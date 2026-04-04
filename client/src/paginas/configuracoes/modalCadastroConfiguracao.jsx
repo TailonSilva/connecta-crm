@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Botao } from '../../componentes/comuns/botao';
 import { BotaoAcaoGrade } from '../../componentes/comuns/botaoAcaoGrade';
 import { CodigoRegistro } from '../../componentes/comuns/codigoRegistro';
+import { GradePadrao } from '../../componentes/comuns/gradePadrao';
 import { ModalFiltros } from '../../componentes/comuns/modalFiltros';
 import { normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTextoFormulario';
 
@@ -318,72 +319,66 @@ export function ModalCadastroConfiguracao({
 
         <div className="corpoModalCliente corpoModalUsuarios corpoModalUsuariosConfiguracao">
           <section className="painelContatosModalCliente painelContatosConfiguracao">
-            <div className="gradeContatosModal">
-              <table className={`tabelaContatosModal tabelaCadastrosConfiguracao ${classeTabela}`.trim()}>
-                <thead>
-                  <tr>
-                    <th>Codigo</th>
-                    {colunas.map((coluna) => (
-                      <th key={coluna.key}>{coluna.label}</th>
-                    ))}
-                    <th>Status</th>
-                    <th className="cabecalhoAcoesContato">Acoes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {registrosFiltrados.length > 0 ? (
-                    registrosFiltrados.map((registro) => (
-                      <tr key={registro[chavePrimaria]}>
-                        <td>
-                          <CodigoRegistro valor={registro[chavePrimaria]} />
-                        </td>
-                        {colunas.map((coluna) => (
-                          <td key={coluna.key}>
-                            {typeof coluna.render === 'function'
-                              ? coluna.render(registro)
-                              : registro[coluna.key]}
-                          </td>
-                        ))}
-                        <td>
-                          <span className={`etiquetaStatus ${registro[statusField] ? 'ativo' : 'inativo'}`}>
-                            {registro[statusField] ? 'Ativo' : 'Inativo'}
-                          </span>
-                        </td>
-                        <td className="celulaAcoesUsuarios">
-                          <div className="acoesContatoModal">
-                            {exibirConsulta || somenteConsulta ? (
-                              <BotaoAcaoGrade icone="consultar" titulo={`Consultar ${titulo.toLowerCase()}`} onClick={() => abrirConsulta(registro)} />
-                            ) : null}
-                            {!somenteConsulta ? (
-                              <BotaoAcaoGrade
-                                icone="editar"
-                                titulo={podeEditarRegistro(registro) ? `Editar ${titulo.toLowerCase()}` : 'Registro critico do sistema'}
-                                onClick={() => abrirEdicao(registro)}
-                                disabled={!podeEditarRegistro(registro)}
-                              />
-                            ) : null}
-                            {!somenteConsulta ? (
-                              <BotaoAcaoGrade
-                                icone="inativar"
-                                titulo={podeInativarRegistro(registro) ? `Inativar ${titulo.toLowerCase()}` : 'Registro critico do sistema'}
-                                onClick={() => aoInativar(registro)}
-                                disabled={!podeInativarRegistro(registro)}
-                              />
-                            ) : null}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={colunas.length + 3} className="mensagemTabelaContatosModal">
-                        Nenhum registro encontrado para o filtro atual.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <GradePadrao
+              className="gradeContatosModal"
+              classNameTabela={`tabelaContatosModal tabelaCadastrosConfiguracao ${classeTabela}`.trim()}
+              classNameMensagem="mensagemTabelaContatosModal"
+              cabecalho={(
+                <tr>
+                  <th>Codigo</th>
+                  {colunas.map((coluna) => (
+                    <th key={coluna.key}>{coluna.label}</th>
+                  ))}
+                  <th>Status</th>
+                  <th className="cabecalhoAcoesContato">Acoes</th>
+                </tr>
+              )}
+              temItens={registrosFiltrados.length > 0}
+              mensagemVazia="Nenhum registro encontrado para o filtro atual."
+            >
+              {registrosFiltrados.map((registro) => (
+                <tr key={registro[chavePrimaria]}>
+                  <td>
+                    <CodigoRegistro valor={registro[chavePrimaria]} />
+                  </td>
+                  {colunas.map((coluna) => (
+                    <td key={coluna.key}>
+                      {typeof coluna.render === 'function'
+                        ? coluna.render(registro)
+                        : registro[coluna.key]}
+                    </td>
+                  ))}
+                  <td>
+                    <span className={`etiquetaStatus ${registro[statusField] ? 'ativo' : 'inativo'}`}>
+                      {registro[statusField] ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </td>
+                  <td className="celulaAcoesUsuarios">
+                    <div className="acoesContatoModal">
+                      {exibirConsulta || somenteConsulta ? (
+                        <BotaoAcaoGrade icone="consultar" titulo={`Consultar ${titulo.toLowerCase()}`} onClick={() => abrirConsulta(registro)} />
+                      ) : null}
+                      {!somenteConsulta ? (
+                        <BotaoAcaoGrade
+                          icone="editar"
+                          titulo={podeEditarRegistro(registro) ? `Editar ${titulo.toLowerCase()}` : 'Registro critico do sistema'}
+                          onClick={() => abrirEdicao(registro)}
+                          disabled={!podeEditarRegistro(registro)}
+                        />
+                      ) : null}
+                      {!somenteConsulta ? (
+                        <BotaoAcaoGrade
+                          icone="inativar"
+                          titulo={podeInativarRegistro(registro) ? `Inativar ${titulo.toLowerCase()}` : 'Registro critico do sistema'}
+                          onClick={() => aoInativar(registro)}
+                          disabled={!podeInativarRegistro(registro)}
+                        />
+                      ) : null}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </GradePadrao>
           </section>
         </div>
 

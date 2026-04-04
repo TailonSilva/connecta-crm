@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Botao } from '../../componentes/comuns/botao';
 import { BotaoAcaoGrade } from '../../componentes/comuns/botaoAcaoGrade';
 import { CodigoRegistro } from '../../componentes/comuns/codigoRegistro';
+import { GradePadrao } from '../../componentes/comuns/gradePadrao';
 import { ModalFiltros } from '../../componentes/comuns/modalFiltros';
 import { normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTextoFormulario';
 import {
@@ -311,54 +312,50 @@ export function ModalGruposProduto({
 
         <div className="corpoModalCliente corpoModalUsuarios corpoModalUsuariosConfiguracao">
           <section className="painelContatosModalCliente painelContatosConfiguracao">
-            <div className="gradeContatosModal">
-              <table className="tabelaContatosModal tabelaCadastrosConfiguracao tabelaGruposProdutoConfiguracao">
-                <thead>
-                  <tr>
-                    <th>Codigo</th>
-                    <th>Descricao</th>
-                    <th>Tamanhos</th>
-                    <th>Status</th>
-                    <th className="cabecalhoAcoesContato">Acoes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {registrosFiltrados.length > 0 ? (
-                    registrosFiltrados.map((registro) => (
-                      <tr key={registro.idGrupo}>
-                        <td><CodigoRegistro valor={registro.idGrupo} /></td>
-                        <td>{registro.descricao}</td>
-                        <td>{obterResumoTamanhos(registro)}</td>
-                        <td>
-                          <span className={`etiquetaStatus ${registro.status ? 'ativo' : 'inativo'}`}>
-                            {registro.status ? 'Ativo' : 'Inativo'}
-                          </span>
-                        </td>
-                        <td className="celulaAcoesUsuarios">
-                          <div className="acoesContatoModal">
-                            {!somenteConsulta ? (
-                              <BotaoAcaoGrade
-                                icone="editar"
-                                titulo="Editar grupos de produto"
-                                onClick={() => abrirEdicao(registro)}
-                                disabled={carregandoAuxiliares}
-                              />
-                            ) : null}
-                            {!somenteConsulta ? (
-                              <BotaoAcaoGrade icone="inativar" titulo="Inativar grupos de produto" onClick={() => aoInativar(registro)} />
-                            ) : null}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={5} className="mensagemTabelaContatosModal">Nenhum grupo encontrado para o filtro atual.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <GradePadrao
+              className="gradeContatosModal"
+              classNameTabela="tabelaContatosModal tabelaCadastrosConfiguracao tabelaGruposProdutoConfiguracao"
+              classNameMensagem="mensagemTabelaContatosModal"
+              cabecalho={(
+                <tr>
+                  <th>Codigo</th>
+                  <th>Descricao</th>
+                  <th>Tamanhos</th>
+                  <th>Status</th>
+                  <th className="cabecalhoAcoesContato">Acoes</th>
+                </tr>
+              )}
+              temItens={registrosFiltrados.length > 0}
+              mensagemVazia="Nenhum grupo encontrado para o filtro atual."
+            >
+              {registrosFiltrados.map((registro) => (
+                <tr key={registro.idGrupo}>
+                  <td><CodigoRegistro valor={registro.idGrupo} /></td>
+                  <td>{registro.descricao}</td>
+                  <td>{obterResumoTamanhos(registro)}</td>
+                  <td>
+                    <span className={`etiquetaStatus ${registro.status ? 'ativo' : 'inativo'}`}>
+                      {registro.status ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </td>
+                  <td className="celulaAcoesUsuarios">
+                    <div className="acoesContatoModal">
+                      {!somenteConsulta ? (
+                        <BotaoAcaoGrade
+                          icone="editar"
+                          titulo="Editar grupos de produto"
+                          onClick={() => abrirEdicao(registro)}
+                          disabled={carregandoAuxiliares}
+                        />
+                      ) : null}
+                      {!somenteConsulta ? (
+                        <BotaoAcaoGrade icone="inativar" titulo="Inativar grupos de produto" onClick={() => aoInativar(registro)} />
+                      ) : null}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </GradePadrao>
           </section>
         </div>
 

@@ -26,20 +26,25 @@ import {
 import { filtrarClientes } from '../../utilitarios/filtrarClientes';
 import { normalizarTelefone } from '../../utilitarios/normalizarTelefone';
 import { obterPrimeiroCodigoDisponivel } from '../../utilitarios/obterPrimeiroCodigoDisponivel';
-import { normalizarFiltrosPorPadrao, useFiltrosPersistidos } from '../../utilitarios/useFiltrosPersistidos';
+import { obterValorGrid } from '../../utilitarios/valorPadraoGrid';
+import {
+  normalizarFiltrosPorPadrao,
+  normalizarListaFiltroPersistido,
+  useFiltrosPersistidos
+} from '../../utilitarios/useFiltrosPersistidos';
 import { ModalFiltros } from '../../componentes/comuns/modalFiltros';
 import { ModalCliente } from './modalCliente';
 import { ModalImportacaoCadastro } from '../../componentes/comuns/modalImportacaoCadastro';
 import { ModalManualClientes } from './modalManualClientes';
 
 const filtrosIniciaisClientes = {
-  estado: '',
+  estado: [],
   cidade: '',
   idGrupoEmpresa: '',
-  idRamo: '',
-  idVendedor: '',
-  tipo: '',
-  status: ''
+  idRamo: [],
+  idVendedor: [],
+  tipo: [],
+  status: []
 };
 
 export function PaginaClientes({ usuarioLogado }) {
@@ -64,7 +69,7 @@ export function PaginaClientes({ usuarioLogado }) {
   const usuarioSomenteVendedor = usuarioLogado?.tipo === 'Usuario padrao' && usuarioLogado?.idVendedor;
   const filtrosIniciais = useMemo(() => ({
     ...filtrosIniciaisClientes,
-    idVendedor: usuarioSomenteVendedor ? String(usuarioLogado.idVendedor) : ''
+    idVendedor: usuarioSomenteVendedor ? [String(usuarioLogado.idVendedor)] : []
   }), [usuarioSomenteVendedor, usuarioLogado?.idVendedor]);
   const [filtros, definirFiltros] = useFiltrosPersistidos({
     chave: 'paginaClientes',
@@ -149,7 +154,13 @@ export function PaginaClientes({ usuarioLogado }) {
         : clientesCarregados;
 
       definirClientes(
-        enriquecerClientes(clientesVisiveis, contatosCarregados, vendedoresCarregados, gruposEmpresaCarregados)
+        enriquecerClientes(
+          clientesVisiveis,
+          contatosCarregados,
+          vendedoresCarregados,
+          gruposEmpresaCarregados,
+          ramosCarregados
+        )
       );
       definirContatos(contatosCarregados);
       definirGruposEmpresa(gruposEmpresaCarregados);
@@ -308,7 +319,9 @@ export function PaginaClientes({ usuarioLogado }) {
 
   const clientesFiltrados = filtrarClientes(clientes, pesquisa, filtros);
   const proximoCodigoCliente = obterPrimeiroCodigoDisponivel(clientes, 'idCliente');
-  const filtrosAtivos = Object.values(filtros).some(Boolean);
+  const filtrosAtivos = Object.values(filtros).some((valor) => (
+    Array.isArray(valor) ? valor.length > 0 : Boolean(valor)
+  ));
   const opcoesEstado = obterOpcoesTexto(clientes, 'estado');
   const opcoesCidade = obterOpcoesTexto(clientes, 'cidade');
   const vendedoresDisponiveis = usuarioSomenteVendedor
@@ -364,7 +377,13 @@ export function PaginaClientes({ usuarioLogado }) {
         titulo="Filtros de clientes"
         filtros={filtros}
         campos={[
-          { name: 'estado', label: 'Estado', options: opcoesEstado },
+          {
+            name: 'estado',
+            label: 'Estado',
+            multiple: true,
+            placeholder: 'Todos os estados',
+            options: opcoesEstado
+          },
           { name: 'cidade', label: 'Cidade', options: opcoesCidade },
           {
             name: 'idGrupoEmpresa',
@@ -377,6 +396,8 @@ export function PaginaClientes({ usuarioLogado }) {
           {
             name: 'idRamo',
             label: 'Ramo de atividade',
+            multiple: true,
+            placeholder: 'Todos os ramos',
             options: ramosAtividade.map((ramo) => ({
               valor: String(ramo.idRamo),
               label: ramo.descricao
@@ -385,7 +406,9 @@ export function PaginaClientes({ usuarioLogado }) {
           {
             name: 'idVendedor',
             label: 'Vendedor',
+            multiple: true,
             disabled: Boolean(usuarioSomenteVendedor),
+            placeholder: 'Todos os vendedores',
             options: vendedoresDisponiveis.map((vendedor) => ({
               valor: String(vendedor.idVendedor),
               label: vendedor.nome
@@ -394,6 +417,8 @@ export function PaginaClientes({ usuarioLogado }) {
           {
             name: 'tipo',
             label: 'Tipo',
+            multiple: true,
+            placeholder: 'Todos os tipos',
             options: [
               { valor: 'Pessoa fisica', label: 'Pessoa fisica' },
               { valor: 'Pessoa juridica', label: 'Pessoa juridica' }
@@ -402,6 +427,8 @@ export function PaginaClientes({ usuarioLogado }) {
           {
             name: 'status',
             label: 'Ativo',
+            multiple: true,
+            placeholder: 'Todos',
             options: [
               { valor: '1', label: 'Ativo' },
               { valor: '0', label: 'Inativo' }
@@ -470,7 +497,13 @@ function normalizarFiltrosClientes(filtros, filtrosPadrao) {
 
   return {
     ...filtrosNormalizados,
-    idVendedor: filtrosPadrao.idVendedor || filtrosNormalizados.idVendedor
+    estado: normalizarListaFiltroPersistido(filtrosNormalizados.estado),
+    idRamo: normalizarListaFiltroPersistido(filtrosNormalizados.idRamo),
+    idVendedor: filtrosPadrao.idVendedor?.length > 0
+      ? [...filtrosPadrao.idVendedor]
+      : normalizarListaFiltroPersistido(filtrosNormalizados.idVendedor),
+    tipo: normalizarListaFiltroPersistido(filtrosNormalizados.tipo),
+    status: normalizarListaFiltroPersistido(filtrosNormalizados.status)
   };
 }
 
@@ -499,13 +532,16 @@ async function salvarContatosCliente(idCliente, contatos) {
   }
 }
 
-function enriquecerClientes(clientes, contatos, vendedores) {
+function enriquecerClientes(clientes, contatos, vendedores, gruposEmpresa, ramosAtividade) {
   const contatosPrincipaisPorCliente = new Map();
   const vendedoresPorId = new Map(
     vendedores.map((vendedor) => [vendedor.idVendedor, vendedor.nome])
   );
   const gruposEmpresaPorId = new Map(
-    (arguments[3] || []).map((grupo) => [grupo.idGrupoEmpresa, grupo.descricao])
+    (gruposEmpresa || []).map((grupo) => [grupo.idGrupoEmpresa, grupo.descricao])
+  );
+  const ramosPorId = new Map(
+    (ramosAtividade || []).map((ramo) => [ramo.idRamo, ramo.descricao])
   );
 
   contatos.forEach((contato) => {
@@ -516,12 +552,11 @@ function enriquecerClientes(clientes, contatos, vendedores) {
 
   return clientes.map((cliente) => ({
     ...cliente,
-    nomeGrupoEmpresa: gruposEmpresaPorId.get(cliente.idGrupoEmpresa) || 'Sem grupo',
-    nomeVendedor: vendedoresPorId.get(cliente.idVendedor) || 'Nao informado',
-    nomeContatoPrincipal:
-      contatosPrincipaisPorCliente.get(cliente.idCliente)?.nome || 'Nao informado',
-    emailContatoPrincipal:
-      contatosPrincipaisPorCliente.get(cliente.idCliente)?.email || 'E-mail nao informado'
+    nomeGrupoEmpresa: obterValorGrid(gruposEmpresaPorId.get(cliente.idGrupoEmpresa)),
+    nomeRamo: obterValorGrid(ramosPorId.get(cliente.idRamo)),
+    nomeVendedor: obterValorGrid(vendedoresPorId.get(cliente.idVendedor)),
+    nomeContatoPrincipal: obterValorGrid(contatosPrincipaisPorCliente.get(cliente.idCliente)?.nome),
+    emailContatoPrincipal: obterValorGrid(contatosPrincipaisPorCliente.get(cliente.idCliente)?.email)
   }));
 }
 

@@ -8,11 +8,12 @@ import { PopupAvisos } from '../../componentes/comuns/popupAvisos';
 import { TabelaHistoricoAtendimentos } from '../../componentes/comuns/tabelaHistoricoAtendimentos';
 import { TabelaHistoricoOrcamentos } from '../../componentes/comuns/tabelaHistoricoOrcamentos';
 import { TabelaHistoricoPedidos } from '../../componentes/comuns/tabelaHistoricoPedidos';
-import { listarClientes, listarContatos, listarVendedores } from '../../servicos/clientes';
+import { listarClientes, listarContatos, listarGruposEmpresa, listarVendedores } from '../../servicos/clientes';
 import { listarEtapasOrcamentoConfiguracao, listarEtapasPedidoConfiguracao } from '../../servicos/configuracoes';
 import { desktopTemExportacaoPdf } from '../../servicos/desktop';
 import { listarOrcamentos } from '../../servicos/orcamentos';
 import { listarPedidos } from '../../servicos/pedidos';
+import { listarGruposProduto, listarProdutos } from '../../servicos/produtos';
 import { listarUsuarios } from '../../servicos/usuarios';
 import { normalizarPreco } from '../../utilitarios/normalizarPreco';
 import { exportarRelatorioAtendimentosPdf } from './utilitarios/exportarRelatorioAtendimentosPdf';
@@ -54,6 +55,8 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
   const [pedidos, definirPedidos] = useState([]);
   const [clientes, definirClientes] = useState([]);
   const [vendedores, definirVendedores] = useState([]);
+  const [gruposEmpresaRelatorio, definirGruposEmpresaRelatorio] = useState([]);
+  const [gruposProdutoRelatorio, definirGruposProdutoRelatorio] = useState([]);
   const [etapasPedido, definirEtapasPedido] = useState([]);
   const [avisosPopup, definirAvisosPopup] = useState([]);
   const [gerandoPdf, definirGerandoPdf] = useState(false);
@@ -87,6 +90,8 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
         definirModalFiltrosAberto(false);
         definirModalBuscaClienteAberto(false);
         definirMensagemErroPedidos('');
+        definirGruposEmpresaRelatorio([]);
+        definirGruposProdutoRelatorio([]);
         definirAvisosPopup([]);
       }
       return undefined;
@@ -99,20 +104,43 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
       definirMensagemErroPedidos('');
 
       try {
-        const [pedidosCarregados, clientesCarregados, vendedoresCarregados, etapasCarregadas] = await Promise.all([
+        const [
+          pedidosCarregados,
+          clientesCarregados,
+          vendedoresCarregados,
+          etapasCarregadas,
+          gruposEmpresaCarregados,
+          gruposProdutoCarregados,
+          produtosCarregados
+        ] = await Promise.all([
           listarPedidos(),
           listarClientes(),
           listarVendedores(),
-          listarEtapasPedidoConfiguracao()
+          listarEtapasPedidoConfiguracao(),
+          listarGruposEmpresa(),
+          listarGruposProduto(),
+          listarProdutos()
         ]);
 
         if (cancelado) {
           return;
         }
 
-        definirPedidos(enriquecerPedidosRelatorio(pedidosCarregados));
-        definirClientes(filtrarRegistrosAtivosLocais(clientesCarregados));
+        const clientesAtivos = filtrarRegistrosAtivosLocais(clientesCarregados);
+        const gruposEmpresaAtivos = filtrarRegistrosAtivosLocais(gruposEmpresaCarregados, 'status');
+        const gruposProdutoAtivos = filtrarRegistrosAtivosLocais(gruposProdutoCarregados, 'status');
+
+        definirPedidos(enriquecerPedidosRelatorio(
+          pedidosCarregados,
+          clientesAtivos,
+          produtosCarregados,
+          gruposEmpresaAtivos,
+          gruposProdutoAtivos
+        ));
+        definirClientes(clientesAtivos);
         definirVendedores(filtrarRegistrosAtivosLocais(vendedoresCarregados));
+        definirGruposEmpresaRelatorio(gruposEmpresaAtivos);
+        definirGruposProdutoRelatorio(gruposProdutoAtivos);
         definirEtapasPedido(normalizarEtapasPedido(filtrarRegistrosAtivosLocais(etapasCarregadas, 'status')));
       } catch (_erro) {
         if (!cancelado) {
@@ -120,6 +148,8 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
           definirPedidos([]);
           definirClientes([]);
           definirVendedores([]);
+          definirGruposEmpresaRelatorio([]);
+          definirGruposProdutoRelatorio([]);
           definirEtapasPedido([]);
         }
       } finally {
@@ -143,6 +173,8 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
         definirOrcamentosConversao([]);
         definirUsuariosConversao([]);
         definirEtapasOrcamentoConversao([]);
+        definirGruposEmpresaRelatorio([]);
+        definirGruposProdutoRelatorio([]);
         definirModalFiltrosConversaoAberto(false);
         definirModalBuscaClienteConversaoAberto(false);
       }
@@ -156,13 +188,26 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
       definirMensagemErroConversao('');
 
       try {
-        const [orcamentosCarregados, clientesCarregados, contatosCarregados, usuariosCarregados, vendedoresCarregados, etapasCarregadas] = await Promise.all([
+        const [
+          orcamentosCarregados,
+          clientesCarregados,
+          contatosCarregados,
+          usuariosCarregados,
+          vendedoresCarregados,
+          etapasCarregadas,
+          gruposEmpresaCarregados,
+          gruposProdutoCarregados,
+          produtosCarregados
+        ] = await Promise.all([
           listarOrcamentos(),
           listarClientes(),
           listarContatos(),
           listarUsuarios(),
           listarVendedores(),
-          listarEtapasOrcamentoConfiguracao()
+          listarEtapasOrcamentoConfiguracao(),
+          listarGruposEmpresa(),
+          listarGruposProduto(),
+          listarProdutos()
         ]);
 
         if (cancelado) {
@@ -173,10 +218,14 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
         const contatosAtivos = filtrarRegistrosAtivosLocais(contatosCarregados);
         const usuariosAtivos = filtrarRegistrosAtivosLocais(usuariosCarregados, 'status');
         const vendedoresAtivos = filtrarRegistrosAtivosLocais(vendedoresCarregados);
+        const gruposEmpresaAtivos = filtrarRegistrosAtivosLocais(gruposEmpresaCarregados, 'status');
+        const gruposProdutoAtivos = filtrarRegistrosAtivosLocais(gruposProdutoCarregados, 'status');
         const etapasAtivas = normalizarEtapasOrcamentoConversao(filtrarRegistrosAtivosLocais(etapasCarregadas, 'status'));
 
         definirClientes(clientesAtivos);
         definirVendedores(vendedoresAtivos);
+        definirGruposEmpresaRelatorio(gruposEmpresaAtivos);
+        definirGruposProdutoRelatorio(gruposProdutoAtivos);
         definirUsuariosConversao(usuariosAtivos);
         definirEtapasOrcamentoConversao(ordenarEtapasPorOrdem(etapasAtivas, 'idEtapaOrcamento'));
         definirOrcamentosConversao(
@@ -186,13 +235,18 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
             contatosAtivos,
             usuariosAtivos,
             vendedoresAtivos,
-            etapasAtivas
+            etapasAtivas,
+            produtosCarregados,
+            gruposEmpresaAtivos,
+            gruposProdutoAtivos
           )
         );
       } catch (_erro) {
         if (!cancelado) {
           definirMensagemErroConversao('Nao foi possivel carregar os orcamentos do relatorio.');
           definirOrcamentosConversao([]);
+          definirGruposEmpresaRelatorio([]);
+          definirGruposProdutoRelatorio([]);
         }
       } finally {
         if (!cancelado) {
@@ -216,6 +270,7 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
         definirUsuariosRelatorio([]);
         definirCanaisAtendimentoRelatorio([]);
         definirOrigensAtendimentoRelatorio([]);
+        definirGruposEmpresaRelatorio([]);
         definirModalFiltrosAtendimentosAberto(false);
         definirModalBuscaClienteAtendimentosAberto(false);
       }
@@ -235,14 +290,16 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
           contatosCarregados,
           usuariosCarregados,
           canaisCarregados,
-          origensCarregadas
+          origensCarregadas,
+          gruposEmpresaCarregados
         ] = await Promise.all([
           listarAtendimentos(),
           listarClientes(),
           listarContatos(),
           listarUsuarios(),
           listarCanaisAtendimento(),
-          listarOrigensAtendimento()
+          listarOrigensAtendimento(),
+          listarGruposEmpresa()
         ]);
 
         if (cancelado) {
@@ -254,8 +311,10 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
         const usuariosAtivos = filtrarRegistrosAtivosLocais(usuariosCarregados, 'status');
         const canaisAtivos = filtrarRegistrosAtivosLocais(canaisCarregados, 'status');
         const origensAtivas = filtrarRegistrosAtivosLocais(origensCarregadas, 'status');
+        const gruposEmpresaAtivos = filtrarRegistrosAtivosLocais(gruposEmpresaCarregados, 'status');
 
         definirClientes(clientesAtivos);
+        definirGruposEmpresaRelatorio(gruposEmpresaAtivos);
         definirUsuariosRelatorio(usuariosAtivos);
         definirCanaisAtendimentoRelatorio(canaisAtivos);
         definirOrigensAtendimentoRelatorio(origensAtivas);
@@ -266,13 +325,15 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
             contatosAtivos,
             usuariosAtivos,
             canaisAtivos,
-            origensAtivas
+            origensAtivas,
+            gruposEmpresaAtivos
           )
         );
       } catch (_erro) {
         if (!cancelado) {
           definirMensagemErroAtendimentosRelatorio('Nao foi possivel carregar os atendimentos do relatorio.');
           definirAtendimentosRelatorio([]);
+          definirGruposEmpresaRelatorio([]);
         }
       } finally {
         if (!cancelado) {
@@ -363,8 +424,14 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
   );
 
   const chipsPedidosFechados = useMemo(
-    () => montarChipsFiltrosPedidosFechados(filtrosPedidosFechados, { clientes, vendedores, etapasPedido }),
-    [clientes, etapasPedido, filtrosPedidosFechados, vendedores]
+    () => montarChipsFiltrosPedidosFechados(filtrosPedidosFechados, {
+      clientes,
+      vendedores,
+      etapasPedido,
+      gruposEmpresa: gruposEmpresaRelatorio,
+      gruposProduto: gruposProdutoRelatorio
+    }),
+    [clientes, etapasPedido, filtrosPedidosFechados, gruposEmpresaRelatorio, gruposProdutoRelatorio, vendedores]
   );
 
   const quantidadeTotalPedidosFechados = useMemo(
@@ -392,9 +459,11 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
       clientes,
       usuarios: usuariosConversao,
       vendedores,
-      etapasOrcamento: etapasOrcamentoConversao
+      etapasOrcamento: etapasOrcamentoConversao,
+      gruposEmpresa: gruposEmpresaRelatorio,
+      gruposProduto: gruposProdutoRelatorio
     }),
-    [clientes, etapasOrcamentoConversao, filtrosConversao, usuariosConversao, vendedores]
+    [clientes, etapasOrcamentoConversao, filtrosConversao, gruposEmpresaRelatorio, gruposProdutoRelatorio, usuariosConversao, vendedores]
   );
 
   const atendimentosRelatorioFiltrados = useMemo(
@@ -417,9 +486,10 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
       clientes,
       usuarios: usuariosRelatorio,
       canaisAtendimento: canaisAtendimentoRelatorio,
-      origensAtendimento: origensAtendimentoRelatorio
+      origensAtendimento: origensAtendimentoRelatorio,
+      gruposEmpresa: gruposEmpresaRelatorio
     }),
-    [canaisAtendimentoRelatorio, clientes, filtrosAtendimentosRelatorio, origensAtendimentoRelatorio, usuariosRelatorio]
+    [canaisAtendimentoRelatorio, clientes, filtrosAtendimentosRelatorio, gruposEmpresaRelatorio, origensAtendimentoRelatorio, usuariosRelatorio]
   );
 
   async function gerarPdfRelatorioPedidosFechados() {
@@ -640,6 +710,28 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
               }))
             },
             {
+              name: 'idsGruposEmpresa',
+              label: 'Grupo de empresa',
+              multiple: true,
+              tituloSelecao: 'Selecionar grupos de empresa',
+              placeholder: 'Todos os grupos',
+              options: gruposEmpresaRelatorio.map((grupo) => ({
+                valor: String(grupo.idGrupoEmpresa),
+                label: grupo.descricao || `Grupo #${grupo.idGrupoEmpresa}`
+              }))
+            },
+            {
+              name: 'idsGruposProduto',
+              label: 'Grupo de produto',
+              multiple: true,
+              tituloSelecao: 'Selecionar grupos de produto',
+              placeholder: 'Todos os grupos',
+              options: gruposProdutoRelatorio.map((grupo) => ({
+                valor: String(grupo.idGrupo),
+                label: grupo.descricao || `Grupo #${grupo.idGrupo}`
+              }))
+            },
+            {
               name: 'idsEtapasPedido',
               label: 'Etapa',
               multiple: true,
@@ -799,6 +891,17 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
               }))
             },
             {
+              name: 'idsGruposEmpresa',
+              label: 'Grupo de empresa',
+              multiple: true,
+              tituloSelecao: 'Selecionar grupos de empresa',
+              placeholder: 'Todos os grupos',
+              options: gruposEmpresaRelatorio.map((grupo) => ({
+                valor: String(grupo.idGrupoEmpresa),
+                label: grupo.descricao || `Grupo #${grupo.idGrupoEmpresa}`
+              }))
+            },
+            {
               name: 'idsCanaisAtendimento',
               label: 'Canal',
               multiple: true,
@@ -951,6 +1054,7 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
             {
               name: 'idUsuario',
               label: 'Usuario do registro',
+              multiple: true,
               placeholder: 'Todos os usuarios',
               options: usuariosConversao.map((usuario) => ({
                 valor: String(usuario.idUsuario),
@@ -960,6 +1064,7 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
             {
               name: 'idVendedorCliente',
               label: 'Clientes do vendedor',
+              multiple: true,
               placeholder: 'Todos os vendedores',
               options: vendedores.map((vendedor) => ({
                 valor: String(vendedor.idVendedor),
@@ -969,10 +1074,33 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
             {
               name: 'idVendedor',
               label: 'Vendedor do orcamento',
+              multiple: true,
               placeholder: 'Todos os vendedores',
               options: vendedores.map((vendedor) => ({
                 valor: String(vendedor.idVendedor),
                 label: vendedor.nome || `Vendedor #${vendedor.idVendedor}`
+              }))
+            },
+            {
+              name: 'idsGruposEmpresa',
+              label: 'Grupo de empresa',
+              multiple: true,
+              tituloSelecao: 'Selecionar grupos de empresa',
+              placeholder: 'Todos os grupos',
+              options: gruposEmpresaRelatorio.map((grupo) => ({
+                valor: String(grupo.idGrupoEmpresa),
+                label: grupo.descricao || `Grupo #${grupo.idGrupoEmpresa}`
+              }))
+            },
+            {
+              name: 'idsGruposProduto',
+              label: 'Grupo de produto',
+              multiple: true,
+              tituloSelecao: 'Selecionar grupos de produto',
+              placeholder: 'Todos os grupos',
+              options: gruposProdutoRelatorio.map((grupo) => ({
+                valor: String(grupo.idGrupo),
+                label: grupo.descricao || `Grupo #${grupo.idGrupo}`
               }))
             },
             {
@@ -1069,10 +1197,37 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
   );
 }
 
-function enriquecerPedidosRelatorio(pedidos) {
+function enriquecerPedidosRelatorio(pedidos, clientes = [], produtos = [], gruposEmpresa = [], gruposProduto = []) {
+  const clientesPorId = new Map(
+    (clientes || []).map((cliente) => [
+      cliente.idCliente,
+      {
+        idGrupoEmpresa: cliente.idGrupoEmpresa,
+        nomeGrupoEmpresa: obterNomeGrupoEmpresaPorId(gruposEmpresa, cliente.idGrupoEmpresa)
+      }
+    ])
+  );
+  const produtosPorId = new Map(
+    (produtos || []).map((produto) => [
+      produto.idProduto,
+      {
+        idGrupo: produto.idGrupo,
+        nomeGrupoProduto: obterNomeGrupoProdutoPorId(gruposProduto, produto.idGrupo)
+      }
+    ])
+  );
+
   return [...(pedidos || [])]
     .map((pedido) => ({
       ...pedido,
+      idGrupoEmpresa: clientesPorId.get(pedido.idCliente)?.idGrupoEmpresa || null,
+      nomeGrupoEmpresa: clientesPorId.get(pedido.idCliente)?.nomeGrupoEmpresa || 'Sem grupo',
+      idsGruposProduto: Array.from(new Set(
+        (Array.isArray(pedido.itens) ? pedido.itens : [])
+          .map((item) => produtosPorId.get(item.idProduto)?.idGrupo)
+          .filter((valor) => valor !== null && valor !== undefined && valor !== '')
+          .map(String)
+      )),
       totalPedido: Array.isArray(pedido.itens)
         ? pedido.itens.reduce((total, item) => total + (Number(item.valorTotal) || 0), 0)
         : 0,
@@ -1110,6 +1265,22 @@ function filtrarPedidosFechados(pedidos, filtros) {
       Array.isArray(filtros.idsVendedores)
       && filtros.idsVendedores.length > 0
       && !filtros.idsVendedores.map(String).includes(String(pedido.idVendedor || ''))
+    ) {
+      return false;
+    }
+
+    if (
+      Array.isArray(filtros.idsGruposEmpresa)
+      && filtros.idsGruposEmpresa.length > 0
+      && !filtros.idsGruposEmpresa.map(String).includes(String(pedido.idGrupoEmpresa || ''))
+    ) {
+      return false;
+    }
+
+    if (
+      Array.isArray(filtros.idsGruposProduto)
+      && filtros.idsGruposProduto.length > 0
+      && !filtros.idsGruposProduto.some((idGrupo) => (pedido.idsGruposProduto || []).includes(String(idGrupo)))
     ) {
       return false;
     }
@@ -1184,6 +1355,8 @@ function montarCardsPlaceholder(titulo) {
 function normalizarFiltrosPedidosFechados(filtros = {}) {
   const idCliente = normalizarIdentificadorFiltro(filtros.idCliente);
   const idsVendedores = normalizarListaIdentificadoresFiltro(filtros.idsVendedores);
+  const idsGruposEmpresa = normalizarListaIdentificadoresFiltro(filtros.idsGruposEmpresa);
+  const idsGruposProduto = normalizarListaIdentificadoresFiltro(filtros.idsGruposProduto);
   const idsEtapasPedido = normalizarListaIdentificadoresFiltro(filtros.idsEtapasPedido);
   const dataInclusaoInicio = normalizarDataFiltro(filtros.dataInclusaoInicio);
   const dataInclusaoFim = normalizarDataFiltro(filtros.dataInclusaoFim);
@@ -1195,6 +1368,8 @@ function normalizarFiltrosPedidosFechados(filtros = {}) {
   return {
     idCliente,
     idsVendedores,
+    idsGruposEmpresa,
+    idsGruposProduto,
     idsEtapasPedido,
     dataInclusaoInicio: periodoInclusao.dataInicio,
     dataInclusaoFim: periodoInclusao.dataFim,
@@ -1219,6 +1394,8 @@ function possuiFiltrosAtivos(filtros = {}) {
   return Boolean(
     filtros.idCliente
     || (Array.isArray(filtros.idsVendedores) && filtros.idsVendedores.length > 0)
+    || (Array.isArray(filtros.idsGruposEmpresa) && filtros.idsGruposEmpresa.length > 0)
+    || (Array.isArray(filtros.idsGruposProduto) && filtros.idsGruposProduto.length > 0)
     || (Array.isArray(filtros.idsEtapasPedido) && filtros.idsEtapasPedido.length > 0)
     || filtros.dataInclusaoInicio
     || filtros.dataInclusaoFim
@@ -1227,7 +1404,13 @@ function possuiFiltrosAtivos(filtros = {}) {
   );
 }
 
-function montarChipsFiltrosPedidosFechados(filtros, { clientes, vendedores, etapasPedido }) {
+function montarChipsFiltrosPedidosFechados(filtros, {
+  clientes,
+  vendedores,
+  etapasPedido,
+  gruposEmpresa,
+  gruposProduto
+}) {
   const chips = [];
 
   if (filtros.idCliente) {
@@ -1315,6 +1498,8 @@ function obterFiltrosPadraoPedidosFechados() {
   return {
     idCliente: '',
     idsVendedores: [],
+    idsGruposEmpresa: [],
+    idsGruposProduto: [],
     idsEtapasPedido: [],
     dataInclusaoInicio: formatarDataInput(inicioMes),
     dataInclusaoFim: formatarDataInput(fimMes),
@@ -1394,7 +1579,8 @@ function normalizarDataFiltro(valor) {
     return '';
   }
 
-  return /^\d{4}-\d{2}-\d{2}$/.test(texto) ? texto : '';
+  const dataNormalizada = texto.slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(dataNormalizada) ? dataNormalizada : '';
 }
 
 function montarCardsRelatorioAtendimentos(atendimentos) {
@@ -1472,12 +1658,17 @@ function enriquecerAtendimentosRelatorio(
   contatos,
   usuarios,
   canaisAtendimento,
-  origensAtendimento
+  origensAtendimento,
+  gruposEmpresa = []
 ) {
   const clientesPorId = new Map(
     (clientes || []).map((cliente) => [
       cliente.idCliente,
-      cliente.nomeFantasia || cliente.razaoSocial || `Cliente #${cliente.idCliente}`
+      {
+        nome: cliente.nomeFantasia || cliente.razaoSocial || `Cliente #${cliente.idCliente}`,
+        idGrupoEmpresa: cliente.idGrupoEmpresa,
+        nomeGrupoEmpresa: obterNomeGrupoEmpresaPorId(gruposEmpresa, cliente.idGrupoEmpresa)
+      }
     ])
   );
   const contatosPorId = new Map(
@@ -1496,7 +1687,9 @@ function enriquecerAtendimentosRelatorio(
   return [...(atendimentos || [])]
     .map((atendimento) => ({
       ...atendimento,
-      nomeCliente: clientesPorId.get(atendimento.idCliente) || atendimento.nomeClienteSnapshot || 'Nao informado',
+      nomeCliente: clientesPorId.get(atendimento.idCliente)?.nome || atendimento.nomeClienteSnapshot || 'Nao informado',
+      idGrupoEmpresa: clientesPorId.get(atendimento.idCliente)?.idGrupoEmpresa || null,
+      nomeGrupoEmpresa: clientesPorId.get(atendimento.idCliente)?.nomeGrupoEmpresa || 'Sem grupo',
       nomeContato: contatosPorId.get(atendimento.idContato) || atendimento.nomeContatoSnapshot || '',
       nomeUsuario: usuariosPorId.get(atendimento.idUsuario) || 'Nao informado',
       nomeCanalAtendimento: canaisPorId.get(atendimento.idCanalAtendimento) || 'Nao informado',
@@ -1515,6 +1708,7 @@ function ordenarAtendimentosMaisRecentes(atendimentoA, atendimentoB) {
 function normalizarFiltrosAtendimentosRelatorio(filtros = {}) {
   const idCliente = normalizarIdentificadorFiltro(filtros.idCliente);
   const idsUsuarios = normalizarListaIdentificadoresFiltro(filtros.idsUsuarios);
+  const idsGruposEmpresa = normalizarListaIdentificadoresFiltro(filtros.idsGruposEmpresa);
   const idsCanaisAtendimento = normalizarListaIdentificadoresFiltro(filtros.idsCanaisAtendimento);
   const idsOrigensAtendimento = normalizarListaIdentificadoresFiltro(filtros.idsOrigensAtendimento);
   const dataInicio = normalizarDataFiltro(filtros.dataInicio);
@@ -1524,6 +1718,7 @@ function normalizarFiltrosAtendimentosRelatorio(filtros = {}) {
   return {
     idCliente,
     idsUsuarios,
+    idsGruposEmpresa,
     idsCanaisAtendimento,
     idsOrigensAtendimento,
     dataInicio: periodo.dataInicio,
@@ -1535,6 +1730,7 @@ function possuiFiltrosAtendimentosAtivos(filtros = {}) {
   return Boolean(
     filtros.idCliente
     || (Array.isArray(filtros.idsUsuarios) && filtros.idsUsuarios.length > 0)
+    || (Array.isArray(filtros.idsGruposEmpresa) && filtros.idsGruposEmpresa.length > 0)
     || (Array.isArray(filtros.idsCanaisAtendimento) && filtros.idsCanaisAtendimento.length > 0)
     || (Array.isArray(filtros.idsOrigensAtendimento) && filtros.idsOrigensAtendimento.length > 0)
     || filtros.dataInicio
@@ -1546,7 +1742,8 @@ function montarChipsFiltrosAtendimentosRelatorio(filtros, {
   clientes,
   usuarios,
   canaisAtendimento,
-  origensAtendimento
+  origensAtendimento,
+  gruposEmpresa
 }) {
   const chips = [];
 
@@ -1564,6 +1761,16 @@ function montarChipsFiltrosAtendimentosRelatorio(filtros, {
       chips.push({
         id: `usuario-${idUsuario}`,
         rotulo: `Usuario: ${usuario?.nome || `#${idUsuario}`}`
+      });
+    });
+  }
+
+  if (Array.isArray(filtros.idsGruposEmpresa) && filtros.idsGruposEmpresa.length > 0) {
+    filtros.idsGruposEmpresa.forEach((idGrupoEmpresa) => {
+      const grupo = gruposEmpresa.find((item) => String(item.idGrupoEmpresa) === String(idGrupoEmpresa));
+      chips.push({
+        id: `grupo-empresa-${idGrupoEmpresa}`,
+        rotulo: `Grupo de empresa: ${grupo?.descricao || `#${idGrupoEmpresa}`}`
       });
     });
   }
@@ -1606,6 +1813,7 @@ function obterFiltrosPadraoAtendimentos() {
   return {
     idCliente: '',
     idsUsuarios: [],
+    idsGruposEmpresa: [],
     idsCanaisAtendimento: [],
     idsOrigensAtendimento: [],
     dataInicio: formatarDataInput(inicioMes),
@@ -1621,6 +1829,11 @@ function filtrarAtendimentosRelatorio(atendimentos, filtros) {
       !Array.isArray(filtros.idsUsuarios)
       || filtros.idsUsuarios.length === 0
       || filtros.idsUsuarios.map(String).includes(String(atendimento.idUsuario || ''))
+    )
+    && (
+      !Array.isArray(filtros.idsGruposEmpresa)
+      || filtros.idsGruposEmpresa.length === 0
+      || filtros.idsGruposEmpresa.map(String).includes(String(atendimento.idGrupoEmpresa || ''))
     )
     && (
       !Array.isArray(filtros.idsCanaisAtendimento)
@@ -1673,9 +1886,11 @@ function montarCardsConversao(orcamentos) {
 
 function normalizarFiltrosConversao(filtros = {}) {
   const idCliente = normalizarIdentificadorFiltro(filtros.idCliente);
-  const idUsuario = normalizarIdentificadorFiltro(filtros.idUsuario);
-  const idVendedorCliente = normalizarIdentificadorFiltro(filtros.idVendedorCliente);
-  const idVendedor = normalizarIdentificadorFiltro(filtros.idVendedor);
+  const idUsuario = normalizarListaIdentificadoresFiltro(filtros.idUsuario);
+  const idVendedorCliente = normalizarListaIdentificadoresFiltro(filtros.idVendedorCliente);
+  const idVendedor = normalizarListaIdentificadoresFiltro(filtros.idVendedor);
+  const idsGruposEmpresa = normalizarListaIdentificadoresFiltro(filtros.idsGruposEmpresa);
+  const idsGruposProduto = normalizarListaIdentificadoresFiltro(filtros.idsGruposProduto);
   const idsEtapaOrcamento = normalizarListaIdentificadoresFiltro(filtros.idsEtapaOrcamento);
   const dataInclusaoInicio = normalizarDataFiltro(filtros.dataInclusaoInicio);
   const dataInclusaoFim = normalizarDataFiltro(filtros.dataInclusaoFim);
@@ -1689,6 +1904,8 @@ function normalizarFiltrosConversao(filtros = {}) {
     idUsuario,
     idVendedorCliente,
     idVendedor,
+    idsGruposEmpresa,
+    idsGruposProduto,
     idsEtapaOrcamento,
     dataInclusaoInicio: periodoInclusao.dataInicio,
     dataInclusaoFim: periodoInclusao.dataFim,
@@ -1700,9 +1917,11 @@ function normalizarFiltrosConversao(filtros = {}) {
 function possuiFiltrosConversaoAtivos(filtros = {}) {
   return Boolean(
     filtros.idCliente
-    || filtros.idUsuario
-    || filtros.idVendedorCliente
-    || filtros.idVendedor
+    || (Array.isArray(filtros.idUsuario) && filtros.idUsuario.length > 0)
+    || (Array.isArray(filtros.idVendedorCliente) && filtros.idVendedorCliente.length > 0)
+    || (Array.isArray(filtros.idVendedor) && filtros.idVendedor.length > 0)
+    || (Array.isArray(filtros.idsGruposEmpresa) && filtros.idsGruposEmpresa.length > 0)
+    || (Array.isArray(filtros.idsGruposProduto) && filtros.idsGruposProduto.length > 0)
     || (Array.isArray(filtros.idsEtapaOrcamento) && filtros.idsEtapaOrcamento.length > 0)
     || filtros.dataInclusaoInicio
     || filtros.dataInclusaoFim
@@ -1715,7 +1934,9 @@ function montarChipsFiltrosConversao(filtros, {
   clientes,
   usuarios,
   vendedores,
-  etapasOrcamento
+  etapasOrcamento,
+  gruposEmpresa,
+  gruposProduto
 }) {
   const chips = [];
 
@@ -1727,27 +1948,53 @@ function montarChipsFiltrosConversao(filtros, {
     });
   }
 
-  if (filtros.idUsuario) {
-    const usuario = usuarios.find((item) => String(item.idUsuario) === String(filtros.idUsuario));
-    chips.push({
-      id: 'usuario',
-      rotulo: `Usuario: ${usuario?.nome || `#${filtros.idUsuario}`}`
+  if (Array.isArray(filtros.idUsuario) && filtros.idUsuario.length > 0) {
+    filtros.idUsuario.forEach((idUsuario) => {
+      const usuario = usuarios.find((item) => String(item.idUsuario) === String(idUsuario));
+      chips.push({
+        id: `usuario-${idUsuario}`,
+        rotulo: `Usuario: ${usuario?.nome || `#${idUsuario}`}`
+      });
     });
   }
 
-  if (filtros.idVendedorCliente) {
-    const vendedor = vendedores.find((item) => String(item.idVendedor) === String(filtros.idVendedorCliente));
-    chips.push({
-      id: 'vendedor-cliente',
-      rotulo: `Vendedor do cliente: ${vendedor?.nome || `#${filtros.idVendedorCliente}`}`
+  if (Array.isArray(filtros.idsGruposEmpresa) && filtros.idsGruposEmpresa.length > 0) {
+    filtros.idsGruposEmpresa.forEach((idGrupoEmpresa) => {
+      const grupo = gruposEmpresa.find((item) => String(item.idGrupoEmpresa) === String(idGrupoEmpresa));
+      chips.push({
+        id: `grupo-empresa-${idGrupoEmpresa}`,
+        rotulo: `Grupo de empresa: ${grupo?.descricao || `#${idGrupoEmpresa}`}`
+      });
     });
   }
 
-  if (filtros.idVendedor) {
-    const vendedor = vendedores.find((item) => String(item.idVendedor) === String(filtros.idVendedor));
-    chips.push({
-      id: 'vendedor-orcamento',
-      rotulo: `Vendedor do orcamento: ${vendedor?.nome || `#${filtros.idVendedor}`}`
+  if (Array.isArray(filtros.idsGruposProduto) && filtros.idsGruposProduto.length > 0) {
+    filtros.idsGruposProduto.forEach((idGrupoProduto) => {
+      const grupo = gruposProduto.find((item) => String(item.idGrupo) === String(idGrupoProduto));
+      chips.push({
+        id: `grupo-produto-${idGrupoProduto}`,
+        rotulo: `Grupo de produto: ${grupo?.descricao || `#${idGrupoProduto}`}`
+      });
+    });
+  }
+
+  if (Array.isArray(filtros.idVendedorCliente) && filtros.idVendedorCliente.length > 0) {
+    filtros.idVendedorCliente.forEach((idVendedorCliente) => {
+      const vendedor = vendedores.find((item) => String(item.idVendedor) === String(idVendedorCliente));
+      chips.push({
+        id: `vendedor-cliente-${idVendedorCliente}`,
+        rotulo: `Vendedor do cliente: ${vendedor?.nome || `#${idVendedorCliente}`}`
+      });
+    });
+  }
+
+  if (Array.isArray(filtros.idVendedor) && filtros.idVendedor.length > 0) {
+    filtros.idVendedor.forEach((idVendedor) => {
+      const vendedor = vendedores.find((item) => String(item.idVendedor) === String(idVendedor));
+      chips.push({
+        id: `vendedor-orcamento-${idVendedor}`,
+        rotulo: `Vendedor do orcamento: ${vendedor?.nome || `#${idVendedor}`}`
+      });
     });
   }
 
@@ -1785,9 +2032,11 @@ function obterFiltrosPadraoConversao() {
 
   return {
     idCliente: '',
-    idUsuario: '',
-    idVendedorCliente: '',
-    idVendedor: '',
+    idUsuario: [],
+    idVendedorCliente: [],
+    idVendedor: [],
+    idsGruposEmpresa: [],
+    idsGruposProduto: [],
     idsEtapaOrcamento: [],
     dataInclusaoInicio: formatarDataInput(inicioMes),
     dataInclusaoFim: formatarDataInput(fimMes),
@@ -1799,9 +2048,31 @@ function obterFiltrosPadraoConversao() {
 function filtrarOrcamentosConversao(orcamentos, filtros) {
   return (orcamentos || []).filter((orcamento) => (
     (!filtros.idCliente || String(orcamento.idCliente || '') === String(filtros.idCliente))
-    && (!filtros.idUsuario || String(orcamento.idUsuario || '') === String(filtros.idUsuario))
-    && (!filtros.idVendedorCliente || String(orcamento.idVendedorCliente || '') === String(filtros.idVendedorCliente))
-    && (!filtros.idVendedor || String(orcamento.idVendedor || '') === String(filtros.idVendedor))
+    && (
+      !Array.isArray(filtros.idUsuario)
+      || filtros.idUsuario.length === 0
+      || filtros.idUsuario.map(String).includes(String(orcamento.idUsuario || ''))
+    )
+    && (
+      !Array.isArray(filtros.idVendedorCliente)
+      || filtros.idVendedorCliente.length === 0
+      || filtros.idVendedorCliente.map(String).includes(String(orcamento.idVendedorCliente || ''))
+    )
+    && (
+      !Array.isArray(filtros.idVendedor)
+      || filtros.idVendedor.length === 0
+      || filtros.idVendedor.map(String).includes(String(orcamento.idVendedor || ''))
+    )
+    && (
+      !Array.isArray(filtros.idsGruposEmpresa)
+      || filtros.idsGruposEmpresa.length === 0
+      || filtros.idsGruposEmpresa.map(String).includes(String(orcamento.idGrupoEmpresa || ''))
+    )
+    && (
+      !Array.isArray(filtros.idsGruposProduto)
+      || filtros.idsGruposProduto.length === 0
+      || filtros.idsGruposProduto.some((idGrupo) => (orcamento.idsGruposProduto || []).includes(String(idGrupo)))
+    )
     && (
       !Array.isArray(filtros.idsEtapaOrcamento)
       || filtros.idsEtapaOrcamento.length === 0
@@ -1812,13 +2083,25 @@ function filtrarOrcamentosConversao(orcamentos, filtros) {
   ));
 }
 
-function enriquecerOrcamentosConversao(orcamentos, clientes, contatos, usuarios, vendedores, etapasOrcamento) {
+function enriquecerOrcamentosConversao(
+  orcamentos,
+  clientes,
+  contatos,
+  usuarios,
+  vendedores,
+  etapasOrcamento,
+  produtos = [],
+  gruposEmpresa = [],
+  gruposProduto = []
+) {
   const clientesPorId = new Map(
     (clientes || []).map((cliente) => [
       cliente.idCliente,
       {
         nome: cliente.nomeFantasia || cliente.razaoSocial || `Cliente #${cliente.idCliente}`,
-        idVendedor: cliente.idVendedor
+        idVendedor: cliente.idVendedor,
+        idGrupoEmpresa: cliente.idGrupoEmpresa,
+        nomeGrupoEmpresa: obterNomeGrupoEmpresaPorId(gruposEmpresa, cliente.idGrupoEmpresa)
       }
     ])
   );
@@ -1834,6 +2117,15 @@ function enriquecerOrcamentosConversao(orcamentos, clientes, contatos, usuarios,
   const etapasPorId = new Map(
     (etapasOrcamento || []).map((etapa) => [etapa.idEtapaOrcamento, etapa])
   );
+  const produtosPorId = new Map(
+    (produtos || []).map((produto) => [
+      produto.idProduto,
+      {
+        idGrupo: produto.idGrupo,
+        nomeGrupoProduto: obterNomeGrupoProdutoPorId(gruposProduto, produto.idGrupo)
+      }
+    ])
+  );
 
   return [...(orcamentos || [])]
     .map((orcamento) => {
@@ -1847,10 +2139,18 @@ function enriquecerOrcamentosConversao(orcamentos, clientes, contatos, usuarios,
         ...orcamento,
         idEtapaOrcamento: idEtapaOrcamentoNormalizado,
         nomeCliente: cliente?.nome || 'Nao informado',
+        idGrupoEmpresa: cliente?.idGrupoEmpresa || null,
+        nomeGrupoEmpresa: cliente?.nomeGrupoEmpresa || 'Sem grupo',
         nomeContato: contatosPorId.get(orcamento.idContato) || '',
         idVendedorCliente: cliente?.idVendedor || null,
         nomeUsuario: usuariosPorId.get(orcamento.idUsuario) || 'Nao informado',
         nomeVendedor: vendedoresPorId.get(orcamento.idVendedor) || 'Nao informado',
+        idsGruposProduto: Array.from(new Set(
+          (Array.isArray(orcamento.itens) ? orcamento.itens : [])
+            .map((item) => produtosPorId.get(item.idProduto)?.idGrupo)
+            .filter((valor) => valor !== null && valor !== undefined && valor !== '')
+            .map(String)
+        )),
         nomeEtapaOrcamento: etapasPorId.get(idEtapaOrcamentoNormalizado)?.descricao || '',
         corEtapaOrcamento: etapasPorId.get(idEtapaOrcamentoNormalizado)?.cor || '',
         obrigarMotivoPerdaEtapa: Boolean(etapasPorId.get(idEtapaOrcamentoNormalizado)?.obrigarMotivoPerda),
@@ -1867,6 +2167,16 @@ function enriquecerOrcamentosConversao(orcamentos, clientes, contatos, usuarios,
 
       return Number(orcamentoB.idOrcamento || 0) - Number(orcamentoA.idOrcamento || 0);
     });
+}
+
+function obterNomeGrupoEmpresaPorId(gruposEmpresa, idGrupoEmpresa) {
+  const grupo = (gruposEmpresa || []).find((item) => String(item.idGrupoEmpresa) === String(idGrupoEmpresa || ''));
+  return grupo?.descricao || 'Sem grupo';
+}
+
+function obterNomeGrupoProdutoPorId(gruposProduto, idGrupo) {
+  const grupo = (gruposProduto || []).find((item) => String(item.idGrupo) === String(idGrupo || ''));
+  return grupo?.descricao || 'Sem grupo';
 }
 
 function ordenarEtapasPorOrdem(etapas, chaveId) {

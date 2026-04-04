@@ -1,6 +1,11 @@
 import { requisitarApi } from './api';
 import { requisitarListaApi } from './listas';
 import { buscarCep } from './clientes';
+import { normalizarConfiguracoesColunasGridClientes } from '../utilitarios/colunasGridClientes';
+import { normalizarConfiguracoesColunasGridOrcamentos } from '../utilitarios/colunasGridOrcamentos';
+import { normalizarConfiguracoesColunasGridProdutos } from '../utilitarios/colunasGridProdutos';
+import { normalizarConfiguracoesColunasGridPedidos } from '../utilitarios/colunasGridPedidos';
+import { normalizarConfiguracoesColunasGridAtendimentos } from '../utilitarios/colunasGridAtendimentos';
 
 export async function listarEmpresas(opcoes) {
   const empresas = await requisitarListaApi('/empresas', opcoes);
@@ -39,6 +44,11 @@ function normalizarEmpresa(empresa) {
 
   return {
     ...empresa,
+    colunasGridClientes: normalizarConfiguracoesColunasGridClientes(empresa.colunasGridClientes),
+    colunasGridOrcamentos: normalizarConfiguracoesColunasGridOrcamentos(empresa.colunasGridOrcamentos),
+    colunasGridProdutos: normalizarConfiguracoesColunasGridProdutos(empresa.colunasGridProdutos),
+    colunasGridPedidos: normalizarConfiguracoesColunasGridPedidos(empresa.colunasGridPedidos),
+    colunasGridAtendimentos: normalizarConfiguracoesColunasGridAtendimentos(empresa.colunasGridAtendimentos),
     imagem: adicionarCacheBusterImagem(empresa.imagem)
   };
 }

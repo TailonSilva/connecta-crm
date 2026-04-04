@@ -10,6 +10,7 @@ import {
   listarProdutos,
   listarUnidadesMedida
 } from '../../servicos/produtos';
+import { listarEmpresas } from '../../servicos/empresa';
 import {
   atualizarGrupoProduto,
   atualizarMarca,
@@ -21,17 +22,22 @@ import {
 import { filtrarProdutos } from '../../utilitarios/filtrarProdutos';
 import { converterPrecoParaNumero } from '../../utilitarios/normalizarPreco';
 import { obterPrimeiroCodigoDisponivel } from '../../utilitarios/obterPrimeiroCodigoDisponivel';
-import { normalizarFiltrosPorPadrao, useFiltrosPersistidos } from '../../utilitarios/useFiltrosPersistidos';
+import { obterValorGrid } from '../../utilitarios/valorPadraoGrid';
+import {
+  normalizarFiltrosPorPadrao,
+  normalizarListaFiltroPersistido,
+  useFiltrosPersistidos
+} from '../../utilitarios/useFiltrosPersistidos';
 import { ModalFiltros } from '../../componentes/comuns/modalFiltros';
 import { ModalProduto } from './modalProduto';
 import { ModalImportacaoCadastro } from '../../componentes/comuns/modalImportacaoCadastro';
 import { ModalManualProdutos } from './modalManualProdutos';
 
 const filtrosIniciaisProdutos = {
-  idGrupo: '',
-  idMarca: '',
-  idUnidade: '',
-  status: ''
+  idGrupo: [],
+  idMarca: [],
+  idUnidade: [],
+  status: []
 };
 
 export function PaginaProdutos({ usuarioLogado }) {
@@ -43,6 +49,7 @@ export function PaginaProdutos({ usuarioLogado }) {
     normalizarFiltros: normalizarFiltrosProdutos
   });
   const [produtos, definirProdutos] = useState([]);
+  const [empresa, definirEmpresa] = useState(null);
   const [gruposProduto, definirGruposProduto] = useState([]);
   const [marcas, definirMarcas] = useState([]);
   const [unidadesMedida, definirUnidadesMedida] = useState([]);
@@ -89,11 +96,13 @@ export function PaginaProdutos({ usuarioLogado }) {
     try {
       const [
         produtosCarregados,
+        empresasCarregadas,
         gruposCarregados,
         marcasCarregadas,
         unidadesCarregadas
       ] = await Promise.all([
         listarProdutos(),
+        listarEmpresas(),
         listarGruposProduto(),
         listarMarcas(),
         listarUnidadesMedida()
@@ -107,6 +116,7 @@ export function PaginaProdutos({ usuarioLogado }) {
           unidadesCarregadas
         )
       );
+      definirEmpresa(empresasCarregadas[0] || null);
       definirGruposProduto(gruposCarregados);
       definirMarcas(marcasCarregadas);
       definirUnidadesMedida(unidadesCarregadas);
@@ -261,7 +271,9 @@ export function PaginaProdutos({ usuarioLogado }) {
 
   const produtosFiltrados = filtrarProdutos(produtos, pesquisa, filtros);
   const proximoCodigoProduto = obterPrimeiroCodigoDisponivel(produtos, 'idProduto');
-  const filtrosAtivos = Object.values(filtros).some(Boolean);
+  const filtrosAtivos = Object.values(filtros).some((valor) => (
+    Array.isArray(valor) ? valor.length > 0 : Boolean(valor)
+  ));
   const referenciasImportacaoProdutos = useMemo(() => ({
     grupoProduto: {
       opcoes: gruposProduto.map((grupo) => ({
@@ -298,6 +310,7 @@ export function PaginaProdutos({ usuarioLogado }) {
         somenteConsulta={usuarioSomenteConsulta}
       />
       <CorpoProdutos
+        empresa={empresa}
         produtos={produtosFiltrados}
         carregando={carregando}
         mensagemErro={mensagemErro}
@@ -314,6 +327,8 @@ export function PaginaProdutos({ usuarioLogado }) {
           {
             name: 'idGrupo',
             label: 'Grupo',
+            multiple: true,
+            placeholder: 'Todos os grupos',
             options: gruposProduto.map((grupo) => ({
               valor: String(grupo.idGrupo),
               label: grupo.descricao
@@ -322,6 +337,8 @@ export function PaginaProdutos({ usuarioLogado }) {
           {
             name: 'idMarca',
             label: 'Marca',
+            multiple: true,
+            placeholder: 'Todas as marcas',
             options: marcas.map((marca) => ({
               valor: String(marca.idMarca),
               label: marca.descricao
@@ -330,6 +347,8 @@ export function PaginaProdutos({ usuarioLogado }) {
           {
             name: 'idUnidade',
             label: 'Unidade',
+            multiple: true,
+            placeholder: 'Todas as unidades',
             options: unidadesMedida.map((unidade) => ({
               valor: String(unidade.idUnidade),
               label: unidade.descricao
@@ -338,6 +357,8 @@ export function PaginaProdutos({ usuarioLogado }) {
           {
             name: 'status',
             label: 'Ativo',
+            multiple: true,
+            placeholder: 'Todos',
             options: [
               { valor: '1', label: 'Ativo' },
               { valor: '0', label: 'Inativo' }
@@ -398,7 +419,15 @@ export function PaginaProdutos({ usuarioLogado }) {
 }
 
 function normalizarFiltrosProdutos(filtros, filtrosPadrao) {
-  return normalizarFiltrosPorPadrao(filtros, filtrosPadrao);
+  const filtrosNormalizados = normalizarFiltrosPorPadrao(filtros, filtrosPadrao);
+
+  return {
+    ...filtrosNormalizados,
+    idGrupo: normalizarListaFiltroPersistido(filtrosNormalizados.idGrupo),
+    idMarca: normalizarListaFiltroPersistido(filtrosNormalizados.idMarca),
+    idUnidade: normalizarListaFiltroPersistido(filtrosNormalizados.idUnidade),
+    status: normalizarListaFiltroPersistido(filtrosNormalizados.status)
+  };
 }
 
 function enriquecerProdutos(produtos, grupos, marcas, unidades) {
@@ -414,9 +443,9 @@ function enriquecerProdutos(produtos, grupos, marcas, unidades) {
 
   return produtos.map((produto) => ({
     ...produto,
-    nomeGrupo: gruposPorId.get(produto.idGrupo) || 'Nao informado',
-    nomeMarca: marcasPorId.get(produto.idMarca) || 'Nao informado',
-    nomeUnidade: unidadesPorId.get(produto.idUnidade) || 'Nao informado'
+    nomeGrupo: obterValorGrid(gruposPorId.get(produto.idGrupo)),
+    nomeMarca: obterValorGrid(marcasPorId.get(produto.idMarca)),
+    nomeUnidade: obterValorGrid(unidadesPorId.get(produto.idUnidade))
   }));
 }
 

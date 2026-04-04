@@ -100,6 +100,8 @@ export function ModalManualPedidos({
             'A pesquisa textual ajuda a localizar rapidamente pedidos por dados do cliente e do registro.',
             'Os filtros incluem cliente, usuario do registro, vendedor, uma ou mais etapas e um botao Datas que abre o painel com os periodos de inclusao e entrega.',
             'A grade permite trocar a etapa do pedido sem abrir o modal completo.',
+            'As colunas foram ajustadas para leitura sem rolagem horizontal e agora separam codigo, cliente, contato, etapa, vendedor e total em campos proprios.',
+            'Textos que excedem duas linhas passam a ser truncados com reticencias para manter a altura da grade sob controle.',
             'Ao reabrir a tela, os filtros anteriores sao restaurados automaticamente.'
           ]
         }

@@ -742,6 +742,11 @@ banco.serialize(() => {
       diasEntregaPedido INTEGER NOT NULL DEFAULT 7,
       codigoPrincipalCliente VARCHAR(30) NOT NULL DEFAULT 'codigo',
       etapasFiltroPadraoOrcamento TEXT,
+      colunasGridClientes TEXT,
+      colunasGridOrcamentos TEXT,
+      colunasGridProdutos TEXT,
+      colunasGridPedidos TEXT,
+      colunasGridAtendimentos TEXT,
       corPrimariaOrcamento VARCHAR(7) NOT NULL DEFAULT '#111827',
       corSecundariaOrcamento VARCHAR(7) NOT NULL DEFAULT '#ef4444',
       corDestaqueOrcamento VARCHAR(7) NOT NULL DEFAULT '#f59e0b',
@@ -867,6 +872,46 @@ banco.serialize(() => {
   `, (erro) => {
     if (erro && !String(erro.message || '').includes('duplicate column name')) {
       console.error('Nao foi possivel garantir a coluna etapasFiltroPadraoOrcamento da empresa.', erro);
+    }
+  });
+
+  banco.run(`
+    ALTER TABLE empresa ADD COLUMN colunasGridClientes TEXT
+  `, (erro) => {
+    if (erro && !String(erro.message || '').includes('duplicate column name')) {
+      console.error('Nao foi possivel garantir a coluna colunasGridClientes da empresa.', erro);
+    }
+  });
+
+  banco.run(`
+    ALTER TABLE empresa ADD COLUMN colunasGridOrcamentos TEXT
+  `, (erro) => {
+    if (erro && !String(erro.message || '').includes('duplicate column name')) {
+      console.error('Nao foi possivel garantir a coluna colunasGridOrcamentos da empresa.', erro);
+    }
+  });
+
+  banco.run(`
+    ALTER TABLE empresa ADD COLUMN colunasGridProdutos TEXT
+  `, (erro) => {
+    if (erro && !String(erro.message || '').includes('duplicate column name')) {
+      console.error('Nao foi possivel garantir a coluna colunasGridProdutos da empresa.', erro);
+    }
+  });
+
+  banco.run(`
+    ALTER TABLE empresa ADD COLUMN colunasGridPedidos TEXT
+  `, (erro) => {
+    if (erro && !String(erro.message || '').includes('duplicate column name')) {
+      console.error('Nao foi possivel garantir a coluna colunasGridPedidos da empresa.', erro);
+    }
+  });
+
+  banco.run(`
+    ALTER TABLE empresa ADD COLUMN colunasGridAtendimentos TEXT
+  `, (erro) => {
+    if (erro && !String(erro.message || '').includes('duplicate column name')) {
+      console.error('Nao foi possivel garantir a coluna colunasGridAtendimentos da empresa.', erro);
     }
   });
 

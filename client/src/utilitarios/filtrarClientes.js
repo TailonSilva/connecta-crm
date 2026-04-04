@@ -6,18 +6,27 @@ function normalizarTexto(valor) {
     .trim();
 }
 
+function incluiValorLista(lista, valorComparacao, normalizador = (valor) => String(valor || '')) {
+  if (!Array.isArray(lista) || lista.length === 0) {
+    return true;
+  }
+
+  const valorNormalizado = normalizador(valorComparacao);
+  return lista.some((item) => normalizador(item) === valorNormalizado);
+}
+
 export function filtrarClientes(clientes, pesquisa, filtros = {}) {
   const termo = normalizarTexto(pesquisa);
 
   return clientes.filter((cliente) => {
     const passouFiltros = (
-      (!filtros.estado || normalizarTexto(cliente.estado) === normalizarTexto(filtros.estado)) &&
+      incluiValorLista(filtros.estado, cliente.estado, normalizarTexto) &&
       (!filtros.cidade || normalizarTexto(cliente.cidade) === normalizarTexto(filtros.cidade)) &&
       (!filtros.idGrupoEmpresa || String(cliente.idGrupoEmpresa) === String(filtros.idGrupoEmpresa)) &&
-      (!filtros.idRamo || String(cliente.idRamo) === String(filtros.idRamo)) &&
-      (!filtros.idVendedor || String(cliente.idVendedor) === String(filtros.idVendedor)) &&
-      (!filtros.tipo || normalizarTexto(cliente.tipo) === normalizarTexto(filtros.tipo)) &&
-      (!filtros.status || String(Number(Boolean(cliente.status))) === String(filtros.status))
+      incluiValorLista(filtros.idRamo, cliente.idRamo) &&
+      incluiValorLista(filtros.idVendedor, cliente.idVendedor) &&
+      incluiValorLista(filtros.tipo, cliente.tipo, normalizarTexto) &&
+      incluiValorLista(filtros.status, Number(Boolean(cliente.status)))
     );
 
     if (!passouFiltros) {

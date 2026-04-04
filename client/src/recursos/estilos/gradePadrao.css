@@ -17,13 +17,32 @@
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   scrollbar-gutter: stable;
+}
+
+.layoutGradePadrao {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+.cabecaLayoutGradePadrao {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--corSuperficie);
+}
+
+.corpoLayoutGradePadrao {
+  display: flex;
+  flex-direction: column;
 }
 
 .tabelaGradePadrao {
   width: 100%;
   border-collapse: collapse;
-  table-layout: fixed;
+  table-layout: auto;
 }
 
 .cabecaTabelaGradePadrao {
@@ -37,6 +56,8 @@
   padding: 10px 16px;
   vertical-align: middle;
   text-align: left;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .cabecalhoGradeClientes,
@@ -64,6 +85,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+  white-space: nowrap;
 }
 
 .linhaCliente td,
@@ -72,6 +94,163 @@
 .linhaOrcamento td,
 .linhaPedido td {
   border-bottom: 1px solid rgba(200, 213, 223, 0.6);
+}
+
+.tabelaGradePadrao .colunaGradeMidia {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.tabelaGradePadrao .colunaGradeCodigo {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.tabelaGradePadrao .colunaGradeSigla {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.tabelaGradePadrao .colunaGradeData {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.tabelaGradePadrao .colunaGradeValor {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.tabelaGradePadrao .colunaGradeStatus {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.tabelaGradePadrao .colunaGradeAcoes {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.tabelaGradePadrao .colunaGradeSelecao {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.tabelaGradePadrao .colunaGradeTextoCurto {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.tabelaGradePadrao .colunaGradeTexto {
+  width: auto;
+  min-width: 0;
+}
+
+.tabelaGradePadrao .colunaGradeTextoPrincipal {
+  width: auto;
+  min-width: 0;
+}
+
+.tabelaGradePadrao td.colunaGradeTextoCurto,
+.tabelaGradePadrao td.colunaGradeTexto {
+  overflow: hidden;
+}
+
+.tabelaGradePadrao td.colunaGradeTextoPrincipal {
+  overflow: hidden;
+}
+
+.tabelaGradePadrao td.colunaGradeTextoCurto {
+  white-space: normal;
+}
+
+.textoGradeClamp {
+  display: -webkit-box;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.layoutGradePadraoPresetAtendimentos .linhaLayoutGradePadrao .colunaGradeTexto {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.layoutGradePadraoPresetAtendimentos .linhaLayoutGradePadrao .colunaGradeTextoPrincipal {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.layoutGradePadraoPresetAtendimentos .linhaLayoutGradePadrao .colunaGradeTextoCurto {
+  white-space: normal;
+}
+
+.cabecalhoLayoutGradePadrao,
+.linhaLayoutGradePadrao {
+  display: grid;
+  grid-template-columns: repeat(var(--grade-padrao-total-colunas, 1), minmax(0, 1fr));
+  column-gap: 12px;
+}
+
+.cabecalhoLayoutGradePadrao {
+  align-items: center;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--corBorda);
+  background: linear-gradient(180deg, #f8fbfe 0%, #edf4f8 100%);
+}
+
+.cabecalhoLayoutGradePadrao > * {
+  min-width: 0;
+  padding: 10px 0;
+  color: var(--corTextoSuave);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.linhaLayoutGradePadrao {
+  align-items: stretch;
+  padding: 0 16px;
+  border-bottom: 1px solid rgba(200, 213, 223, 0.6);
+}
+
+.linhaLayoutGradePadrao > * {
+  min-width: 0;
+  padding: 10px 0;
+}
+
+.celulaLayoutGradePadrao {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.celulaLayoutGradePadrao.colunaGradeAcoes {
+  align-items: flex-start;
+}
+
+.rotuloCelulaLayoutGradePadrao {
+  display: none;
+  margin-bottom: 4px;
+  color: var(--corTextoSuave);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.celulaLayoutGradePadrao .textoGradeClamp {
+  -webkit-line-clamp: 2;
 }
 
 .mensagemGradePadrao {
@@ -94,6 +273,26 @@
 @media (max-width: 640px) {
   .corpoGradePadrao {
     overflow-y: visible;
+  }
+
+  .cabecaLayoutGradePadrao {
+    display: none;
+  }
+
+  .linhaLayoutGradePadrao {
+    grid-template-columns: 1fr;
+    row-gap: 6px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
+  .linhaLayoutGradePadrao > * {
+    grid-column: 1 / -1 !important;
+    padding: 0;
+  }
+
+  .rotuloCelulaLayoutGradePadrao {
+    display: block;
   }
 
   .cabecaTabelaGradePadrao {

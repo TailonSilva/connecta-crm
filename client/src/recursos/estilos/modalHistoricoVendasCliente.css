@@ -12,26 +12,30 @@
   height: 100%;
   width: 100%;
   max-height: none;
-  overflow-x: auto;
+  overflow-x: hidden;
   overflow-y: auto;
 }
 
 .modalCliente.modalHistoricoVendasCadastro .tabelaContatosModal {
-  min-width: 1440px;
+  min-width: 0;
   table-layout: auto;
 }
 
 .modalCliente.modalHistoricoVendasCadastro .tabelaContatosModal th,
 .modalCliente.modalHistoricoVendasCadastro .tabelaContatosModal td {
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .modalCliente.modalHistoricoVendasCadastro .colunaHistoricoData {
-  width: 120px;
+  width: 108px;
+  white-space: nowrap;
 }
 
 .modalCliente.modalHistoricoVendasCadastro .colunaHistoricoPedido {
-  width: 96px;
+  width: 88px;
+  white-space: nowrap;
 }
 
 .modalCliente.modalHistoricoVendasCadastro .codigoHistoricoPedido {
@@ -48,51 +52,51 @@
 }
 
 .modalCliente.modalHistoricoVendasCadastro .colunaHistoricoCliente {
-  width: 240px;
+  width: auto;
 }
 
 .modalCliente.modalHistoricoVendasCadastro .colunaHistoricoEtapa {
-  width: 180px;
+  width: 168px;
 }
 
 .modalCliente.modalHistoricoVendasCadastro .colunaHistoricoVendedor {
-  width: 180px;
+  width: 160px;
 }
 
 .modalCliente.modalHistoricoVendasCadastro .colunaHistoricoPrazoPagamento {
-  width: 220px;
+  width: auto;
   white-space: normal;
 }
 
 .modalCliente.modalHistoricoVendasCadastro .colunaHistoricoReferencia {
-  width: 180px;
+  width: 150px;
+  white-space: nowrap;
 }
 
 .modalCliente.modalHistoricoVendasCadastro .colunaHistoricoDescricao {
-  min-width: 320px;
+  width: auto;
+  min-width: 0;
   white-space: normal;
 }
 
 .modalCliente.modalHistoricoVendasCadastro .colunaHistoricoValor,
 .modalCliente.modalHistoricoVendasCadastro .colunaHistoricoValorTotal {
-  width: 140px;
+  width: 118px;
+  white-space: nowrap;
 }
 
 .modalCliente.modalHistoricoVendasCadastro .colunaHistoricoQuantidade {
-  width: 120px;
+  width: 92px;
+  white-space: nowrap;
 }
 
 .modalCliente.modalHistoricoVendasCadastro .tabelaPedidosCliente th.cabecalhoAcoesContato,
 .modalCliente.modalHistoricoVendasCadastro .tabelaItensPedidosCliente th.cabecalhoAcoesContato {
-  width: 92px;
+  width: 84px;
 }
 
 @media (max-width: 640px) {
   .modalCliente.modalHistoricoVendasCadastro {
     width: min(100%, calc(100vw - 12px));
-  }
-
-  .modalCliente.modalHistoricoVendasCadastro .tabelaContatosModal {
-    min-width: 920px;
   }
 }

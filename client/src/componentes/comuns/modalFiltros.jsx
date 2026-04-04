@@ -285,10 +285,10 @@ export function ModalFiltros({
                         <label htmlFor={`${campoPeriodoAberto.name}-${periodo.nomeInicio}`}>{periodo.labelInicio || 'Data inicial'}</label>
                         <input
                           id={`${campoPeriodoAberto.name}-${periodo.nomeInicio}`}
-                          type="date"
+                          type={periodo.tipoInicio || 'date'}
                           className="entradaFormulario"
                           value={formulario[periodo.nomeInicio] || ''}
-                          max={formulario[periodo.nomeFim] || undefined}
+                          max={(periodo.tipoInicio || 'date') === 'date' ? (formulario[periodo.nomeFim] || undefined) : undefined}
                           onChange={(evento) => alterarCampoPeriodo(periodo.nomeInicio, evento.target.value)}
                         />
                       </div>
@@ -297,10 +297,10 @@ export function ModalFiltros({
                         <label htmlFor={`${campoPeriodoAberto.name}-${periodo.nomeFim}`}>{periodo.labelFim || 'Data final'}</label>
                         <input
                           id={`${campoPeriodoAberto.name}-${periodo.nomeFim}`}
-                          type="date"
+                          type={periodo.tipoFim || 'date'}
                           className="entradaFormulario"
                           value={formulario[periodo.nomeFim] || ''}
-                          min={formulario[periodo.nomeInicio] || undefined}
+                          min={(periodo.tipoFim || 'date') === 'date' ? (formulario[periodo.nomeInicio] || undefined) : undefined}
                           onChange={(evento) => alterarCampoPeriodo(periodo.nomeFim, evento.target.value)}
                         />
                       </div>
@@ -340,7 +340,7 @@ function montarResumoCampoDatas(formulario, campo) {
     const periodoAtivo = periodosAtivos[0];
     const dataInicio = valueOrEmpty(formulario?.[periodoAtivo.nomeInicio]);
     const dataFim = valueOrEmpty(formulario?.[periodoAtivo.nomeFim]);
-    const resumoPeriodo = montarResumoPeriodoIndividual(dataInicio, dataFim);
+    const resumoPeriodo = montarResumoPeriodoIndividual(dataInicio, dataFim, periodoAtivo);
 
     return `${periodoAtivo.titulo || periodoAtivo.label || 'Periodo'}: ${resumoPeriodo}`;
   }
@@ -348,16 +348,18 @@ function montarResumoCampoDatas(formulario, campo) {
   return `${periodosAtivos.length} periodos configurados`;
 }
 
-function montarResumoPeriodoIndividual(dataInicio, dataFim) {
+function montarResumoPeriodoIndividual(dataInicio, dataFim, periodo = null) {
+  const tipoPeriodo = periodo?.tipoInicio || periodo?.tipoFim || 'date';
+
   if (dataInicio && dataFim) {
-    return `${formatarDataResumo(dataInicio)} ate ${formatarDataResumo(dataFim)}`;
+    return `${formatarResumoValorPeriodo(dataInicio, tipoPeriodo)} ate ${formatarResumoValorPeriodo(dataFim, tipoPeriodo)}`;
   }
 
   if (dataInicio) {
-    return `A partir de ${formatarDataResumo(dataInicio)}`;
+    return `A partir de ${formatarResumoValorPeriodo(dataInicio, tipoPeriodo)}`;
   }
 
-  return `Ate ${formatarDataResumo(dataFim)}`;
+  return `Ate ${formatarResumoValorPeriodo(dataFim, tipoPeriodo)}`;
 }
 
 function obterPeriodosCampoDatas(campo) {
@@ -381,6 +383,24 @@ function formatarDataResumo(valor) {
 
   const [ano, mes, dia] = data.split('-');
   return `${dia}/${mes}/${ano}`;
+}
+
+function formatarHoraResumo(valor) {
+  const hora = valueOrEmpty(valor);
+
+  if (!hora || !/^\d{2}:\d{2}$/.test(hora)) {
+    return 'Nao definida';
+  }
+
+  return hora;
+}
+
+function formatarResumoValorPeriodo(valor, tipo = 'date') {
+  if (tipo === 'time') {
+    return formatarHoraResumo(valor);
+  }
+
+  return formatarDataResumo(valor);
 }
 
 function valueOrEmpty(valor) {

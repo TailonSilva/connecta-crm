@@ -8,15 +8,24 @@ function normalizarTexto(valor) {
 
 import { normalizarPreco } from './normalizarPreco';
 
+function incluiValorLista(lista, valorComparacao, normalizador = (valor) => String(valor || '')) {
+  if (!Array.isArray(lista) || lista.length === 0) {
+    return true;
+  }
+
+  const valorNormalizado = normalizador(valorComparacao);
+  return lista.some((item) => normalizador(item) === valorNormalizado);
+}
+
 export function filtrarProdutos(produtos, pesquisa, filtros = {}) {
   const termo = normalizarTexto(pesquisa);
 
   return produtos.filter((produto) => {
     const passouFiltros = (
-      (!filtros.idGrupo || String(produto.idGrupo) === String(filtros.idGrupo)) &&
-      (!filtros.idMarca || String(produto.idMarca) === String(filtros.idMarca)) &&
-      (!filtros.idUnidade || String(produto.idUnidade) === String(filtros.idUnidade)) &&
-      (!filtros.status || String(Number(Boolean(produto.status))) === String(filtros.status))
+      incluiValorLista(filtros.idGrupo, produto.idGrupo) &&
+      incluiValorLista(filtros.idMarca, produto.idMarca) &&
+      incluiValorLista(filtros.idUnidade, produto.idUnidade) &&
+      incluiValorLista(filtros.status, Number(Boolean(produto.status)))
     );
 
     if (!passouFiltros) {

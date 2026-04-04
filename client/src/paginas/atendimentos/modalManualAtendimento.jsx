@@ -129,6 +129,10 @@ export function ModalManualAtendimento({
           itens: [
             'A grade permite pesquisar por texto e filtrar por cliente, usuario do registro, vendedor, canal e origem.',
             'Os filtros ficam persistidos por usuario para reabrir a pagina no mesmo contexto de trabalho.',
+            'As colunas da listagem foram ajustadas para evitar rolagem horizontal e agora separam cliente, contato, assunto e descricao em campos proprios.',
+            'A distribuicao da largura prioriza colunas curtas e previsiveis, como data, inicio, fim, origem e acoes, para sobrar mais espaco util a assunto e descricao.',
+            'A empresa pode ajustar em Configuracoes quais colunas do cadastro aparecem na grade, incluindo codigo, agendamento, inicio, fim, cliente, contato, canal, origem e usuario.',
+            'Sempre que um texto ultrapassa duas linhas na grade, a celula aplica reticencias para manter o ritmo visual da listagem.',
             'Cada linha oferece consultar, editar e excluir conforme o perfil e a permissao da sessao.',
             'Usuario padrao enxerga apenas a propria carteira e os registros ligados ao seu usuario.',
             'Os dados exibidos na grade ja chegam enriquecidos com nomes de cliente, contato, canal, origem e vendedor.'

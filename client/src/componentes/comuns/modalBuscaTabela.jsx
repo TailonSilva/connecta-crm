@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Botao } from './botao';
 import { CampoPesquisa } from './campoPesquisa';
+import { GradePadrao } from './gradePadrao';
 import { filtrarRegistrosAtivos } from '../../servicos/listas';
 
 export function ModalBuscaTabela({
@@ -163,42 +164,36 @@ export function ModalBuscaTabela({
             ariaLabel={ariaLabelPesquisa}
           />
 
-          <div className="gradeContatosModal gradeBuscaClienteAtendimento">
-            <table className={classNameTabela}>
-              <thead>
-                <tr>
-                  {colunas.map((coluna) => (
-                    <th key={coluna.key}>{coluna.label}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {registrosFiltrados.length > 0 ? (
-                  registrosFiltrados.map((registro, indice) => (
-                    <tr
-                      key={obterChaveRegistro(registro)}
-                      className={indice === indiceAtivo ? 'linhaBuscaClienteAtiva' : ''}
-                      onMouseEnter={() => definirIndiceAtivo(indice)}
-                      onClick={() => aoSelecionar(registro)}
-                      onDoubleClick={() => aoSelecionar(registro)}
-                    >
-                      {colunas.map((coluna) => (
-                        <td key={`${obterChaveRegistro(registro)}-${coluna.key}`}>
-                          {coluna.render ? coluna.render(registro) : registro[coluna.key]}
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={colunas.length} className="mensagemTabelaContatosModal">
-                      {mensagemVazio}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <GradePadrao
+            className="gradeContatosModal gradeBuscaClienteAtendimento"
+            classNameTabela={classNameTabela}
+            classNameMensagem="mensagemTabelaContatosModal"
+            cabecalho={(
+              <tr>
+                {colunas.map((coluna) => (
+                  <th key={coluna.key}>{coluna.label}</th>
+                ))}
+              </tr>
+            )}
+            temItens={registrosFiltrados.length > 0}
+            mensagemVazia={mensagemVazio}
+          >
+            {registrosFiltrados.map((registro, indice) => (
+              <tr
+                key={obterChaveRegistro(registro)}
+                className={indice === indiceAtivo ? 'linhaBuscaClienteAtiva' : ''}
+                onMouseEnter={() => definirIndiceAtivo(indice)}
+                onClick={() => aoSelecionar(registro)}
+                onDoubleClick={() => aoSelecionar(registro)}
+              >
+                {colunas.map((coluna) => (
+                  <td key={`${obterChaveRegistro(registro)}-${coluna.key}`}>
+                    {coluna.render ? coluna.render(registro) : registro[coluna.key]}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </GradePadrao>
         </div>
       </div>
     </div>

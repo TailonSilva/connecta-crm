@@ -118,6 +118,8 @@ export function ModalManualClientes({
             'A pesquisa textual filtra rapidamente a grade combinando dados relevantes do cliente.',
             'Os filtros incluem estado, cidade, grupo de empresa, ramo, vendedor, tipo e status do cadastro.',
             'A busca tambem considera o Codigo alternativo quando ele estiver preenchido.',
+            'A grade prioriza leitura sem rolagem horizontal e agora separa codigo, cliente, documento, contato e e-mail em colunas proprias.',
+            'Quando um texto passa de duas linhas, a propria celula aplica reticencias para manter a altura da listagem mais previsivel.',
             'O contato principal e enriquecido para aparecer diretamente na grade.',
             'A listagem ja considera a carteira do vendedor quando o perfil e restrito.',
             'Atendimento e Vendas sairam do corpo principal do cliente e agora abrem modais quase em tela cheia; ambos ganharam busca por digitacao no cabecalho e filtros mais completos. Em Atendimento, a grade separa Data, Inicio, Fim, Assunto e Contato; em Vendas, continuam as duas visoes de Pedidos e Itens do pedido com colunas separadas de Inclusao e Entrega e filtros pelos dois periodos.'

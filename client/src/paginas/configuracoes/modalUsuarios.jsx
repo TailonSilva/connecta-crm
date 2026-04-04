@@ -3,6 +3,7 @@ import { Botao } from '../../componentes/comuns/botao';
 import { BotaoAcaoGrade } from '../../componentes/comuns/botaoAcaoGrade';
 import { CampoImagemPadrao } from '../../componentes/comuns/campoImagemPadrao';
 import { CodigoRegistro } from '../../componentes/comuns/codigoRegistro';
+import { GradePadrao } from '../../componentes/comuns/gradePadrao';
 import { ModalFiltros } from '../../componentes/comuns/modalFiltros';
 import { normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTextoFormulario';
 
@@ -242,72 +243,66 @@ export function ModalUsuarios({
 
         <div className="corpoModalCliente corpoModalUsuarios corpoModalUsuariosConfiguracao">
           <section className="painelContatosModalCliente painelContatosConfiguracao">
-            <div className="gradeContatosModal">
-              <table className="tabelaContatosModal tabelaUsuariosModal">
-                <thead>
-                  <tr>
-                    <th>Foto</th>
-                    <th>Nome</th>
-                    <th>Codigo</th>
-                    <th>Tipo</th>
-                    <th>Vendedor</th>
-                    <th>Status</th>
-                    <th className="cabecalhoAcoesContato">Acoes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {usuariosFiltrados.length > 0 ? (
-                    usuariosFiltrados.map((usuario) => (
-                      <tr key={usuario.idUsuario}>
-                        <td>
-                          <div className="celulaAvatarCliente">
-                            {usuario.imagem ? (
-                              <img className="avatarClienteImagem" src={usuario.imagem} alt={`Foto de ${usuario.nome}`} />
-                            ) : (
-                              <span className="avatarClientePlaceholder">
-                                {obterIniciaisUsuario(usuario.nome)}
-                              </span>
-                            )}
-                          </div>
-                        </td>
-                        <td>
-                          <div className="celulaContatoModal">
-                            <strong>{usuario.nome}</strong>
-                          </div>
-                        </td>
-                        <td>
-                          <CodigoRegistro valor={usuario.idUsuario} />
-                        </td>
-                        <td>{usuario.tipo}</td>
-                        <td>{usuario.nomeVendedor || 'Nao vinculado'}</td>
-                        <td>
-                          <span className={`etiquetaStatus ${usuario.ativo ? 'ativo' : 'inativo'}`}>
-                            {usuario.ativo ? 'Ativo' : 'Inativo'}
-                          </span>
-                        </td>
-                        <td className="celulaAcoesUsuarios">
-                          <div className="acoesContatoModal">
-                            <BotaoAcaoGrade icone="consultar" titulo="Consultar usuario" onClick={() => abrirConsultaUsuario(usuario)} />
-                            {!somenteConsulta ? (
-                              <BotaoAcaoGrade icone="editar" titulo="Editar usuario" onClick={() => abrirEdicaoUsuario(usuario)} />
-                            ) : null}
-                            {!somenteConsulta ? (
-                              <BotaoAcaoGrade icone="inativar" titulo="Inativar usuario" onClick={() => aoInativar(usuario)} />
-                            ) : null}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={7} className="mensagemTabelaContatosModal">
-                        Nenhum usuario encontrado para o filtro atual.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <GradePadrao
+              className="gradeContatosModal"
+              classNameTabela="tabelaContatosModal tabelaUsuariosModal"
+              classNameMensagem="mensagemTabelaContatosModal"
+              cabecalho={(
+                <tr>
+                  <th>Foto</th>
+                  <th>Nome</th>
+                  <th>Codigo</th>
+                  <th>Tipo</th>
+                  <th>Vendedor</th>
+                  <th>Status</th>
+                  <th className="cabecalhoAcoesContato">Acoes</th>
+                </tr>
+              )}
+              temItens={usuariosFiltrados.length > 0}
+              mensagemVazia="Nenhum usuario encontrado para o filtro atual."
+            >
+              {usuariosFiltrados.map((usuario) => (
+                <tr key={usuario.idUsuario}>
+                  <td>
+                    <div className="celulaAvatarCliente">
+                      {usuario.imagem ? (
+                        <img className="avatarClienteImagem" src={usuario.imagem} alt={`Foto de ${usuario.nome}`} />
+                      ) : (
+                        <span className="avatarClientePlaceholder">
+                          {obterIniciaisUsuario(usuario.nome)}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td>
+                    <div className="celulaContatoModal">
+                      <strong>{usuario.nome}</strong>
+                    </div>
+                  </td>
+                  <td>
+                    <CodigoRegistro valor={usuario.idUsuario} />
+                  </td>
+                  <td>{usuario.tipo}</td>
+                  <td>{usuario.nomeVendedor || 'Nao vinculado'}</td>
+                  <td>
+                    <span className={`etiquetaStatus ${usuario.ativo ? 'ativo' : 'inativo'}`}>
+                      {usuario.ativo ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </td>
+                  <td className="celulaAcoesUsuarios">
+                    <div className="acoesContatoModal">
+                      <BotaoAcaoGrade icone="consultar" titulo="Consultar usuario" onClick={() => abrirConsultaUsuario(usuario)} />
+                      {!somenteConsulta ? (
+                        <BotaoAcaoGrade icone="editar" titulo="Editar usuario" onClick={() => abrirEdicaoUsuario(usuario)} />
+                      ) : null}
+                      {!somenteConsulta ? (
+                        <BotaoAcaoGrade icone="inativar" titulo="Inativar usuario" onClick={() => aoInativar(usuario)} />
+                      ) : null}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </GradePadrao>
           </section>
         </div>
 

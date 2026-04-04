@@ -1,6 +1,8 @@
 import { AcoesRegistro } from '../../componentes/comuns/acoesRegistro';
+import { CodigoRegistro } from '../../componentes/comuns/codigoRegistro';
+import { TextoGradeClamp } from '../../componentes/comuns/textoGradeClamp';
 import { normalizarPreco } from '../../utilitarios/normalizarPreco';
-import { DetalhesProduto } from './detalhesProduto';
+import { obterValorGrid } from '../../utilitarios/valorPadraoGrid';
 import { ImagemProduto } from './imagemProduto';
 
 export function LinhaProduto({
@@ -12,18 +14,20 @@ export function LinhaProduto({
 }) {
   return (
     <tr className="linhaProduto">
-      <td><ImagemProduto produto={produto} /></td>
-      <td><DetalhesProduto produto={produto} /></td>
-      <td>{produto.nomeGrupo}</td>
-      <td>{produto.nomeMarca}</td>
-      <td>{produto.nomeUnidade}</td>
-      <td>{normalizarPreco(produto.preco)}</td>
-      <td>
+      <td className="colunaGradeMidia"><ImagemProduto produto={produto} /></td>
+      <td className="colunaGradeCodigo"><CodigoRegistro valor={produto.idProduto} /></td>
+      <td className="colunaGradeTexto"><TextoGradeClamp>{obterValorGrid(produto.referencia)}</TextoGradeClamp></td>
+      <td className="colunaGradeTextoPrincipal"><TextoGradeClamp>{obterValorGrid(produto.descricao)}</TextoGradeClamp></td>
+      <td className="colunaGradeTexto"><TextoGradeClamp>{obterValorGrid(produto.nomeGrupo)}</TextoGradeClamp></td>
+      <td className="colunaGradeTexto"><TextoGradeClamp>{obterValorGrid(produto.nomeMarca)}</TextoGradeClamp></td>
+      <td className="colunaGradeTextoCurto"><TextoGradeClamp>{obterValorGrid(produto.nomeUnidade)}</TextoGradeClamp></td>
+      <td className="colunaGradeValor">{normalizarPreco(produto.preco)}</td>
+      <td className="colunaGradeStatus">
         <span className={`etiquetaStatus ${produto.status ? 'ativo' : 'inativo'}`}>
           {produto.status ? 'Ativo' : 'Inativo'}
         </span>
       </td>
-      <td>
+      <td className="colunaGradeAcoes">
         <AcoesRegistro
           rotuloConsulta="Consultar produto"
           rotuloEdicao="Editar produto"

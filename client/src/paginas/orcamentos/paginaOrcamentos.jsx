@@ -5,7 +5,9 @@ import { Botao } from '../../componentes/comuns/botao';
 import { CampoPesquisa } from '../../componentes/comuns/campoPesquisa';
 import { CodigoRegistro } from '../../componentes/comuns/codigoRegistro';
 import { GradePadrao } from '../../componentes/comuns/gradePadrao';
+import { ModalBuscaClientes } from '../../componentes/comuns/modalBuscaClientes';
 import { ModalFiltros } from '../../componentes/comuns/modalFiltros';
+import { TextoGradeClamp } from '../../componentes/comuns/textoGradeClamp';
 import { CorpoPagina } from '../../componentes/layout/corpoPagina';
 import { listarClientes, listarContatos, listarVendedores } from '../../servicos/clientes';
 import {
@@ -29,8 +31,17 @@ import {
 import { listarEmpresas } from '../../servicos/empresa';
 import { listarProdutos } from '../../servicos/produtos';
 import { listarUsuarios } from '../../servicos/usuarios';
+import {
+  normalizarColunasGridOrcamentos,
+  TOTAL_COLUNAS_GRID_ORCAMENTOS
+} from '../../utilitarios/colunasGridOrcamentos';
 import { normalizarPreco } from '../../utilitarios/normalizarPreco';
-import { normalizarFiltrosPorPadrao, useFiltrosPersistidos } from '../../utilitarios/useFiltrosPersistidos';
+import { obterValorGrid } from '../../utilitarios/valorPadraoGrid';
+import {
+  normalizarFiltrosPorPadrao,
+  normalizarListaFiltroPersistido,
+  useFiltrosPersistidos
+} from '../../utilitarios/useFiltrosPersistidos';
 import { ModalOrcamento } from './modalOrcamento';
 import { ModalManualOrcamentos } from './modalManualOrcamentos';
 import { ModalPedido } from '../pedidos/modalPedido';
@@ -38,9 +49,9 @@ import { ModalPedido } from '../pedidos/modalPedido';
 function criarFiltrosIniciaisOrcamentos(usuarioLogado, empresa = null) {
   return {
     idCliente: '',
-    idUsuario: '',
-    idVendedorCliente: '',
-    idVendedor: usuarioLogado?.idVendedor ? String(usuarioLogado.idVendedor) : '',
+    idUsuario: [],
+    idVendedorCliente: [],
+    idVendedor: usuarioLogado?.idVendedor ? [String(usuarioLogado.idVendedor)] : [],
     idsEtapaOrcamento: obterEtapasFiltroPadraoOrcamento(empresa),
     dataInclusaoInicio: '',
     dataInclusaoFim: '',
@@ -56,9 +67,9 @@ function criarFiltrosIniciaisOrcamentos(usuarioLogado, empresa = null) {
 function criarFiltrosLimposOrcamentos(usuarioLogado, empresa = null) {
   return {
     idCliente: '',
-    idUsuario: '',
-    idVendedorCliente: '',
-    idVendedor: usuarioLogado?.idVendedor ? String(usuarioLogado.idVendedor) : '',
+    idUsuario: [],
+    idVendedorCliente: [],
+    idVendedor: usuarioLogado?.idVendedor ? [String(usuarioLogado.idVendedor)] : [],
     idsEtapaOrcamento: obterEtapasFiltroPadraoOrcamento(empresa),
     dataInclusaoInicio: '',
     dataInclusaoFim: '',
@@ -88,6 +99,8 @@ export function PaginaOrcamentos({ usuarioLogado }) {
   const [modalAberto, definirModalAberto] = useState(false);
   const [modalManualAberto, definirModalManualAberto] = useState(false);
   const [modalFiltrosAberto, definirModalFiltrosAberto] = useState(false);
+  const [modalBuscaClienteFiltrosAberto, definirModalBuscaClienteFiltrosAberto] = useState(false);
+  const [filtrosEmEdicao, definirFiltrosEmEdicao] = useState(null);
   const [orcamentoSelecionado, definirOrcamentoSelecionado] = useState(null);
   const [orcamentoExclusaoPendente, definirOrcamentoExclusaoPendente] = useState(null);
   const [alteracaoEtapaPendente, definirAlteracaoEtapaPendente] = useState(null);
@@ -225,7 +238,8 @@ export function PaginaOrcamentos({ usuarioLogado }) {
           vendedoresCarregados,
           enriquecerPrazosPagamento(prazosCarregados, metodosCarregados),
           etapasCarregadasOrdenadas,
-          produtosCarregados
+          produtosCarregados,
+          motivosPerdaCarregados
         )
       );
       definirClientes(clientesDisponiveis);
@@ -453,6 +467,22 @@ export function PaginaOrcamentos({ usuarioLogado }) {
     definirModoModal('novo');
   }
 
+  function abrirModalFiltrosOrcamentos() {
+    definirFiltrosEmEdicao({
+      ...filtros,
+      idUsuario: Array.isArray(filtros.idUsuario) ? [...filtros.idUsuario] : [],
+      idVendedorCliente: Array.isArray(filtros.idVendedorCliente) ? [...filtros.idVendedorCliente] : [],
+      idVendedor: Array.isArray(filtros.idVendedor) ? [...filtros.idVendedor] : [],
+      idsEtapaOrcamento: Array.isArray(filtros.idsEtapaOrcamento) ? [...filtros.idsEtapaOrcamento] : []
+    });
+    definirModalFiltrosAberto(true);
+  }
+
+  function fecharModalFiltrosOrcamentos() {
+    definirModalFiltrosAberto(false);
+    definirFiltrosEmEdicao(null);
+  }
+
   function abrirExclusaoOrcamento(orcamento) {
     if (!permitirExcluir || orcamento.idPedidoVinculado) {
       return;
@@ -569,6 +599,10 @@ export function PaginaOrcamentos({ usuarioLogado }) {
     () => filtrarOrcamentos(orcamentos, pesquisa, filtros),
     [orcamentos, pesquisa, filtros]
   );
+  const colunasVisiveisOrcamentos = useMemo(
+    () => normalizarColunasGridOrcamentos(empresa?.colunasGridOrcamentos),
+    [empresa?.colunasGridOrcamentos]
+  );
   const filtrosAtivos = JSON.stringify(filtros) !== JSON.stringify(filtrosIniciais);
 
   return (
@@ -592,7 +626,7 @@ export function PaginaOrcamentos({ usuarioLogado }) {
             somenteIcone
             title="Filtrar"
             aria-label="Filtrar"
-            onClick={() => definirModalFiltrosAberto(true)}
+            onClick={abrirModalFiltrosOrcamentos}
           />
           <Botao
             variante="primario"
@@ -607,7 +641,9 @@ export function PaginaOrcamentos({ usuarioLogado }) {
 
       <CorpoPagina>
         <GradePadrao
-          cabecalho={<CabecalhoGradeOrcamentos />}
+          modo="layout"
+          totalColunasLayout={TOTAL_COLUNAS_GRID_ORCAMENTOS}
+          cabecalho={<CabecalhoGradeOrcamentos colunas={colunasVisiveisOrcamentos} />}
           carregando={carregando}
           mensagemErro={mensagemErro}
           temItens={orcamentosFiltrados.length > 0}
@@ -618,6 +654,7 @@ export function PaginaOrcamentos({ usuarioLogado }) {
             <LinhaOrcamento
               key={orcamento.idOrcamento}
               orcamento={orcamento}
+              colunas={colunasVisiveisOrcamentos}
               etapasOrcamento={etapasOrcamento}
               permitirExcluir={permitirExcluir}
               permitirEdicao={!orcamentoBloqueadoParaUsuarioPadrao(orcamento, usuarioLogado)}
@@ -637,11 +674,25 @@ export function PaginaOrcamentos({ usuarioLogado }) {
       <ModalFiltros
         aberto={modalFiltrosAberto}
         titulo="Filtros de orcamentos"
-        filtros={filtros}
+        filtros={filtrosEmEdicao || filtros}
         campos={[
           {
             name: 'idCliente',
             label: 'Cliente',
+            acaoExtra: (
+              <Botao
+                variante="secundario"
+                icone="pesquisa"
+                type="button"
+                className="botaoCampoAcao"
+                onClick={() => definirModalBuscaClienteFiltrosAberto(true)}
+                somenteIcone
+                title="Buscar cliente"
+                aria-label="Buscar cliente"
+              >
+                Buscar cliente
+              </Botao>
+            ),
             options: clientes.map((cliente) => ({
               valor: String(cliente.idCliente),
               label: cliente.nomeFantasia || cliente.razaoSocial
@@ -650,6 +701,8 @@ export function PaginaOrcamentos({ usuarioLogado }) {
           {
             name: 'idUsuario',
             label: 'Usuario do registro',
+            multiple: true,
+            placeholder: 'Todos os usuarios',
             options: usuarios.map((usuario) => ({
               valor: String(usuario.idUsuario),
               label: usuario.nome
@@ -658,6 +711,8 @@ export function PaginaOrcamentos({ usuarioLogado }) {
           {
             name: 'idVendedorCliente',
             label: 'Clientes do vendedor',
+            multiple: true,
+            placeholder: 'Todos os vendedores',
             options: vendedores.map((vendedor) => ({
               valor: String(vendedor.idVendedor),
               label: vendedor.nome
@@ -666,6 +721,8 @@ export function PaginaOrcamentos({ usuarioLogado }) {
           {
             name: 'idVendedor',
             label: 'Vendedor do orcamento',
+            multiple: true,
+            placeholder: 'Todos os vendedores',
             options: vendedores.map((vendedor) => ({
               valor: String(vendedor.idVendedor),
               label: vendedor.nome
@@ -705,12 +762,27 @@ export function PaginaOrcamentos({ usuarioLogado }) {
             ]
           }
         ]}
-        aoFechar={() => definirModalFiltrosAberto(false)}
+        aoFechar={fecharModalFiltrosOrcamentos}
         aoAplicar={(proximosFiltros) => {
           definirFiltros(proximosFiltros);
-          definirModalFiltrosAberto(false);
+          fecharModalFiltrosOrcamentos();
         }}
-        aoLimpar={() => definirFiltros(criarFiltrosLimposOrcamentos(usuarioLogado, empresa))}
+        aoLimpar={() => definirFiltrosEmEdicao(criarFiltrosLimposOrcamentos(usuarioLogado, empresa))}
+      />
+      <ModalBuscaClientes
+        aberto={modalBuscaClienteFiltrosAberto}
+        empresa={empresa}
+        clientes={clientes}
+        placeholder="Pesquisar cliente no filtro"
+        ariaLabelPesquisa="Pesquisar cliente no filtro"
+        aoSelecionar={(cliente) => {
+          definirFiltrosEmEdicao((estadoAtual) => ({
+            ...(estadoAtual || criarFiltrosIniciaisOrcamentos(usuarioLogado, empresa)),
+            idCliente: String(cliente.idCliente || '')
+          }));
+          definirModalBuscaClienteFiltrosAberto(false);
+        }}
+        aoFechar={() => definirModalBuscaClienteFiltrosAberto(false)}
       />
 
       <ModalOrcamento
@@ -936,21 +1008,21 @@ export function PaginaOrcamentos({ usuarioLogado }) {
   );
 }
 
-function CabecalhoGradeOrcamentos() {
+function CabecalhoGradeOrcamentos({ colunas }) {
   return (
-    <tr className="cabecalhoGradeOrcamentos">
-      <th>Codigo</th>
-      <th>Cliente</th>
-      <th>Etapa</th>
-      <th>Vendedor</th>
-      <th>Total</th>
-      <th>Acoes</th>
-    </tr>
+    <div className="cabecalhoLayoutGradePadrao cabecalhoGradeOrcamentos">
+      {colunas.map((coluna) => (
+        <div key={coluna.id} className={coluna.classe} style={obterEstiloColunaLayout(coluna)}>
+          {coluna.rotulo}
+        </div>
+      ))}
+    </div>
   );
 }
 
 function LinhaOrcamento({
   orcamento,
+  colunas,
   etapasOrcamento,
   permitirExcluir,
   permitirEdicao,
@@ -961,19 +1033,120 @@ function LinhaOrcamento({
   aoExcluir
 }) {
   return (
-    <tr className="linhaOrcamento">
-      <td>
+    <div className="linhaLayoutGradePadrao linhaOrcamento">
+      {colunas.map((coluna) => renderizarCelulaOrcamento({
+        coluna,
+        orcamento,
+        etapasOrcamento,
+        permitirExcluir,
+        permitirEdicao,
+        permitirAlteracaoEtapa,
+        aoAlterarEtapa,
+        aoConsultar,
+        aoEditar,
+        aoExcluir
+      }))}
+    </div>
+  );
+}
+
+function renderizarCelulaOrcamento({
+  coluna,
+  orcamento,
+  etapasOrcamento,
+  permitirExcluir,
+  permitirEdicao,
+  permitirAlteracaoEtapa,
+  aoAlterarEtapa,
+  aoConsultar,
+  aoEditar,
+  aoExcluir
+}) {
+  const propriedadesCelula = {
+    key: coluna.id,
+    className: `celulaLayoutGradePadrao ${coluna.classe}`.trim(),
+    style: obterEstiloColunaLayout(coluna)
+  };
+
+  if (coluna.id === 'codigo') {
+    return (
+      <CelulaLayoutOrcamento coluna={coluna} {...propriedadesCelula}>
         <CodigoRegistro valor={orcamento.idOrcamento} />
-      </td>
-      <td>
-        <div className="celulaRegistroDetalhes">
-          <div className="topoRegistroDetalhes">
-            <strong>{orcamento.nomeCliente}</strong>
-          </div>
-          <span className="textoSecundarioRegistro">{orcamento.nomeContato || 'Sem contato'}</span>
-        </div>
-      </td>
-      <td>
+      </CelulaLayoutOrcamento>
+    );
+  }
+
+  if (coluna.id === 'idOrcamento') {
+    return (
+      <CelulaLayoutOrcamento coluna={coluna} {...propriedadesCelula}>
+        <CodigoRegistro valor={orcamento.idOrcamento} />
+      </CelulaLayoutOrcamento>
+    );
+  }
+
+  if (coluna.id === 'cliente') {
+    return (
+      <CelulaLayoutOrcamento coluna={coluna} {...propriedadesCelula}>
+        <TextoGradeClamp>{obterValorGrid(orcamento.nomeCliente)}</TextoGradeClamp>
+      </CelulaLayoutOrcamento>
+    );
+  }
+
+  if (coluna.id === 'idCliente') {
+    return (
+      <CelulaLayoutOrcamento coluna={coluna} {...propriedadesCelula}>
+        <TextoGradeClamp>{obterValorGrid(orcamento.nomeCliente)}</TextoGradeClamp>
+      </CelulaLayoutOrcamento>
+    );
+  }
+
+  if (coluna.id === 'contato') {
+    return (
+      <CelulaLayoutOrcamento coluna={coluna} {...propriedadesCelula}>
+        <TextoGradeClamp>{obterValorGrid(orcamento.nomeContato)}</TextoGradeClamp>
+      </CelulaLayoutOrcamento>
+    );
+  }
+
+  if (coluna.id === 'idContato') {
+    return (
+      <CelulaLayoutOrcamento coluna={coluna} {...propriedadesCelula}>
+        <TextoGradeClamp>{obterValorGrid(orcamento.nomeContato)}</TextoGradeClamp>
+      </CelulaLayoutOrcamento>
+    );
+  }
+
+  if (coluna.id === 'usuario' || coluna.id === 'idUsuario') {
+    return (
+      <CelulaLayoutOrcamento coluna={coluna} {...propriedadesCelula}>
+        <TextoGradeClamp>{obterValorGrid(orcamento.nomeUsuario)}</TextoGradeClamp>
+      </CelulaLayoutOrcamento>
+    );
+  }
+
+  if (coluna.id === 'idPedidoVinculado') {
+    return (
+      <CelulaLayoutOrcamento coluna={coluna} {...propriedadesCelula}>
+        {orcamento.idPedidoVinculado ? (
+          <CodigoRegistro valor={orcamento.idPedidoVinculado} />
+        ) : (
+          '-'
+        )}
+      </CelulaLayoutOrcamento>
+    );
+  }
+
+  if (coluna.id === 'idVendedor') {
+    return (
+      <CelulaLayoutOrcamento coluna={coluna} {...propriedadesCelula}>
+        <TextoGradeClamp>{obterValorGrid(orcamento.nomeVendedor)}</TextoGradeClamp>
+      </CelulaLayoutOrcamento>
+    );
+  }
+
+  if (coluna.id === 'etapa') {
+    return (
+      <CelulaLayoutOrcamento coluna={coluna} {...propriedadesCelula}>
         <div className="campoEtapaGridOrcamento">
           <select
             className="selectEtapaGridOrcamento"
@@ -991,10 +1164,101 @@ function LinhaOrcamento({
             ))}
           </select>
         </div>
-      </td>
-      <td>{orcamento.nomeVendedor || 'Nao informado'}</td>
-      <td>{normalizarPreco(orcamento.totalOrcamento)}</td>
-      <td>
+      </CelulaLayoutOrcamento>
+    );
+  }
+
+  if (coluna.id === 'idEtapaOrcamento') {
+    return (
+      <CelulaLayoutOrcamento coluna={coluna} {...propriedadesCelula}>
+        <TextoGradeClamp>{obterValorGrid(orcamento.nomeEtapaOrcamento)}</TextoGradeClamp>
+      </CelulaLayoutOrcamento>
+    );
+  }
+
+  if (coluna.id === 'vendedor') {
+    return (
+      <CelulaLayoutOrcamento coluna={coluna} {...propriedadesCelula}>
+        <TextoGradeClamp>{obterValorGrid(orcamento.nomeVendedor)}</TextoGradeClamp>
+      </CelulaLayoutOrcamento>
+    );
+  }
+
+  if (coluna.id === 'comissao') {
+    return (
+      <CelulaLayoutOrcamento coluna={coluna} {...propriedadesCelula}>
+        {normalizarPreco(orcamento.comissao || 0)}
+      </CelulaLayoutOrcamento>
+    );
+  }
+
+  if (coluna.id === 'prazoPagamento' || coluna.id === 'idPrazoPagamento') {
+    return (
+      <CelulaLayoutOrcamento coluna={coluna} {...propriedadesCelula}>
+        <TextoGradeClamp>{obterValorGrid(orcamento.nomePrazoPagamento)}</TextoGradeClamp>
+      </CelulaLayoutOrcamento>
+    );
+  }
+
+  if (coluna.id === 'metodoPagamento') {
+    return (
+      <CelulaLayoutOrcamento coluna={coluna} {...propriedadesCelula}>
+        <TextoGradeClamp>{obterValorGrid(orcamento.nomeMetodoPagamento)}</TextoGradeClamp>
+      </CelulaLayoutOrcamento>
+    );
+  }
+
+  if (coluna.id === 'idMotivoPerda') {
+    return (
+      <CelulaLayoutOrcamento coluna={coluna} {...propriedadesCelula}>
+        <TextoGradeClamp>{obterValorGrid(orcamento.nomeMotivoPerda)}</TextoGradeClamp>
+      </CelulaLayoutOrcamento>
+    );
+  }
+
+  if (coluna.id === 'dataInclusao') {
+    return (
+      <CelulaLayoutOrcamento coluna={coluna} {...propriedadesCelula}>
+        {formatarDataGridOrcamento(orcamento.dataInclusao)}
+      </CelulaLayoutOrcamento>
+    );
+  }
+
+  if (coluna.id === 'dataValidade') {
+    return (
+      <CelulaLayoutOrcamento coluna={coluna} {...propriedadesCelula}>
+        {formatarDataGridOrcamento(orcamento.dataValidade)}
+      </CelulaLayoutOrcamento>
+    );
+  }
+
+  if (coluna.id === 'dataFechamento') {
+    return (
+      <CelulaLayoutOrcamento coluna={coluna} {...propriedadesCelula}>
+        {formatarDataGridOrcamento(orcamento.dataFechamento)}
+      </CelulaLayoutOrcamento>
+    );
+  }
+
+  if (coluna.id === 'observacao') {
+    return (
+      <CelulaLayoutOrcamento coluna={coluna} {...propriedadesCelula}>
+        <TextoGradeClamp>{obterValorGrid(orcamento.observacao)}</TextoGradeClamp>
+      </CelulaLayoutOrcamento>
+    );
+  }
+
+  if (coluna.id === 'total') {
+    return (
+      <CelulaLayoutOrcamento coluna={coluna} {...propriedadesCelula}>
+        {normalizarPreco(orcamento.totalOrcamento)}
+      </CelulaLayoutOrcamento>
+    );
+  }
+
+  if (coluna.id === 'acoes') {
+    return (
+      <CelulaLayoutOrcamento coluna={coluna} {...propriedadesCelula}>
         <AcoesRegistro
           rotuloConsulta="Consultar orcamento"
           rotuloEdicao={permitirEdicao ? 'Editar orcamento' : 'Orcamento fechado: usuario padrao consulta apenas.'}
@@ -1006,9 +1270,42 @@ function LinhaOrcamento({
           aoEditar={aoEditar}
           aoInativar={aoExcluir}
         />
-      </td>
-    </tr>
+      </CelulaLayoutOrcamento>
+    );
+  }
+
+  return null;
+}
+
+function CelulaLayoutOrcamento({ coluna, children, ...propriedades }) {
+  return (
+    <div {...propriedades}>
+      <span className="rotuloCelulaLayoutGradePadrao">{coluna.rotulo}</span>
+      {children}
+    </div>
   );
+}
+
+function obterEstiloColunaLayout(coluna) {
+  return {
+    order: coluna.ordem,
+    gridColumn: `span ${Math.max(1, Number(coluna.span || 1))}`
+  };
+}
+
+function formatarDataGridOrcamento(valor) {
+  if (!valor) {
+    return '-';
+  }
+
+  const texto = String(valor).slice(0, 10);
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(texto)) {
+    return '-';
+  }
+
+  const [ano, mes, dia] = texto.split('-');
+  return `${dia}/${mes}/${ano}`;
 }
 
 function normalizarFiltrosOrcamentos(filtros, filtrosPadrao) {
@@ -1016,6 +1313,12 @@ function normalizarFiltrosOrcamentos(filtros, filtrosPadrao) {
 
   return {
     ...filtrosNormalizados,
+    idUsuario: normalizarListaFiltroPersistido(filtrosNormalizados.idUsuario),
+    idVendedorCliente: normalizarListaFiltroPersistido(filtrosNormalizados.idVendedorCliente),
+    idVendedor: filtrosPadrao.idVendedor?.length > 0
+      ? [...filtrosPadrao.idVendedor]
+      : normalizarListaFiltroPersistido(filtrosNormalizados.idVendedor),
+    idsEtapaOrcamento: normalizarListaFiltroPersistido(filtrosNormalizados.idsEtapaOrcamento),
     ...normalizarIntervaloDatasFiltros(
       filtrosNormalizados,
       filtrosPadrao,
@@ -1048,9 +1351,21 @@ function filtrarOrcamentos(orcamentos, pesquisa, filtros) {
 
     const atendeFiltros = (
       (!filtros.idCliente || String(orcamento.idCliente) === String(filtros.idCliente))
-      && (!filtros.idUsuario || String(orcamento.idUsuario) === String(filtros.idUsuario))
-      && (!filtros.idVendedorCliente || String(orcamento.idVendedorCliente) === String(filtros.idVendedorCliente))
-      && (!filtros.idVendedor || String(orcamento.idVendedor) === String(filtros.idVendedor))
+      && (
+        !Array.isArray(filtros.idUsuario)
+        || filtros.idUsuario.length === 0
+        || filtros.idUsuario.includes(String(orcamento.idUsuario))
+      )
+      && (
+        !Array.isArray(filtros.idVendedorCliente)
+        || filtros.idVendedorCliente.length === 0
+        || filtros.idVendedorCliente.includes(String(orcamento.idVendedorCliente || ''))
+      )
+      && (
+        !Array.isArray(filtros.idVendedor)
+        || filtros.idVendedor.length === 0
+        || filtros.idVendedor.includes(String(orcamento.idVendedor))
+      )
       && (
         !Array.isArray(filtros.idsEtapaOrcamento)
         || filtros.idsEtapaOrcamento.length === 0
@@ -1145,7 +1460,17 @@ function obterValorOrdemEtapa(ordem, fallback) {
   return Number.MAX_SAFE_INTEGER;
 }
 
-function enriquecerOrcamentos(orcamentos, clientes, contatos, usuarios, vendedores, prazosPagamento, etapasOrcamento, produtos) {
+function enriquecerOrcamentos(
+  orcamentos,
+  clientes,
+  contatos,
+  usuarios,
+  vendedores,
+  prazosPagamento,
+  etapasOrcamento,
+  produtos,
+  motivosPerda = []
+) {
   const clientesPorId = new Map(
     clientes.map((cliente) => [cliente.idCliente, cliente])
   );
@@ -1167,6 +1492,9 @@ function enriquecerOrcamentos(orcamentos, clientes, contatos, usuarios, vendedor
   const produtosPorId = new Map(
     produtos.map((produto) => [produto.idProduto, produto])
   );
+  const motivosPorId = new Map(
+    motivosPerda.map((motivo) => [motivo.idMotivo, motivo.descricao])
+  );
 
   return orcamentos.map((orcamento) => {
     const cliente = clientesPorId.get(orcamento.idCliente);
@@ -1178,18 +1506,19 @@ function enriquecerOrcamentos(orcamentos, clientes, contatos, usuarios, vendedor
       ...orcamento,
       itens: Array.isArray(orcamento.itens) ? orcamento.itens.map((item) => ({
         ...item,
-        nomeProduto: produtosPorId.get(item.idProduto)?.descricao || 'Produto nao informado'
+        nomeProduto: obterValorGrid(produtosPorId.get(item.idProduto)?.descricao)
       })) : [],
-      nomeCliente: cliente?.nomeFantasia || cliente?.razaoSocial || 'Nao informado',
-      nomeContato: contatosPorId.get(orcamento.idContato) || '',
+      nomeCliente: obterValorGrid(cliente?.nomeFantasia || cliente?.razaoSocial),
+      nomeContato: obterValorGrid(contatosPorId.get(orcamento.idContato)),
       idVendedorCliente: cliente?.idVendedor || null,
-      nomeVendedorCliente: vendedoresPorId.get(cliente?.idVendedor) || 'Nao informado',
-      nomeUsuario: usuariosPorId.get(orcamento.idUsuario) || 'Nao informado',
-      nomeVendedor: vendedoresPorId.get(orcamento.idVendedor) || 'Nao informado',
-      nomeMetodoPagamento: prazosPorId.get(orcamento.idPrazoPagamento)?.nomeMetodoPagamento || '',
-      nomePrazoPagamento: prazosPorId.get(orcamento.idPrazoPagamento)?.descricaoFormatada || '',
-      nomePrazoPagamentoDias: prazosPorId.get(orcamento.idPrazoPagamento)?.descricaoDias || '',
-      nomeEtapaOrcamento: etapasPorId.get(orcamento.idEtapaOrcamento)?.descricao || '',
+      nomeVendedorCliente: obterValorGrid(vendedoresPorId.get(cliente?.idVendedor)),
+      nomeUsuario: obterValorGrid(usuariosPorId.get(orcamento.idUsuario)),
+      nomeVendedor: obterValorGrid(vendedoresPorId.get(orcamento.idVendedor)),
+      nomeMetodoPagamento: obterValorGrid(prazosPorId.get(orcamento.idPrazoPagamento)?.nomeMetodoPagamento),
+      nomePrazoPagamento: obterValorGrid(prazosPorId.get(orcamento.idPrazoPagamento)?.descricaoFormatada),
+      nomePrazoPagamentoDias: obterValorGrid(prazosPorId.get(orcamento.idPrazoPagamento)?.descricaoDias),
+      nomeEtapaOrcamento: obterValorGrid(etapasPorId.get(orcamento.idEtapaOrcamento)?.descricao),
+      nomeMotivoPerda: obterValorGrid(motivosPorId.get(orcamento.idMotivoPerda)),
       corEtapaOrcamento: etapasPorId.get(orcamento.idEtapaOrcamento)?.cor || '',
       obrigarMotivoPerdaEtapa: Boolean(etapasPorId.get(orcamento.idEtapaOrcamento)?.obrigarMotivoPerda),
       totalOrcamento

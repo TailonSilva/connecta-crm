@@ -6,6 +6,7 @@ import { CampoPesquisa } from '../../componentes/comuns/campoPesquisa';
 import { CodigoRegistro } from '../../componentes/comuns/codigoRegistro';
 import { GradePadrao } from '../../componentes/comuns/gradePadrao';
 import { ModalFiltros } from '../../componentes/comuns/modalFiltros';
+import { TextoGradeClamp } from '../../componentes/comuns/textoGradeClamp';
 import { CorpoPagina } from '../../componentes/layout/corpoPagina';
 import { listarClientes, listarContatos, listarVendedores } from '../../servicos/clientes';
 import {
@@ -21,6 +22,11 @@ import { atualizarPedido, excluirPedido, incluirPedido, listarPedidos } from '..
 import { listarProdutos } from '../../servicos/produtos';
 import { listarUsuarios } from '../../servicos/usuarios';
 import { normalizarPreco } from '../../utilitarios/normalizarPreco';
+import { obterValorGrid } from '../../utilitarios/valorPadraoGrid';
+import {
+  normalizarColunasGridPedidos,
+  TOTAL_COLUNAS_GRID_PEDIDOS
+} from '../../utilitarios/colunasGridPedidos';
 import {
   normalizarFiltrosPorPadrao,
   normalizarListaFiltroPersistido,
@@ -323,6 +329,10 @@ export function PaginaPedidos({ usuarioLogado }) {
     () => filtrarPedidos(pedidos, pesquisa, filtros),
     [pedidos, pesquisa, filtros]
   );
+  const colunasVisiveisPedidos = useMemo(
+    () => normalizarColunasGridPedidos(empresa?.colunasGridPedidos),
+    [empresa?.colunasGridPedidos]
+  );
   const filtrosAtivos = JSON.stringify(filtros) !== JSON.stringify(criarFiltrosIniciaisPedidos());
 
   return (
@@ -361,7 +371,9 @@ export function PaginaPedidos({ usuarioLogado }) {
 
       <CorpoPagina>
         <GradePadrao
-          cabecalho={<CabecalhoGradePedidos />}
+          modo="layout"
+          totalColunasLayout={TOTAL_COLUNAS_GRID_PEDIDOS}
+          cabecalho={<CabecalhoGradePedidos colunas={colunasVisiveisPedidos} />}
           carregando={carregando}
           mensagemErro={mensagemErro}
           temItens={pedidosFiltrados.length > 0}
@@ -372,6 +384,7 @@ export function PaginaPedidos({ usuarioLogado }) {
             <LinhaPedido
               key={pedido.idPedido}
               pedido={pedido}
+              colunas={colunasVisiveisPedidos}
               etapasPedido={etapasPedido}
               permitirExcluir={permitirExcluir}
               permitirEdicao={!pedidoBloqueadoParaUsuarioPadrao(pedido, usuarioLogado)}
@@ -520,21 +533,21 @@ export function PaginaPedidos({ usuarioLogado }) {
   );
 }
 
-function CabecalhoGradePedidos() {
+function CabecalhoGradePedidos({ colunas }) {
   return (
-    <tr className="cabecalhoGradePedidos">
-      <th>Codigo</th>
-      <th>Cliente</th>
-      <th>Etapa</th>
-      <th>Vendedor</th>
-      <th>Total</th>
-      <th>Acoes</th>
-    </tr>
+    <div className="cabecalhoLayoutGradePadrao cabecalhoGradePedidos">
+      {colunas.map((coluna) => (
+        <div key={coluna.id} className={coluna.classe} style={obterEstiloColunaLayout(coluna)}>
+          {coluna.rotulo}
+        </div>
+      ))}
+    </div>
   );
 }
 
 function LinhaPedido({
   pedido,
+  colunas,
   etapasPedido,
   permitirExcluir,
   permitirEdicao,
@@ -545,19 +558,100 @@ function LinhaPedido({
   aoExcluir
 }) {
   return (
-    <tr className="linhaPedido">
-      <td>
+    <div className="linhaLayoutGradePadrao linhaPedido">
+      {colunas.map((coluna) => renderizarCelulaPedido({
+        coluna,
+        pedido,
+        etapasPedido,
+        permitirExcluir,
+        permitirEdicao,
+        permitirAlteracaoEtapa,
+        aoAlterarEtapa,
+        aoConsultar,
+        aoEditar,
+        aoExcluir
+      }))}
+    </div>
+  );
+}
+
+function renderizarCelulaPedido({
+  coluna,
+  pedido,
+  etapasPedido,
+  permitirExcluir,
+  permitirEdicao,
+  permitirAlteracaoEtapa,
+  aoAlterarEtapa,
+  aoConsultar,
+  aoEditar,
+  aoExcluir
+}) {
+  const propriedadesCelula = {
+    key: coluna.id,
+    className: `celulaLayoutGradePadrao ${coluna.classe}`.trim(),
+    style: obterEstiloColunaLayout(coluna)
+  };
+
+  if (coluna.id === 'codigo' || coluna.id === 'idPedido') {
+    return (
+      <CelulaLayoutPedido coluna={coluna} {...propriedadesCelula}>
         <CodigoRegistro valor={pedido.idPedido} />
-      </td>
-      <td>
-        <div className="celulaRegistroDetalhes">
-          <div className="topoRegistroDetalhes">
-            <strong>{pedido.nomeClienteSnapshot || 'Nao informado'}</strong>
-          </div>
-          <span className="textoSecundarioRegistro">{pedido.nomeContatoSnapshot || 'Sem contato'}</span>
-        </div>
-      </td>
-      <td>
+      </CelulaLayoutPedido>
+    );
+  }
+
+  if (coluna.id === 'idOrcamento') {
+    return (
+      <CelulaLayoutPedido coluna={coluna} {...propriedadesCelula}>
+        {pedido.idOrcamento ? <CodigoRegistro valor={pedido.idOrcamento} /> : '-'}
+      </CelulaLayoutPedido>
+    );
+  }
+
+  if (coluna.id === 'codigoOrcamentoOrigem') {
+    return (
+      <CelulaLayoutPedido coluna={coluna} {...propriedadesCelula}>
+        {pedido.codigoOrcamentoOrigem ? <CodigoRegistro valor={pedido.codigoOrcamentoOrigem} /> : '-'}
+      </CelulaLayoutPedido>
+    );
+  }
+
+  if (coluna.id === 'cliente' || coluna.id === 'idCliente') {
+    return (
+      <CelulaLayoutPedido coluna={coluna} {...propriedadesCelula}>
+        <TextoGradeClamp>{obterValorGrid(pedido.nomeClienteSnapshot)}</TextoGradeClamp>
+      </CelulaLayoutPedido>
+    );
+  }
+
+  if (coluna.id === 'contato' || coluna.id === 'idContato') {
+    return (
+      <CelulaLayoutPedido coluna={coluna} {...propriedadesCelula}>
+        <TextoGradeClamp>{obterValorGrid(pedido.nomeContatoSnapshot)}</TextoGradeClamp>
+      </CelulaLayoutPedido>
+    );
+  }
+
+  if (coluna.id === 'usuario' || coluna.id === 'idUsuario') {
+    return (
+      <CelulaLayoutPedido coluna={coluna} {...propriedadesCelula}>
+        <TextoGradeClamp>{obterValorGrid(pedido.nomeUsuarioSnapshot)}</TextoGradeClamp>
+      </CelulaLayoutPedido>
+    );
+  }
+
+  if (coluna.id === 'vendedor' || coluna.id === 'idVendedor') {
+    return (
+      <CelulaLayoutPedido coluna={coluna} {...propriedadesCelula}>
+        <TextoGradeClamp>{obterValorGrid(pedido.nomeVendedorSnapshot)}</TextoGradeClamp>
+      </CelulaLayoutPedido>
+    );
+  }
+
+  if (coluna.id === 'etapa') {
+    return (
+      <CelulaLayoutPedido coluna={coluna} {...propriedadesCelula}>
         <div className="campoEtapaGridOrcamento">
           <select
             className="selectEtapaGridOrcamento"
@@ -576,10 +670,85 @@ function LinhaPedido({
             ))}
           </select>
         </div>
-      </td>
-      <td>{pedido.nomeVendedorSnapshot || 'Nao informado'}</td>
-      <td>{normalizarPreco(pedido.totalPedido)}</td>
-      <td>
+      </CelulaLayoutPedido>
+    );
+  }
+
+  if (coluna.id === 'idEtapaPedido') {
+    return (
+      <CelulaLayoutPedido coluna={coluna} {...propriedadesCelula}>
+        <TextoGradeClamp>{obterValorGrid(pedido.nomeEtapaPedidoSnapshot)}</TextoGradeClamp>
+      </CelulaLayoutPedido>
+    );
+  }
+
+  if (coluna.id === 'comissao') {
+    return (
+      <CelulaLayoutPedido coluna={coluna} {...propriedadesCelula}>
+        {normalizarPreco(pedido.comissao || 0)}
+      </CelulaLayoutPedido>
+    );
+  }
+
+  if (coluna.id === 'prazoPagamento' || coluna.id === 'idPrazoPagamento') {
+    return (
+      <CelulaLayoutPedido coluna={coluna} {...propriedadesCelula}>
+        <TextoGradeClamp>{obterValorGrid(pedido.nomePrazoPagamentoSnapshot)}</TextoGradeClamp>
+      </CelulaLayoutPedido>
+    );
+  }
+
+  if (coluna.id === 'metodoPagamento') {
+    return (
+      <CelulaLayoutPedido coluna={coluna} {...propriedadesCelula}>
+        <TextoGradeClamp>{obterValorGrid(pedido.nomeMetodoPagamentoSnapshot)}</TextoGradeClamp>
+      </CelulaLayoutPedido>
+    );
+  }
+
+  if (coluna.id === 'dataInclusao') {
+    return (
+      <CelulaLayoutPedido coluna={coluna} {...propriedadesCelula}>
+        {formatarDataGridPedido(pedido.dataInclusao)}
+      </CelulaLayoutPedido>
+    );
+  }
+
+  if (coluna.id === 'dataEntrega') {
+    return (
+      <CelulaLayoutPedido coluna={coluna} {...propriedadesCelula}>
+        {formatarDataGridPedido(pedido.dataEntrega)}
+      </CelulaLayoutPedido>
+    );
+  }
+
+  if (coluna.id === 'dataValidade') {
+    return (
+      <CelulaLayoutPedido coluna={coluna} {...propriedadesCelula}>
+        {formatarDataGridPedido(pedido.dataValidade)}
+      </CelulaLayoutPedido>
+    );
+  }
+
+  if (coluna.id === 'observacao') {
+    return (
+      <CelulaLayoutPedido coluna={coluna} {...propriedadesCelula}>
+        <TextoGradeClamp>{obterValorGrid(pedido.observacao)}</TextoGradeClamp>
+      </CelulaLayoutPedido>
+    );
+  }
+
+  if (coluna.id === 'total') {
+    return (
+      <CelulaLayoutPedido coluna={coluna} {...propriedadesCelula}>
+        {normalizarPreco(pedido.totalPedido)}
+      </CelulaLayoutPedido>
+    );
+  }
+
+  if (coluna.id === 'acoes') {
+    return (
+      <CelulaLayoutPedido coluna={coluna} {...propriedadesCelula}>
         <AcoesRegistro
           rotuloConsulta="Consultar pedido"
           rotuloEdicao={permitirEdicao ? 'Editar pedido' : 'Pedido entregue: usuario padrao consulta apenas.'}
@@ -591,8 +760,19 @@ function LinhaPedido({
           aoEditar={aoEditar}
           aoInativar={aoExcluir}
         />
-      </td>
-    </tr>
+      </CelulaLayoutPedido>
+    );
+  }
+
+  return null;
+}
+
+function CelulaLayoutPedido({ coluna, children, ...propriedades }) {
+  return (
+    <div {...propriedades}>
+      <span className="rotuloCelulaLayoutGradePadrao">{coluna.rotulo}</span>
+      {children}
+    </div>
   );
 }
 
@@ -612,6 +792,28 @@ function enriquecerPedidos(pedidos, etapasPedido) {
       || '',
     corEtapaPedido: etapasPorId.get(pedido.idEtapaPedido)?.cor || ''
   }));
+}
+
+function obterEstiloColunaLayout(coluna) {
+  return {
+    order: coluna.ordem,
+    gridColumn: `span ${Math.max(1, Number(coluna.span || 1))}`
+  };
+}
+
+function formatarDataGridPedido(valor) {
+  if (!valor) {
+    return '-';
+  }
+
+  const texto = String(valor).slice(0, 10);
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(texto)) {
+    return '-';
+  }
+
+  const [ano, mes, dia] = texto.split('-');
+  return `${dia}/${mes}/${ano}`;
 }
 
 function filtrarPedidos(pedidos, pesquisa, filtros) {

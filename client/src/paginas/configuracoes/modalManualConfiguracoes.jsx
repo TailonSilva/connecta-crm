@@ -18,7 +18,7 @@ export function ModalManualConfiguracoes({
       descricao="Guia visual dos cadastros base do CRM, atalhos por secao e regras de permissao da pagina de configuracoes."
       eyebrow="Base estrutural"
       heroTitulo="Como a pagina de Configuracoes sustenta o restante do sistema"
-      heroDescricao="A tela de Configuracoes centraliza cadastros auxiliares, parametros da empresa, layout do orcamento, atualizacao do sistema e a base inicial da area de relatorios. Tudo o que e mantido aqui abastece formularios e regras das demais paginas do CRM."
+      heroDescricao="A tela de Configuracoes centraliza cadastros auxiliares, parametros da empresa, layout do orcamento, colunas visiveis de grids, atualizacao do sistema e a base inicial da area de relatorios. Tudo o que e mantido aqui abastece formularios e regras das demais paginas do CRM."
       painelHeroi={[
         { valor: secoes.length, rotulo: 'Secoes disponiveis' },
         { valor: totalAtalhos, rotulo: 'Atalhos de configuracao' },
@@ -98,6 +98,8 @@ export function ModalManualConfiguracoes({
             'Canais, origens e motivos de perda entram no fluxo comercial.',
             'Grupos de empresa e seus contatos abastecem o cadastro de clientes com heranca de contatos.',
             'A empresa define se o CRM usa o codigo padrao do cliente ou o Codigo alternativo como identificador principal nos grids que exibem codigo.',
+            'A empresa tambem pode escolher quais colunas do cadastro de Atendimentos aparecem no grid principal, incluindo codigo, agendamento, horarios e relacionamentos exibidos com nomes legiveis.',
+            'As grades de configuracao, historico e relatorio priorizam leitura sem rolagem horizontal, com colunas curtas mais contidas e colunas textuais mais flexiveis.',
             'Metodos, prazos, etapas e campos personalizados abastecem Orcamentos e Pedidos.',
             'Parametros da empresa influenciam layout de PDF, expediente, pagina inicial simplificada e regras operacionais do cadastro.'
           ]

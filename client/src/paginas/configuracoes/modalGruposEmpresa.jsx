@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Botao } from '../../componentes/comuns/botao';
 import { BotaoAcaoGrade } from '../../componentes/comuns/botaoAcaoGrade';
+import { GradePadrao } from '../../componentes/comuns/gradePadrao';
 import { normalizarTelefone } from '../../utilitarios/normalizarTelefone';
 import { normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTextoFormulario';
 import { ModalContatoCliente } from '../clientes/modalContatoCliente';
@@ -268,55 +269,53 @@ export function ModalGruposEmpresa({
                 </Botao>
               </div>
 
-              <div className="gradeContatosModal">
-                <table className="tabelaContatosModal">
-                  <thead>
-                    <tr>
-                      <th>Nome</th>
-                      <th>Contato</th>
-                      <th></th>
-                      <th className="cabecalhoAcoesContato">Acoes</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {contatosFormulario.length > 0 ? contatosFormulario.map((contato) => (
-                      <tr key={identificarContatoGrupo(contato)}>
-                        <td>
-                          <div className="celulaContatoModal">
-                            <strong>{contato.nome}</strong>
-                            <span>{contato.cargo || 'Cargo nao informado'}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="celulaContatoComunicacao">
-                            <span>{contato.email || 'E-mail nao informado'}</span>
-                            <span>{normalizarTelefone(contato.whatsapp || contato.telefone) || 'Telefone nao informado'}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="grupoEtiquetasContato">
-                            <span className={`etiquetaStatus ${contato.status ? 'ativo' : 'inativo'}`}>
-                              {contato.status ? 'Ativo' : 'Inativo'}
-                            </span>
-                            {contato.principal ? <span className="etiquetaStatus etiquetaPrincipal">Principal</span> : null}
-                          </div>
-                        </td>
-                        <td>
-                          <div className="acoesContatoModal">
-                            <BotaoAcaoGrade icone="consultar" titulo="Consultar contato" onClick={() => consultarContato(contato)} />
-                            <BotaoAcaoGrade icone="editar" titulo="Editar contato" onClick={() => editarContato(contato)} disabled={modoAtual === 'consulta'} />
-                            <BotaoAcaoGrade icone="inativar" titulo="Inativar contato" onClick={() => inativarContato(contato)} disabled={modoAtual === 'consulta'} />
-                          </div>
-                        </td>
-                      </tr>
-                    )) : (
-                      <tr>
-                        <td colSpan={4} className="mensagemTabelaContatosModal">Nenhum contato cadastrado.</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              <GradePadrao
+                className="gradeContatosModal"
+                classNameTabela="tabelaContatosModal"
+                classNameMensagem="mensagemTabelaContatosModal"
+                cabecalho={(
+                  <tr>
+                    <th>Nome</th>
+                    <th>Contato</th>
+                    <th></th>
+                    <th className="cabecalhoAcoesContato">Acoes</th>
+                  </tr>
+                )}
+                temItens={contatosFormulario.length > 0}
+                mensagemVazia="Nenhum contato cadastrado."
+              >
+                {contatosFormulario.map((contato) => (
+                  <tr key={identificarContatoGrupo(contato)}>
+                    <td>
+                      <div className="celulaContatoModal">
+                        <strong>{contato.nome}</strong>
+                        <span>{contato.cargo || 'Cargo nao informado'}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="celulaContatoComunicacao">
+                        <span>{contato.email || 'E-mail nao informado'}</span>
+                        <span>{normalizarTelefone(contato.whatsapp || contato.telefone) || 'Telefone nao informado'}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="grupoEtiquetasContato">
+                        <span className={`etiquetaStatus ${contato.status ? 'ativo' : 'inativo'}`}>
+                          {contato.status ? 'Ativo' : 'Inativo'}
+                        </span>
+                        {contato.principal ? <span className="etiquetaStatus etiquetaPrincipal">Principal</span> : null}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="acoesContatoModal">
+                        <BotaoAcaoGrade icone="consultar" titulo="Consultar contato" onClick={() => consultarContato(contato)} />
+                        <BotaoAcaoGrade icone="editar" titulo="Editar contato" onClick={() => editarContato(contato)} disabled={modoAtual === 'consulta'} />
+                        <BotaoAcaoGrade icone="inativar" titulo="Inativar contato" onClick={() => inativarContato(contato)} disabled={modoAtual === 'consulta'} />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </GradePadrao>
             </section>
 
             {mensagemErroContato ? <p className="mensagemErroFormulario">{mensagemErroContato}</p> : null}

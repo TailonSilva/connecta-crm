@@ -1,14 +1,16 @@
 export function CabecalhoGradeProdutos() {
   return (
     <tr className="cabecalhoGradeProdutos">
-      <th>Imagem</th>
-      <th>Produto</th>
-      <th>Grupo</th>
-      <th>Marca</th>
-      <th>Unidade</th>
-      <th>Preco</th>
-      <th>Status</th>
-      <th>Acoes</th>
+      <th className="colunaGradeMidia">Imagem</th>
+      <th className="colunaGradeCodigo">Codigo</th>
+      <th className="colunaGradeTexto">Referencia</th>
+      <th className="colunaGradeTextoPrincipal">Descricao</th>
+      <th className="colunaGradeTexto">Grupo</th>
+      <th className="colunaGradeTexto">Marca</th>
+      <th className="colunaGradeTextoCurto">Unidade</th>
+      <th className="colunaGradeValor">Preco</th>
+      <th className="colunaGradeStatus">Status</th>
+      <th className="colunaGradeAcoes">Acoes</th>
     </tr>
   );
 }

@@ -8,6 +8,7 @@
 }
 
 .modalHistoricoGrade .acoesCabecalhoModalCliente {
+  flex: 1 1 auto;
   flex-wrap: nowrap;
   justify-content: flex-end;
   min-width: 0;
@@ -26,9 +27,10 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  flex: 1 1 auto;
 }
 
 .modalHistoricoGradeChipsCabecalho {
@@ -56,14 +58,15 @@
 }
 
 .modalHistoricoGradePesquisa {
-  min-width: 220px;
-  width: min(280px, 100%);
+  flex: 0 1 280px;
+  min-width: 180px;
+  width: 280px;
 }
 
 .modalHistoricoGradeAbasCabecalho {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex: 0 0 auto;
   min-width: max-content;
   padding-inline: 2px;
@@ -74,6 +77,12 @@
   flex: 0 0 auto;
   min-width: max-content;
   padding-block: 9px;
+  padding-inline: 12px;
+}
+
+.modalHistoricoGrade .acoesCabecalhoModalCliente > .botao {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .modalHistoricoGradeCorpo {

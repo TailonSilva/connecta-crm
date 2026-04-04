@@ -58,6 +58,14 @@ Observacao importante:
 - Campos de formulario com botoes laterais de busca, consulta ou cadastro devem usar os contêineres compartilhados de acao do formulario para manter o botao ao lado do input/select sem quebrar a grade
 - Selects de contato devem exibir o rotulo no formato `Nome - Cargo` sempre que o cargo estiver preenchido
 - Sempre que houver mudanca estrutural relevante de banco, fluxo desktop ou release, o README deve ser atualizado
+- Sempre que houver alteracao relevante de arquitetura frontend, padroes reutilizaveis ou convencoes de implementacao, o README tambem deve ser atualizado no mesmo trabalho
+- Grades de dados do aplicativo devem nascer do componente-base reutilizavel `GradePadrao`; excecoes ficam restritas a documentos de exportacao e PDF
+- Quando um modulo precisar priorizar composicao visual flexivel em vez de tabela semantica fixa, o `GradePadrao` pode operar em modo de layout com `display: grid`, mantendo carregamento, estados e rolagem reutilizaveis
+- Grades de dados devem priorizar leitura sem rolagem horizontal: colunas curtas como codigo, valores e acoes permanecem mais contidas, enquanto colunas textuais podem expandir, quebrar linha ou aplicar truncamento visual conforme o contexto
+- Grades de dados nao devem empilhar duas informacoes diferentes na mesma celula; quando o registro exigir mais de um dado relevante, cada informacao deve ganhar sua propria coluna
+- Sempre que o conteudo textual de uma celula ultrapassar duas linhas, a grade deve truncar visualmente com reticencias para preservar altura previsivel e leitura da listagem
+- Quando uma grade tiver muitas colunas ou textos longos, a distribuicao horizontal deve usar presets de largura por contexto dentro do `GradePadrao`, em vez de voltar para tabelas isoladas ou CSS solto por pagina
+- Quando a empresa puder escolher colunas visiveis de uma grade, essa configuracao deve ficar persistida no cadastro da `Empresa`, refletir todas as colunas persistidas daquele modulo e usar renderizacao dinamica de cabecalho, linhas e `colgroup`
 - Cada componente novo deve ter seu proprio arquivo de estilo com o mesmo nome do componente salvo em `client/src/recursos/estilos/`
 - CSS de pagina deve ficar restrito a layout/composicao da pagina e tambem salvo em `client/src/recursos/estilos/`
 - Classes CSS devem ser prefixadas pelo nome do componente para reduzir acoplamento visual e colisao de seletores
@@ -68,7 +76,7 @@ Observacao importante:
 Padroes centralizados no frontend:
 
 - `Botao`: botoes primarios, secundarios, complementares, perigo e somente icone
-- `GradePadrao`: grades principais com cabecalho fixo e rolagem na lista
+- `GradePadrao`: componente-base unico para grades de dados da interface, com cabecalho fixo, rolagem vertical na lista, estados de carregamento/erro/vazio, `colgroup` opcional, distribuicao mais flexivel das colunas, suporte a presets de largura por contexto e classes de compatibilidade para preservar variacoes visuais existentes
 - `AcoesRegistro`: acoes padrao de linha
 - `CodigoRegistro`: selo visual de codigo
 - `CampoImagemPadrao`: upload, preview e recorte de imagem com resolucao de saida configuravel por contexto e area de corte destacada no modal com moldura pontilhada e cantos arredondados
@@ -286,6 +294,10 @@ Filtros da agenda:
 - Tela com grade, pesquisa e filtros
 - Modal de atendimento com formulario proprio
 - Manual visual da pagina acessado por `F1`, com fluxo, validacoes, permissoes e atalhos reais da tela
+- A grade principal usa distribuicao dinamica por coluna, mantendo dados curtos e previsiveis como `Data`, `Inicio`, `Fim`, `Origem` e `Acoes` mais contidos, deixando `Assunto` e `Descricao` ocuparem a maior parte do espaco util
+- A empresa pode definir em `Configuracoes > Atendimentos > Colunas do grid` quais colunas do cadastro aparecem na listagem principal, incluindo `Codigo`, `Agendamento`, `Data`, `Inicio`, `Fim`, `Cliente`, `Contato`, `Assunto`, `Descricao`, `Canal`, `Origem` e `Usuario`
+- A configuracao do grid principal de `Atendimentos` tambem permite definir a ordem e o espaco ocupado por cada informacao em uma malha de `24` colunas, com `Acoes` sempre visivel
+- O atalho geral `Colunas do grid` abre um seletor por modulo; hoje `Atendimentos`, `Clientes`, `Produtos`, `Orcamentos` e `Pedidos` ja permitem configurar visibilidade, ordem e espaco das colunas por empresa
 - Campos de cliente, contato e orcamento no mesmo fluxo comercial
 - Busca de cliente por modal reutilizavel
 - Busca de contato por modal reutilizavel
@@ -348,6 +360,7 @@ Filtros da agenda:
 
 - Manual visual da pagina de configuracoes acessado por `F1`, com organizacao das secoes, permissoes e impacto dos cadastros no restante do CRM
 - Sempre que uma regra, fluxo, validacao ou configuracao relevante de qualquer pagina mudar, o respectivo manual visual tambem deve ser atualizado para continuar refletindo o comportamento real da tela
+- Refatoracoes internas sem impacto de uso nao exigem ajuste de manual visual, mas continuam exigindo atualizacao do README quando mudarem arquitetura, convencoes ou componentes-base reutilizaveis
 
 A tela de configuracoes usa cards grandes e modais padrao. Hoje ela cobre:
 
@@ -381,6 +394,7 @@ A tela de configuracoes usa cards grandes e modais padrao. Hoje ela cobre:
 - `Vendas` ja esta funcional e lista pedidos pelas datas de `Inclusao` e `Entrega`, com cards de consolidado, chips de filtros ativos, botao de exportacao em PDF e grade de pedidos sem botoes de acao
 - `Conversao` ja esta funcional e lista orcamentos em grade propria mais simples, com colunas separadas de inclusao, fechamento, cliente e contato, cards de gerados, fechados, conversao e abertos, filtros por cliente, usuario, vendedores, etapas e datas, alem de exportacao em PDF
 - `Atendimentos` ja esta funcional e reaproveita a grade do historico por cliente com a coluna de `Cliente` adicionada, alem de cards com total atendido, clientes distintos, canal lider, origem lider, filtro no cabecalho e exportacao em PDF
+- A secao `Atendimentos` tambem possui atalho para configurar por empresa quais colunas persistidas do cadastro aparecem na grade principal da pagina operacional
 - `Pedidos Entregues` e `Atendimentos` ja usam a mesma base visual e ficam preparados para evolucao das regras especificas
 
 Regras importantes:
@@ -774,6 +788,7 @@ Paginas hoje presentes no painel:
 - `Clientes`
 - `Produtos`
 - `Orcamentos`
+- `Pedidos`
 - `Pedidos`
 - `Configuracoes`
 

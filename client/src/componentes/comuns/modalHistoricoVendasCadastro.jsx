@@ -1,3 +1,5 @@
+import { BotaoAcaoGrade } from './botaoAcaoGrade';
+import { GradePadrao } from './gradePadrao';
 import { ModalHistoricoGrade } from './modalHistoricoGrade';
 import { TabelaHistoricoPedidos } from './tabelaHistoricoPedidos';
 import { normalizarPreco } from '../../utilitarios/normalizarPreco';
@@ -72,66 +74,53 @@ export function ModalHistoricoVendasCadastro({
             onConsultarPedido={onConsultarPedido}
           />
         ) : (
-          <div className="gradeContatosModal gradePedidosCliente modalHistoricoVendasClienteGrade">
-            <table className="tabelaContatosModal tabelaItensPedidosCliente">
-              <thead>
-                <tr>
-                  <th className="colunaHistoricoData">Inclusao</th>
-                  <th className="colunaHistoricoData">Entrega</th>
-                  <th className="colunaHistoricoPedido">Pedido</th>
-                  {exibirClienteNosItens ? <th className="colunaHistoricoCliente">Cliente</th> : null}
-                  {exibirProdutoNosItens ? <th className="colunaHistoricoReferencia">Referencia</th> : null}
-                  {exibirProdutoNosItens ? <th className="colunaHistoricoDescricao">Descricao</th> : null}
-                  <th className="colunaHistoricoValor">Valor</th>
-                  <th className="colunaHistoricoQuantidade">Quantidade</th>
-                  <th className="colunaHistoricoValorTotal">Valor total</th>
-                  {exibirAcaoItens ? <th className="cabecalhoAcoesContato">Acoes</th> : null}
-                </tr>
-              </thead>
-              <tbody>
-                {carregando ? (
-                  <tr>
-                    <td colSpan={obterColspanItens({ exibirClienteNosItens, exibirProdutoNosItens, exibirAcaoItens })} className="mensagemTabelaContatosModal">Carregando itens dos pedidos...</td>
-                  </tr>
-                ) : mensagemErro ? (
-                  <tr>
-                    <td colSpan={obterColspanItens({ exibirClienteNosItens, exibirProdutoNosItens, exibirAcaoItens })} className="mensagemTabelaContatosModal">{mensagemErro}</td>
-                  </tr>
-                ) : !contextoSalvo ? (
-                  <tr>
-                    <td colSpan={obterColspanItens({ exibirClienteNosItens, exibirProdutoNosItens, exibirAcaoItens })} className="mensagemTabelaContatosModal">{mensagemSemContextoItens}</td>
-                  </tr>
-                ) : itensPedidos.length > 0 ? (
-                  itensPedidos.map((item) => (
-                    <tr key={item.chave}>
-                      <td className="colunaHistoricoData">{formatarDataHistoricoVenda(item.dataInclusao)}</td>
-                      <td className="colunaHistoricoData">{formatarDataHistoricoVenda(item.dataEntrega)}</td>
-                      <td className="colunaHistoricoPedido">
-                        <span className="codigoHistoricoPedido">{`#${String(item.idPedido).padStart(4, '0')}`}</span>
-                      </td>
-                      {exibirClienteNosItens ? <td className="colunaHistoricoCliente">{item.nomeCliente || 'Cliente nao informado'}</td> : null}
-                      {exibirProdutoNosItens ? <td className="colunaHistoricoReferencia">{item.referenciaProduto || '-'}</td> : null}
-                      {exibirProdutoNosItens ? <td className="colunaHistoricoDescricao">{item.descricaoProduto || 'Produto nao informado'}</td> : null}
-                      <td className="colunaHistoricoValor">{normalizarPreco(item.valorUnitario)}</td>
-                      <td className="colunaHistoricoQuantidade">{item.quantidade}</td>
-                      <td className="colunaHistoricoValorTotal">{normalizarPreco(item.valorTotal)}</td>
-                      {exibirAcaoItens ? (
-                        <td>
-                          <div className="acoesContatoModal">
-                            <BotaoAcaoGrade icone="consultar" titulo="Consultar pedido" onClick={() => onConsultarPedido?.(item.pedido)} />
-                          </div>
-                        </td>
-                      ) : null}
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={obterColspanItens({ exibirClienteNosItens, exibirProdutoNosItens, exibirAcaoItens })} className="mensagemTabelaContatosModal">{mensagemVazioItens}</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <GradePadrao
+            className="gradeContatosModal gradePedidosCliente modalHistoricoVendasClienteGrade"
+            classNameTabela="tabelaContatosModal tabelaItensPedidosCliente"
+            classNameMensagem="mensagemTabelaContatosModal"
+            cabecalho={(
+              <tr>
+                <th className="colunaHistoricoData">Inclusao</th>
+                <th className="colunaHistoricoData">Entrega</th>
+                <th className="colunaHistoricoPedido">Pedido</th>
+                {exibirClienteNosItens ? <th className="colunaHistoricoCliente">Cliente</th> : null}
+                {exibirProdutoNosItens ? <th className="colunaHistoricoReferencia">Referencia</th> : null}
+                {exibirProdutoNosItens ? <th className="colunaHistoricoDescricao">Descricao</th> : null}
+                <th className="colunaHistoricoValor">Valor</th>
+                <th className="colunaHistoricoQuantidade">Quantidade</th>
+                <th className="colunaHistoricoValorTotal">Valor total</th>
+                {exibirAcaoItens ? <th className="cabecalhoAcoesContato">Acoes</th> : null}
+              </tr>
+            )}
+            carregando={carregando}
+            mensagemErro={mensagemErro}
+            temItens={contextoSalvo && itensPedidos.length > 0}
+            mensagemCarregando="Carregando itens dos pedidos..."
+            mensagemVazia={contextoSalvo ? mensagemVazioItens : mensagemSemContextoItens}
+          >
+            {itensPedidos.map((item) => (
+              <tr key={item.chave}>
+                <td className="colunaHistoricoData">{formatarDataHistoricoVenda(item.dataInclusao)}</td>
+                <td className="colunaHistoricoData">{formatarDataHistoricoVenda(item.dataEntrega)}</td>
+                <td className="colunaHistoricoPedido">
+                  <span className="codigoHistoricoPedido">{`#${String(item.idPedido).padStart(4, '0')}`}</span>
+                </td>
+                {exibirClienteNosItens ? <td className="colunaHistoricoCliente">{item.nomeCliente || 'Cliente nao informado'}</td> : null}
+                {exibirProdutoNosItens ? <td className="colunaHistoricoReferencia">{item.referenciaProduto || '-'}</td> : null}
+                {exibirProdutoNosItens ? <td className="colunaHistoricoDescricao">{item.descricaoProduto || 'Produto nao informado'}</td> : null}
+                <td className="colunaHistoricoValor">{normalizarPreco(item.valorUnitario)}</td>
+                <td className="colunaHistoricoQuantidade">{item.quantidade}</td>
+                <td className="colunaHistoricoValorTotal">{normalizarPreco(item.valorTotal)}</td>
+                {exibirAcaoItens ? (
+                  <td>
+                    <div className="acoesContatoModal">
+                      <BotaoAcaoGrade icone="consultar" titulo="Consultar pedido" onClick={() => onConsultarPedido?.(item.pedido)} />
+                    </div>
+                  </td>
+                ) : null}
+              </tr>
+            ))}
+          </GradePadrao>
         )}
       </section>
     </ModalHistoricoGrade>
@@ -146,6 +135,3 @@ function formatarDataHistoricoVenda(data) {
   return new Intl.DateTimeFormat('pt-BR').format(new Date(`${data}T00:00:00`));
 }
 
-function obterColspanItens({ exibirClienteNosItens, exibirProdutoNosItens, exibirAcaoItens }) {
-  return 6 + (exibirClienteNosItens ? 1 : 0) + (exibirProdutoNosItens ? 2 : 0) + (exibirAcaoItens ? 1 : 0);
-}

@@ -92,6 +92,28 @@
   display: grid;
 }
 
+.conteudoCartaoConfiguracao small {
+  margin-top: 4px;
+  color: var(--corTextoSuave);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.modalSelecaoColunasGrid {
+  width: min(1120px, calc(100vw - 32px));
+}
+
+.gradeSelecaoColunasGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+  justify-content: stretch;
+}
+
+.cartaoSelecaoColunasGrid {
+  min-height: 164px;
+}
+
 .iconeCartaoConfiguracao {
   place-items: center;
 }
@@ -148,39 +170,181 @@
   line-height: 1.6;
 }
 
+.listaCheckboxesGridAtendimentos {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.itemCheckboxGridAtendimentos {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  border: 1px solid rgba(23, 145, 226, 0.12);
+  border-radius: 18px;
+  background: rgba(248, 251, 254, 0.88);
+}
+
+.cabecalhoItemCheckboxGridAtendimentos {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.itemCheckboxGridAtendimentos input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--corPrimaria);
+}
+
+.itemCheckboxGridAtendimentos span {
+  min-width: 0;
+  font-weight: 600;
+  color: var(--corTexto);
+}
+
+.itemCheckboxGridAtendimentos small {
+  color: var(--corTextoSuave);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.itemCheckboxGridAtendimentos.ativo {
+  border-color: rgba(23, 145, 226, 0.22);
+  background: rgba(236, 246, 253, 0.96);
+}
+
+.itemCheckboxGridAtendimentos.obrigatorio {
+  background:
+    linear-gradient(180deg, rgba(248, 251, 254, 0.96) 0%, rgba(239, 247, 252, 0.96) 100%);
+}
+
+.acoesItemCheckboxGridAtendimentos {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.grupoChipsGridAtendimentos {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chipResumoGridAtendimentos {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(23, 145, 226, 0.12);
+  color: var(--corPrimariaForte);
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.chipResumoGridAtendimentos.inativo {
+  background: rgba(148, 163, 184, 0.16);
+  color: var(--corTextoSuave);
+}
+
+.chipResumoGridAtendimentosObrigatorio {
+  background: rgba(245, 158, 11, 0.16);
+  color: #a16207;
+}
+
+.resumoColunasGridAtendimentos {
+  margin: 10px 0 0;
+  color: var(--corTextoSuave);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.resumoColunasGridAtendimentos.excedido {
+  color: #b34c4c;
+}
+
+.modalEdicaoColunaGridAtendimentos {
+  width: min(420px, calc(100vw - 32px));
+}
+
+.painelEdicaoColunaGridAtendimentos {
+  display: grid;
+  gap: 14px;
+}
+
+.campoEdicaoColunaGridAtendimentos {
+  display: grid;
+  gap: 6px;
+}
+
+.campoEdicaoColunaGridAtendimentos span {
+  color: var(--corTextoSuave);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.campoEdicaoColunaGridAtendimentos input {
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  padding: 10px 12px;
+  border: 1px solid rgba(23, 145, 226, 0.18);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--corTexto);
+  font: inherit;
+}
+
 .tabelaUsuariosModal th:nth-child(1),
 .tabelaUsuariosModal td:nth-child(1) {
   width: 64px;
+  white-space: nowrap;
 }
 
 .tabelaUsuariosModal th:nth-child(2),
 .tabelaUsuariosModal td:nth-child(2) {
-  width: 22%;
+  width: auto;
 }
 
 .tabelaUsuariosModal th:nth-child(3),
 .tabelaUsuariosModal td:nth-child(3) {
   width: 86px;
+  white-space: nowrap;
 }
 
 .tabelaUsuariosModal th:nth-child(4),
 .tabelaUsuariosModal td:nth-child(4) {
-  width: 18%;
+  width: 16%;
 }
 
 .tabelaUsuariosModal th:nth-child(5),
 .tabelaUsuariosModal td:nth-child(5) {
-  width: 24%;
+  width: auto;
 }
 
 .tabelaUsuariosModal th:nth-child(6),
 .tabelaUsuariosModal td:nth-child(6) {
-  width: 12%;
+  width: 112px;
+  white-space: nowrap;
 }
 
 .tabelaUsuariosModal th:nth-child(7),
 .tabelaUsuariosModal td:nth-child(7) {
-  width: 148px;
+  width: 118px;
 }
 
 .tabelaUsuariosModal th.cabecalhoAcoesContato {
@@ -195,41 +359,44 @@
 .tabelaCadastrosConfiguracao th:nth-child(1),
 .tabelaCadastrosConfiguracao td:nth-child(1) {
   width: 86px;
+  white-space: nowrap;
 }
 
 .tabelaCadastrosConfiguracao th:last-child,
 .tabelaCadastrosConfiguracao td:last-child {
-  width: 148px;
+  width: 118px;
 }
 
 .tabelaPrazosPagamento th:nth-child(1),
 .tabelaPrazosPagamento td:nth-child(1) {
   width: 92px;
+  white-space: nowrap;
 }
 
 .tabelaPrazosPagamento th:nth-child(2),
 .tabelaPrazosPagamento td:nth-child(2) {
-  width: 36%;
+  width: auto;
 }
 
 .tabelaPrazosPagamento th:nth-child(3),
 .tabelaPrazosPagamento td:nth-child(3) {
-  width: 18%;
+  width: 16%;
 }
 
 .tabelaPrazosPagamento th:nth-child(4),
 .tabelaPrazosPagamento td:nth-child(4) {
-  width: 16%;
+  width: auto;
 }
 
 .tabelaPrazosPagamento th:nth-child(5),
 .tabelaPrazosPagamento td:nth-child(5) {
-  width: 116px;
+  width: 104px;
+  white-space: nowrap;
 }
 
 .tabelaPrazosPagamento th:nth-child(6),
 .tabelaPrazosPagamento td:nth-child(6) {
-  width: 164px;
+  width: 118px;
 }
 
 .tabelaEtapasPedido th:nth-child(1),
@@ -789,6 +956,24 @@
 @media (max-width: 980px) {
   .gradeConfiguracoes {
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+
+  .listaCheckboxesGridAtendimentos {
+    grid-template-columns: 1fr;
+  }
+
+  .itemCheckboxGridAtendimentos {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .acoesItemCheckboxGridAtendimentos {
+    margin-left: 0;
+    justify-content: space-between;
+  }
+
+  .grupoChipsGridAtendimentos {
+    justify-content: flex-start;
   }
 }
 

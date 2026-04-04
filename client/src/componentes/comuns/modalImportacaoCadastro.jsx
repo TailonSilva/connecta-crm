@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Botao } from './botao';
+import { GradePadrao } from './gradePadrao';
 import { baixarModeloImportacao, lerArquivoImportacao, obterConfiguracaoImportacaoCadastro } from '../../utilitarios/importacaoCadastros';
 import '../../recursos/estilos/modalImportacaoCadastro.css';
 
@@ -221,31 +222,33 @@ export function ModalImportacaoCadastro({
               </div>
 
               {resultado.rejeitados?.length ? (
-                <div className="gradeContatosModal modalImportacaoCadastroGrade">
-                  <table className="tabelaContatosModal modalImportacaoCadastroTabela">
+                <GradePadrao
+                  className="gradeContatosModal modalImportacaoCadastroGrade"
+                  classNameTabela="tabelaContatosModal modalImportacaoCadastroTabela"
+                  colGroup={(
                     <colgroup>
                       <col className="modalImportacaoCadastroColLinha" />
                       <col className="modalImportacaoCadastroColIdentificacao" />
                       <col className="modalImportacaoCadastroColMotivos" />
                     </colgroup>
-                    <thead>
-                      <tr>
-                        <th>Linha</th>
-                        <th>Identificacao</th>
-                        <th>Motivos</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {resultado.rejeitados.map((item) => (
-                        <tr key={`${item.linha}-${item.identificador}`}>
-                          <td>{item.linha}</td>
-                          <td>{item.identificador || '-'}</td>
-                          <td>{Array.isArray(item.motivos) ? item.motivos.join(' | ') : item.motivo || '-'}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                  )}
+                  cabecalho={(
+                    <tr>
+                      <th>Linha</th>
+                      <th>Identificacao</th>
+                      <th>Motivos</th>
+                    </tr>
+                  )}
+                  temItens={resultado.rejeitados.length > 0}
+                >
+                  {resultado.rejeitados.map((item) => (
+                    <tr key={`${item.linha}-${item.identificador}`}>
+                      <td>{item.linha}</td>
+                      <td>{item.identificador || '-'}</td>
+                      <td>{Array.isArray(item.motivos) ? item.motivos.join(' | ') : item.motivo || '-'}</td>
+                    </tr>
+                  ))}
+                </GradePadrao>
               ) : (
                 <p className="modalImportacaoCadastroSucesso">Nenhuma linha rejeitada nesta importacao.</p>
               )}
@@ -265,8 +268,10 @@ export function ModalImportacaoCadastro({
                 </Botao>
               </div>
 
-              <div className="gradeContatosModal modalImportacaoCadastroGrade modalImportacaoCadastroGradePendencias">
-                <table className="tabelaContatosModal modalImportacaoCadastroTabela modalImportacaoCadastroTabelaPendencias">
+              <GradePadrao
+                className="gradeContatosModal modalImportacaoCadastroGrade modalImportacaoCadastroGradePendencias"
+                classNameTabela="tabelaContatosModal modalImportacaoCadastroTabela modalImportacaoCadastroTabelaPendencias"
+                colGroup={(
                   <colgroup>
                     <col className="modalImportacaoCadastroColLinha" />
                     <col className="modalImportacaoCadastroColIdentificacao" />
@@ -274,47 +279,47 @@ export function ModalImportacaoCadastro({
                     <col className="modalImportacaoCadastroColInformado" />
                     <col className="modalImportacaoCadastroColEscolha" />
                   </colgroup>
-                  <thead>
-                    <tr>
-                      <th>Linha</th>
-                      <th>Identificacao</th>
-                      <th>Campo</th>
-                      <th>Informado</th>
-                      <th>Escolher existente</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pendenciasRelacionais.map((pendencia) => {
-                      const valorSelecionado = correcoesPendencias[pendencia.chave] || '';
+                )}
+                cabecalho={(
+                  <tr>
+                    <th>Linha</th>
+                    <th>Identificacao</th>
+                    <th>Campo</th>
+                    <th>Informado</th>
+                    <th>Escolher existente</th>
+                  </tr>
+                )}
+                temItens={pendenciasRelacionais.length > 0}
+              >
+                {pendenciasRelacionais.map((pendencia) => {
+                  const valorSelecionado = correcoesPendencias[pendencia.chave] || '';
 
-                      return (
-                        <tr key={pendencia.chave}>
-                          <td>{pendencia.linha}</td>
-                          <td>{pendencia.identificador || '-'}</td>
-                          <td>{pendencia.rotulo}</td>
-                          <td>{pendencia.valorInformado || '-'}</td>
-                          <td>
-                            <select
-                              className="entradaFormulario modalImportacaoCadastroSelect"
-                              value={valorSelecionado}
-                              onChange={(evento) => alterarCorrecaoPendencia(pendencia.chave, evento.target.value)}
-                              disabled={bloqueado}
-                            >
-                              <option value="">{pendencia.obrigatorio ? 'Selecione uma opcao' : 'Selecione ou remova o vinculo'}</option>
-                              {!pendencia.obrigatorio ? <option value={VALOR_LIMPAR_REFERENCIA}>Nao vincular</option> : null}
-                              {pendencia.opcoes.map((opcao) => (
-                                <option key={`${pendencia.chave}-${opcao.valor}`} value={opcao.valor}>
-                                  {opcao.label}
-                                </option>
-                              ))}
-                            </select>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                  return (
+                    <tr key={pendencia.chave}>
+                      <td>{pendencia.linha}</td>
+                      <td>{pendencia.identificador || '-'}</td>
+                      <td>{pendencia.rotulo}</td>
+                      <td>{pendencia.valorInformado || '-'}</td>
+                      <td>
+                        <select
+                          className="entradaFormulario modalImportacaoCadastroSelect"
+                          value={valorSelecionado}
+                          onChange={(evento) => alterarCorrecaoPendencia(pendencia.chave, evento.target.value)}
+                          disabled={bloqueado}
+                        >
+                          <option value="">{pendencia.obrigatorio ? 'Selecione uma opcao' : 'Selecione ou remova o vinculo'}</option>
+                          {!pendencia.obrigatorio ? <option value={VALOR_LIMPAR_REFERENCIA}>Nao vincular</option> : null}
+                          {pendencia.opcoes.map((opcao) => (
+                            <option key={`${pendencia.chave}-${opcao.valor}`} value={opcao.valor}>
+                              {opcao.label}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </GradePadrao>
             </section>
           ) : null}
         </div>

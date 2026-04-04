@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Botao } from '../../componentes/comuns/botao';
 import { BotaoAcaoGrade } from '../../componentes/comuns/botaoAcaoGrade';
 import { CodigoRegistro } from '../../componentes/comuns/codigoRegistro';
+import { GradePadrao } from '../../componentes/comuns/gradePadrao';
 import { ModalFiltros } from '../../componentes/comuns/modalFiltros';
 import { normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTextoFormulario';
 
@@ -266,56 +267,50 @@ export function ModalPrazosPagamento({
 
         <div className="corpoModalCliente corpoModalUsuarios corpoModalUsuariosConfiguracao">
           <section className="painelContatosModalCliente painelContatosConfiguracao">
-            <div className="gradeContatosModal">
-              <table className="tabelaContatosModal tabelaCadastrosConfiguracao tabelaPrazosPagamento">
-                <thead>
-                  <tr>
-                    <th>Codigo</th>
-                    <th>Descricao</th>
-                    <th>Metodo</th>
-                    <th>Prazos</th>
-                    <th>Status</th>
-                    <th className="cabecalhoAcoesContato">Acoes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {prazosFiltrados.length > 0 ? (
-                    prazosFiltrados.map((prazo) => (
-                      <tr key={prazo.idPrazoPagamento}>
-                        <td>
-                          <CodigoRegistro valor={prazo.idPrazoPagamento} />
-                        </td>
-                        <td>{prazo.descricao || 'Nao informado'}</td>
-                        <td>{prazo.nomeMetodoPagamento || 'Nao informado'}</td>
-                        <td>{montarResumoPrazos(prazo) || 'Nao informado'}</td>
-                        <td>
-                          <span className={`etiquetaStatus ${prazo.status ? 'ativo' : 'inativo'}`}>
-                            {prazo.status ? 'Ativo' : 'Inativo'}
-                          </span>
-                        </td>
-                        <td className="celulaAcoesUsuarios">
-                          <div className="acoesContatoModal">
-                            <BotaoAcaoGrade icone="consultar" titulo="Consultar prazo de pagamento" onClick={() => abrirConsulta(prazo)} />
-                            {!somenteConsulta ? (
-                              <BotaoAcaoGrade icone="editar" titulo="Editar prazo de pagamento" onClick={() => abrirEdicao(prazo)} />
-                            ) : null}
-                            {!somenteConsulta ? (
-                              <BotaoAcaoGrade icone="inativar" titulo="Inativar prazo de pagamento" onClick={() => aoInativar(prazo)} />
-                            ) : null}
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan={6} className="mensagemTabelaContatosModal">
-                        Nenhum prazo de pagamento encontrado para o filtro atual.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <GradePadrao
+              className="gradeContatosModal"
+              classNameTabela="tabelaContatosModal tabelaCadastrosConfiguracao tabelaPrazosPagamento"
+              classNameMensagem="mensagemTabelaContatosModal"
+              cabecalho={(
+                <tr>
+                  <th>Codigo</th>
+                  <th>Descricao</th>
+                  <th>Metodo</th>
+                  <th>Prazos</th>
+                  <th>Status</th>
+                  <th className="cabecalhoAcoesContato">Acoes</th>
+                </tr>
+              )}
+              temItens={prazosFiltrados.length > 0}
+              mensagemVazia="Nenhum prazo de pagamento encontrado para o filtro atual."
+            >
+              {prazosFiltrados.map((prazo) => (
+                <tr key={prazo.idPrazoPagamento}>
+                  <td>
+                    <CodigoRegistro valor={prazo.idPrazoPagamento} />
+                  </td>
+                  <td>{prazo.descricao || 'Nao informado'}</td>
+                  <td>{prazo.nomeMetodoPagamento || 'Nao informado'}</td>
+                  <td>{montarResumoPrazos(prazo) || 'Nao informado'}</td>
+                  <td>
+                    <span className={`etiquetaStatus ${prazo.status ? 'ativo' : 'inativo'}`}>
+                      {prazo.status ? 'Ativo' : 'Inativo'}
+                    </span>
+                  </td>
+                  <td className="celulaAcoesUsuarios">
+                    <div className="acoesContatoModal">
+                      <BotaoAcaoGrade icone="consultar" titulo="Consultar prazo de pagamento" onClick={() => abrirConsulta(prazo)} />
+                      {!somenteConsulta ? (
+                        <BotaoAcaoGrade icone="editar" titulo="Editar prazo de pagamento" onClick={() => abrirEdicao(prazo)} />
+                      ) : null}
+                      {!somenteConsulta ? (
+                        <BotaoAcaoGrade icone="inativar" titulo="Inativar prazo de pagamento" onClick={() => aoInativar(prazo)} />
+                      ) : null}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </GradePadrao>
           </section>
         </div>
 

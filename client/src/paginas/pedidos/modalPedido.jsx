@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Botao } from '../../componentes/comuns/botao';
 import { CodigoRegistro } from '../../componentes/comuns/codigoRegistro';
+import { GradePadrao } from '../../componentes/comuns/gradePadrao';
 import { ModalBuscaClientes } from '../../componentes/comuns/modalBuscaClientes';
 import { ModalBuscaContatos } from '../../componentes/comuns/modalBuscaContatos';
 import { ModalItemProduto } from '../../componentes/comuns/modalItemProduto';
@@ -693,64 +694,60 @@ export function ModalPedido({
                   ) : null}
                 </div>
 
-                <div className="gradeContatosModal gradeItensOrcamentoRolavel">
-                  <table className="tabelaContatosModal tabelaItensOrcamento">
-                    <thead>
-                      <tr>
-                        <th>Foto</th>
-                        <th>Produto</th>
-                        <th>Quantidade</th>
-                        <th>Valor unitario</th>
-                        <th>Total</th>
-                        <th>Observacao</th>
-                        <th className="cabecalhoAcoesContato">Acoes</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {formulario.itens.length > 0 ? formulario.itens.map((item, indice) => {
-                        const imagemItem = item.imagem || '';
+                <GradePadrao
+                  className="gradeContatosModal gradeItensOrcamentoRolavel"
+                  classNameTabela="tabelaContatosModal tabelaItensOrcamento"
+                  classNameMensagem="mensagemTabelaContatosModal"
+                  cabecalho={(
+                    <tr>
+                      <th>Foto</th>
+                      <th>Produto</th>
+                      <th>Quantidade</th>
+                      <th>Valor unitario</th>
+                      <th>Total</th>
+                      <th>Observacao</th>
+                      <th className="cabecalhoAcoesContato">Acoes</th>
+                    </tr>
+                  )}
+                  temItens={formulario.itens.length > 0}
+                  mensagemVazia="Nenhum item informado."
+                >
+                  {formulario.itens.map((item, indice) => {
+                    const imagemItem = item.imagem || '';
 
-                        return (
-                          <tr key={`${item.idItemPedido || indice}-${indice}`}>
-                            <td>
-                              {imagemItem ? (
-                                <img src={imagemItem} alt={item.descricaoProdutoSnapshot || 'Item do pedido'} className="miniaturaItemOrcamento" />
-                              ) : (
-                                <div className="miniaturaItemOrcamentoPlaceholder">
-                                  {obterIniciaisItemPedido(item)}
-                                </div>
-                              )}
-                            </td>
-                            <td>{item.descricaoProdutoSnapshot || 'Produto nao informado'}</td>
-                            <td>{item.quantidade}</td>
-                            <td>{normalizarPreco(item.valorUnitario)}</td>
-                            <td>{normalizarPreco(item.valorTotal)}</td>
-                            <td>{item.observacao || 'Sem observacao'}</td>
-                            <td className="celulaAcoesUsuarios">
-                              <div className="acoesContatoModal">
-                                <Botao
-                                  variante="secundario"
-                                  type="button"
-                                  icone={somenteLeitura ? 'consultar' : 'editar'}
-                                  somenteIcone
-                                  title={somenteLeitura ? 'Consultar item' : 'Editar item'}
-                                  aria-label={somenteLeitura ? 'Consultar item' : 'Editar item'}
-                                  onClick={() => abrirEdicaoItem(item, indice)}
-                                />
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      }) : (
-                        <tr>
-                          <td colSpan={7} className="mensagemTabelaContatosModal">
-                            Nenhum item informado.
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                    return (
+                      <tr key={`${item.idItemPedido || indice}-${indice}`}>
+                        <td>
+                          {imagemItem ? (
+                            <img src={imagemItem} alt={item.descricaoProdutoSnapshot || 'Item do pedido'} className="miniaturaItemOrcamento" />
+                          ) : (
+                            <div className="miniaturaItemOrcamentoPlaceholder">
+                              {obterIniciaisItemPedido(item)}
+                            </div>
+                          )}
+                        </td>
+                        <td>{item.descricaoProdutoSnapshot || 'Produto nao informado'}</td>
+                        <td>{item.quantidade}</td>
+                        <td>{normalizarPreco(item.valorUnitario)}</td>
+                        <td>{normalizarPreco(item.valorTotal)}</td>
+                        <td>{item.observacao || 'Sem observacao'}</td>
+                        <td className="celulaAcoesUsuarios">
+                          <div className="acoesContatoModal">
+                            <Botao
+                              variante="secundario"
+                              type="button"
+                              icone={somenteLeitura ? 'consultar' : 'editar'}
+                              somenteIcone
+                              title={somenteLeitura ? 'Consultar item' : 'Editar item'}
+                              aria-label={somenteLeitura ? 'Consultar item' : 'Editar item'}
+                              onClick={() => abrirEdicaoItem(item, indice)}
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </GradePadrao>
               </section>
               <div className="resumoTotalItensOrcamento resumoTotalItensOrcamentoRodape">
                 <span className="rotuloResumoTotalItensOrcamento">Total dos itens</span>

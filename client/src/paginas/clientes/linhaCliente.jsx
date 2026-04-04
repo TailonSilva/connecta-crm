@@ -1,23 +1,30 @@
 import { AvatarCliente } from './avatarCliente';
 import { AcoesRegistro } from '../../componentes/comuns/acoesRegistro';
-import { ContatoPrincipalCliente } from './contatoPrincipalCliente';
-import { DetalhesCliente } from './detalhesCliente';
+import { CodigoRegistro } from '../../componentes/comuns/codigoRegistro';
+import { TextoGradeClamp } from '../../componentes/comuns/textoGradeClamp';
+import { obterCodigoPrincipalCliente } from '../../utilitarios/codigoCliente';
+import { obterValorGrid } from '../../utilitarios/valorPadraoGrid';
 
 export function LinhaCliente({ empresa, cliente, aoConsultar, aoEditar, aoInativar }) {
   return (
     <tr className="linhaCliente">
-      <td><AvatarCliente cliente={cliente} /></td>
-      <td><DetalhesCliente cliente={cliente} empresa={empresa} /></td>
-      <td>{cliente.cidade}</td>
-      <td>{cliente.estado || 'Nao informado'}</td>
-      <td><ContatoPrincipalCliente cliente={cliente} /></td>
-      <td>{cliente.nomeVendedor}</td>
-      <td>
+      <td className="colunaGradeMidia"><AvatarCliente cliente={cliente} /></td>
+      <td className="colunaGradeCodigo">
+        <CodigoRegistro valor={obterCodigoPrincipalCliente(cliente, empresa) || 0} />
+      </td>
+      <td className="colunaGradeTexto"><TextoGradeClamp>{obterValorGrid(cliente.nomeFantasia || cliente.razaoSocial)}</TextoGradeClamp></td>
+      <td className="colunaGradeTexto"><TextoGradeClamp>{obterValorGrid(cliente.cnpj)}</TextoGradeClamp></td>
+      <td className="colunaGradeTexto"><TextoGradeClamp>{obterValorGrid(cliente.cidade)}</TextoGradeClamp></td>
+      <td className="colunaGradeSigla">{obterValorGrid(cliente.estado)}</td>
+      <td className="colunaGradeTexto"><TextoGradeClamp>{obterValorGrid(cliente.nomeContatoPrincipal)}</TextoGradeClamp></td>
+      <td className="colunaGradeTexto"><TextoGradeClamp>{obterValorGrid(cliente.emailContatoPrincipal)}</TextoGradeClamp></td>
+      <td className="colunaGradeTexto"><TextoGradeClamp>{obterValorGrid(cliente.nomeVendedor)}</TextoGradeClamp></td>
+      <td className="colunaGradeStatus">
         <span className={`etiquetaStatus ${cliente.status ? 'ativo' : 'inativo'}`}>
           {cliente.status ? 'Ativo' : 'Inativo'}
         </span>
       </td>
-      <td>
+      <td className="colunaGradeAcoes">
         <AcoesRegistro
           rotuloConsulta="Consultar cliente"
           rotuloEdicao="Editar cliente"

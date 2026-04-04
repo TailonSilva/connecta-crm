@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Botao } from '../../componentes/comuns/botao';
 import { BotaoAcaoGrade } from '../../componentes/comuns/botaoAcaoGrade';
 import { CampoImagemPadrao } from '../../componentes/comuns/campoImagemPadrao';
+import { GradePadrao } from '../../componentes/comuns/gradePadrao';
 import { ModalFiltros } from '../../componentes/comuns/modalFiltros';
 import { atualizarContato, buscarCep, buscarCnpj } from '../../servicos/clientes';
 import {
@@ -904,79 +905,73 @@ export function ModalCliente({
                 </Botao>
               </div>
 
-              <div className="gradeContatosModal">
-                <table className="tabelaContatosModal">
-                  <thead>
-                    <tr>
-                      <th>Nome</th>
-                      <th>Contato</th>
-                      <th></th>
-                      <th className="cabecalhoAcoesContato">Acoes</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {contatosExibicao.length > 0 ? (
-                      contatosExibicao.map((contato) => (
-                        <tr key={contato.idContato || contato.idContatoGrupoEmpresa || contato.idTemporario}>
-                          <td>
-                            <div className="celulaContatoModal">
-                              <strong>{contato.nome}</strong>
-                              <span>{contato.cargo || 'Cargo nao informado'}</span>
-                            </div>
-                          </td>
-                          <td>
-                            <div className="celulaContatoComunicacao">
-                              <span>{contato.email || 'E-mail nao informado'}</span>
-                              {contato.telefone || contato.whatsapp ? (
-                                <a
-                                  href={montarLinkWhatsapp(contato.whatsapp || contato.telefone)}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="linkContatoWhatsapp"
-                                >
-                                  {normalizarTelefone(contato.whatsapp || contato.telefone)}
-                                </a>
-                              ) : (
-                                <span>Telefone nao informado</span>
-                              )}
-                            </div>
-                          </td>
-                          <td>
-                            <div className="grupoEtiquetasContato">
-                              <span className={`etiquetaStatus ${contato.status ? 'ativo' : 'inativo'}`}>
-                                {contato.status ? 'Ativo' : 'Inativo'}
-                              </span>
-                              {contato.principal ? (
-                                <span className="etiquetaStatus etiquetaPrincipal">Principal</span>
-                              ) : null}
-                              {contato.contatoVinculadoGrupo ? (
-                                <span className="etiquetaStatus etiquetaGrupoContato">Grupo</span>
-                              ) : null}
-                            </div>
-                          </td>
-                          <td>
-                            <div className="acoesContatoModal">
-                              <BotaoAcaoGrade icone="consultar" titulo="Consultar contato" onClick={() => consultarContato(contato)} />
-                              {!contato.contatoVinculadoGrupo ? (
-                                <>
-                                  <BotaoAcaoGrade icone="editar" titulo="Editar contato" onClick={() => editarContato(contato)} disabled={somenteLeitura} />
-                                  <BotaoAcaoGrade icone="inativar" titulo="Inativar contato" onClick={() => inativarContato(contato.idContato)} disabled={somenteLeitura} />
-                                </>
-                              ) : null}
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={4} className="mensagemTabelaContatosModal">
-                          Nenhum contato cadastrado.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              <GradePadrao
+                className="gradeContatosModal"
+                classNameTabela="tabelaContatosModal"
+                classNameMensagem="mensagemTabelaContatosModal"
+                cabecalho={(
+                  <tr>
+                    <th>Nome</th>
+                    <th>Contato</th>
+                    <th></th>
+                    <th className="cabecalhoAcoesContato">Acoes</th>
+                  </tr>
+                )}
+                temItens={contatosExibicao.length > 0}
+                mensagemVazia="Nenhum contato cadastrado."
+              >
+                {contatosExibicao.map((contato) => (
+                  <tr key={contato.idContato || contato.idContatoGrupoEmpresa || contato.idTemporario}>
+                    <td>
+                      <div className="celulaContatoModal">
+                        <strong>{contato.nome}</strong>
+                        <span>{contato.cargo || 'Cargo nao informado'}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="celulaContatoComunicacao">
+                        <span>{contato.email || 'E-mail nao informado'}</span>
+                        {contato.telefone || contato.whatsapp ? (
+                          <a
+                            href={montarLinkWhatsapp(contato.whatsapp || contato.telefone)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="linkContatoWhatsapp"
+                          >
+                            {normalizarTelefone(contato.whatsapp || contato.telefone)}
+                          </a>
+                        ) : (
+                          <span>Telefone nao informado</span>
+                        )}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="grupoEtiquetasContato">
+                        <span className={`etiquetaStatus ${contato.status ? 'ativo' : 'inativo'}`}>
+                          {contato.status ? 'Ativo' : 'Inativo'}
+                        </span>
+                        {contato.principal ? (
+                          <span className="etiquetaStatus etiquetaPrincipal">Principal</span>
+                        ) : null}
+                        {contato.contatoVinculadoGrupo ? (
+                          <span className="etiquetaStatus etiquetaGrupoContato">Grupo</span>
+                        ) : null}
+                      </div>
+                    </td>
+                    <td>
+                      <div className="acoesContatoModal">
+                        <BotaoAcaoGrade icone="consultar" titulo="Consultar contato" onClick={() => consultarContato(contato)} />
+                        {!contato.contatoVinculadoGrupo ? (
+                          <>
+                            <BotaoAcaoGrade icone="editar" titulo="Editar contato" onClick={() => editarContato(contato)} disabled={somenteLeitura} />
+                            <BotaoAcaoGrade icone="inativar" titulo="Inativar contato" onClick={() => inativarContato(contato.idContato)} disabled={somenteLeitura} />
+                          </>
+                        ) : null}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </GradePadrao>
             </section>
           ) : null}
 

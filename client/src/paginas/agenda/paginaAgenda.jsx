@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import '../../recursos/estilos/cabecalhoPagina.css';
 import { Botao } from '../../componentes/comuns/botao';
+import { ModalBuscaClientes } from '../../componentes/comuns/modalBuscaClientes';
 import { ModalFiltros } from '../../componentes/comuns/modalFiltros';
 import { CorpoPagina } from '../../componentes/layout/corpoPagina';
 import {
@@ -44,7 +45,11 @@ import {
   listarTiposAgenda,
   listarTiposRecurso
 } from '../../servicos/agenda';
-import { normalizarFiltrosPorPadrao, useFiltrosPersistidos } from '../../utilitarios/useFiltrosPersistidos';
+import {
+  normalizarFiltrosPorPadrao,
+  normalizarListaFiltroPersistido,
+  useFiltrosPersistidos
+} from '../../utilitarios/useFiltrosPersistidos';
 import { ModalAtendimento } from '../atendimentos/modalAtendimento';
 import { ModalPedido } from '../pedidos/modalPedido';
 import { ModalAgendamento } from './modalAgendamento';
@@ -66,11 +71,11 @@ const configuracaoExpedientePadrao = {
 };
 const filtrosIniciaisAgenda = {
   idUsuario: [],
-  idVendedor: '',
+  idVendedor: [],
   idCliente: '',
-  idLocal: '',
+  idLocal: [],
   idRecurso: [],
-  idStatusVisita: ''
+  idStatusVisita: []
 };
 const ID_STATUS_VISITA_REALIZADO = 3;
 
@@ -101,6 +106,8 @@ export function PaginaAgenda({ usuarioLogado }) {
   const [modalAberto, definirModalAberto] = useState(false);
   const [modalManualAberto, definirModalManualAberto] = useState(false);
   const [modalFiltrosAberto, definirModalFiltrosAberto] = useState(false);
+  const [modalBuscaClienteFiltrosAberto, definirModalBuscaClienteFiltrosAberto] = useState(false);
+  const [filtrosEmEdicao, definirFiltrosEmEdicao] = useState(null);
   const [modalAtendimentoAberto, definirModalAtendimentoAberto] = useState(false);
   const [modalPedidoAberto, definirModalPedidoAberto] = useState(false);
   const [confirmacaoAtendimentoAberta, definirConfirmacaoAtendimentoAberta] = useState(false);
@@ -508,6 +515,23 @@ export function PaginaAgenda({ usuarioLogado }) {
     definirDadosIniciaisModal(null);
   }
 
+  function abrirModalFiltrosAgenda() {
+    definirFiltrosEmEdicao({
+      ...filtros,
+      idUsuario: Array.isArray(filtros.idUsuario) ? [...filtros.idUsuario] : [],
+      idVendedor: Array.isArray(filtros.idVendedor) ? [...filtros.idVendedor] : [],
+      idLocal: Array.isArray(filtros.idLocal) ? [...filtros.idLocal] : [],
+      idRecurso: Array.isArray(filtros.idRecurso) ? [...filtros.idRecurso] : [],
+      idStatusVisita: Array.isArray(filtros.idStatusVisita) ? [...filtros.idStatusVisita] : []
+    });
+    definirModalFiltrosAberto(true);
+  }
+
+  function fecharModalFiltrosAgenda() {
+    definirModalFiltrosAberto(false);
+    definirFiltrosEmEdicao(null);
+  }
+
   function colarAgendamentoCopiado() {
     if (!agendamentoCopiado || !faixaSelecionada?.data || !faixaSelecionada?.horaInicio) {
       return;
@@ -826,7 +850,7 @@ export function PaginaAgenda({ usuarioLogado }) {
             somenteIcone
             title="Filtrar"
             aria-label="Filtrar"
-            onClick={() => definirModalFiltrosAberto(true)}
+            onClick={abrirModalFiltrosAgenda}
           >
             Filtrar
           </Botao>
@@ -1115,7 +1139,7 @@ export function PaginaAgenda({ usuarioLogado }) {
       <ModalFiltros
         aberto={modalFiltrosAberto}
         titulo="Filtros da agenda"
-        filtros={filtros}
+        filtros={filtrosEmEdicao || filtros}
         campos={[
           {
             name: 'idUsuario',
@@ -1130,6 +1154,8 @@ export function PaginaAgenda({ usuarioLogado }) {
           {
             name: 'idVendedor',
             label: 'Vendedor',
+            multiple: true,
+            placeholder: 'Todos os vendedores',
             options: vendedores.map((vendedor) => ({
               valor: String(vendedor.idVendedor),
               label: vendedor.nome
@@ -1138,6 +1164,20 @@ export function PaginaAgenda({ usuarioLogado }) {
           {
             name: 'idCliente',
             label: 'Cliente',
+            acaoExtra: (
+                <Botao
+                  variante="secundario"
+                  icone="pesquisa"
+                  type="button"
+                  className="botaoCampoAcao"
+                  onClick={() => definirModalBuscaClienteFiltrosAberto(true)}
+                  somenteIcone
+                title="Buscar cliente"
+                aria-label="Buscar cliente"
+              >
+                Buscar cliente
+              </Botao>
+            ),
             options: clientes.map((cliente) => ({
               valor: String(cliente.idCliente),
               label: cliente.nomeFantasia || cliente.razaoSocial
@@ -1146,6 +1186,8 @@ export function PaginaAgenda({ usuarioLogado }) {
           {
             name: 'idLocal',
             label: 'Local',
+            multiple: true,
+            placeholder: 'Todos os locais',
             options: locais
               .filter((local) => local.status)
               .map((local) => ({
@@ -1168,25 +1210,51 @@ export function PaginaAgenda({ usuarioLogado }) {
           {
             name: 'idStatusVisita',
             label: 'Status',
+            multiple: true,
+            placeholder: 'Todos os status',
             options: statusVisita.map((status) => ({
               valor: String(status.idStatusVisita),
               label: status.descricao
             }))
           }
         ]}
-        aoFechar={() => definirModalFiltrosAberto(false)}
+        aoFechar={fecharModalFiltrosAgenda}
         aoAplicar={(novosFiltros) => {
           definirFiltros(novosFiltros);
-          definirModalFiltrosAberto(false);
+          fecharModalFiltrosAgenda();
         }}
-        aoLimpar={() => definirFiltros(criarFiltrosIniciaisAgenda(usuarioLogado))}
+        aoLimpar={() => definirFiltrosEmEdicao(criarFiltrosIniciaisAgenda(usuarioLogado))}
+      />
+      <ModalBuscaClientes
+        aberto={modalBuscaClienteFiltrosAberto}
+        empresa={empresa}
+        clientes={clientes}
+        placeholder="Pesquisar cliente no filtro"
+        ariaLabelPesquisa="Pesquisar cliente no filtro"
+        aoSelecionar={(cliente) => {
+          definirFiltrosEmEdicao((estadoAtual) => ({
+            ...(estadoAtual || criarFiltrosIniciaisAgenda(usuarioLogado)),
+            idCliente: String(cliente.idCliente || '')
+          }));
+          definirModalBuscaClienteFiltrosAberto(false);
+        }}
+        aoFechar={() => definirModalBuscaClienteFiltrosAberto(false)}
       />
     </>
   );
 }
 
 function normalizarFiltrosAgenda(filtros, filtrosPadrao) {
-  return normalizarFiltrosPorPadrao(filtros, filtrosPadrao);
+  const filtrosNormalizados = normalizarFiltrosPorPadrao(filtros, filtrosPadrao);
+
+  return {
+    ...filtrosNormalizados,
+    idUsuario: normalizarListaFiltroPersistido(filtrosNormalizados.idUsuario),
+    idVendedor: normalizarListaFiltroPersistido(filtrosNormalizados.idVendedor),
+    idLocal: normalizarListaFiltroPersistido(filtrosNormalizados.idLocal),
+    idRecurso: normalizarListaFiltroPersistido(filtrosNormalizados.idRecurso),
+    idStatusVisita: normalizarListaFiltroPersistido(filtrosNormalizados.idStatusVisita)
+  };
 }
 
 function criarFiltrosIniciaisAgenda(usuarioLogado) {
@@ -1886,11 +1954,13 @@ function filtrarAgendamentos(agendamentos, filtros) {
       return false;
     }
 
-    if (filtros.idVendedor && String(agendamento.idVendedor || '') !== String(filtros.idVendedor)) {
+    const idsVendedoresFiltro = Array.isArray(filtros.idVendedor) ? filtros.idVendedor.map(String) : [];
+    if (idsVendedoresFiltro.length > 0 && !idsVendedoresFiltro.includes(String(agendamento.idVendedor || ''))) {
       return false;
     }
 
-    if (filtros.idLocal && String(agendamento.idLocal || '') !== String(filtros.idLocal)) {
+    const idsLocaisFiltro = Array.isArray(filtros.idLocal) ? filtros.idLocal.map(String) : [];
+    if (idsLocaisFiltro.length > 0 && !idsLocaisFiltro.includes(String(agendamento.idLocal || ''))) {
       return false;
     }
 
@@ -1906,7 +1976,8 @@ function filtrarAgendamentos(agendamentos, filtros) {
       return false;
     }
 
-    if (filtros.idStatusVisita && String(agendamento.idStatusVisita) !== String(filtros.idStatusVisita)) {
+    const idsStatusFiltro = Array.isArray(filtros.idStatusVisita) ? filtros.idStatusVisita.map(String) : [];
+    if (idsStatusFiltro.length > 0 && !idsStatusFiltro.includes(String(agendamento.idStatusVisita))) {
       return false;
     }
 

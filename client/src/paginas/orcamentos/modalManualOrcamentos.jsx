@@ -107,6 +107,8 @@ export function ModalManualOrcamentos({
           itens: [
             'A pesquisa textual e os filtros ajudam a localizar propostas por cliente, usuario, vendedor, etapa e um botao Datas que abre o painel com os periodos de inclusao e fechamento.',
             'A grade mostra rapidamente a etapa atual e permite acao rapida de evolucao do funil.',
+            'As colunas foram redistribuidas para evitar rolagem horizontal e agora separam codigo, cliente, contato, etapa, vendedor e total em campos proprios.',
+            'Quando algum texto ultrapassa duas linhas, a grade aplica reticencias para preservar a altura das linhas.',
             'Registros fechados podem gerar pedido sem perder o contexto do orcamento.',
             'A exclusao depende do perfil e usa confirmacao dedicada antes de remover o registro.'
           ]
