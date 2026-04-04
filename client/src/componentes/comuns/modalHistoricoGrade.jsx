@@ -7,6 +7,7 @@ export function ModalHistoricoGrade({
   titulo,
   subtitulo = '',
   className = '',
+  chipsCabecalho = [],
   filtrosAtivos = false,
   tituloFiltro = 'Filtrar',
   ariaFiltro = 'Filtrar',
@@ -14,6 +15,7 @@ export function ModalHistoricoGrade({
   onAlterarPesquisa,
   placeholderPesquisa = 'Pesquisar no historico...',
   onAbrirFiltros,
+  acaoCabecalho = null,
   onFechar,
   abas = [],
   abaAtiva = '',
@@ -62,6 +64,15 @@ export function ModalHistoricoGrade({
                     ))}
                   </div>
                 ) : null}
+                {Array.isArray(chipsCabecalho) && chipsCabecalho.length > 0 ? (
+                  <div className="modalHistoricoGradeChipsCabecalho" aria-label="Filtros ativos">
+                    {chipsCabecalho.map((chip) => (
+                      <span key={chip.id || chip.rotulo} className="modalHistoricoGradeChipCabecalho">
+                        {chip.rotulo}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
                 {typeof onAbrirFiltros === 'function' ? (
                   <Botao
                     variante={filtrosAtivos ? 'primario' : 'secundario'}
@@ -86,6 +97,7 @@ export function ModalHistoricoGrade({
                 ) : null}
               </div>
             ) : null}
+            {acaoCabecalho}
             <Botao variante="secundario" type="button" onClick={onFechar}>
               Fechar
             </Botao>

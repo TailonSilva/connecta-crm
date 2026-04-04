@@ -18,7 +18,7 @@ export function ModalManualConfiguracoes({
       descricao="Guia visual dos cadastros base do CRM, atalhos por secao e regras de permissao da pagina de configuracoes."
       eyebrow="Base estrutural"
       heroTitulo="Como a pagina de Configuracoes sustenta o restante do sistema"
-      heroDescricao="A tela de Configuracoes centraliza cadastros auxiliares, parametros da empresa, layout do orcamento e atualizacao do sistema. Tudo o que e mantido aqui abastece formulários e regras das demais paginas do CRM."
+      heroDescricao="A tela de Configuracoes centraliza cadastros auxiliares, parametros da empresa, layout do orcamento, atualizacao do sistema e a base inicial da area de relatorios. Tudo o que e mantido aqui abastece formularios e regras das demais paginas do CRM."
       painelHeroi={[
         { valor: secoes.length, rotulo: 'Secoes disponiveis' },
         { valor: totalAtalhos, rotulo: 'Atalhos de configuracao' },
@@ -47,7 +47,7 @@ export function ModalManualConfiguracoes({
           titulo: 'Perfil atual',
           descricao: usuarioLogado?.tipo === 'Usuario padrao'
             ? 'Usuario padrao entra com restricoes em configuracoes sensiveis, principalmente empresa, usuarios, layout do orcamento e atualizacao do sistema.'
-            : 'Perfis administrativos podem manter toda a estrutura do sistema.',
+            : 'Administrador e Gestor podem manter toda a estrutura do sistema, incluindo a atualizacao do sistema.',
           detalhe: 'A permissao tambem e refletida nos atalhos internos de outros modais do CRM.',
           icone: 'usuarios'
         }
@@ -80,7 +80,11 @@ export function ModalManualConfiguracoes({
           titulo: 'O que muda conforme o perfil',
           itens: [
             'Empresa, usuarios e layout do orcamento ficam protegidos para Usuario padrao.',
-            'A atualizacao do sistema aparece para Usuario padrao, mas fica desabilitada fora do perfil administrador.',
+            'A atualizacao do sistema aparece para todos os perfis, mas fica desabilitada apenas para Usuario padrao.',
+            'A nova secao de Relatorios fica disponivel com atalhos para Vendas, Conversao e Atendimentos, mas esses atalhos tambem ficam desabilitados para Usuario padrao.',
+            'Vendas ja abre um relatorio funcional com cards de resumo, grade de pedidos, filtro por cliente, um ou mais vendedores, uma ou mais etapas, data de inclusao e data de entrega, alem de busca dedicada para cliente; por padrao, o periodo inicia no mes corrente.',
+            'Conversao usa uma grade simples de orcamentos com colunas separadas de inclusao, fechamento, cliente e contato, filtros no mesmo padrao dos outros relatorios, exportacao em PDF e cards com orcamentos gerados, fechados, percentual de conversao, cancelados na etapa Recusado, percentual de perca e quantidade ainda em aberto.',
+            'Atendimentos tambem ja abre um relatorio funcional com a mesma base visual, cards de total, clientes atendidos, canal lider e origem lider, alem da grade de historico com o cliente exibido junto nas linhas, botao de filtros e exportacao em PDF; os filtros de usuario, canal e origem aceitam selecao multipla.',
             'Os cadastros de Ramo de atividade e Grupo de empresa seguem liberados tambem na propria pagina de Configuracoes para alimentar o fluxo comercial.',
             'Cadastros auxiliares sensiveis seguem o mesmo principio quando abertos por atalhos internos em outros modais.',
             'Essa consistencia evita que um usuario altere uma tabela protegida por um caminho alternativo.'
@@ -111,6 +115,12 @@ export function ModalManualConfiguracoes({
           descricao: 'Ao salvar configuracoes da empresa, o sistema dispara eventos para recarregar telas dependentes, como a pagina inicial e regras de exibicao ligadas ao cadastro de clientes.',
           detalhe: 'Isso reduz inconsistencias entre tela e parametro salvo.',
           icone: 'empresa'
+        },
+        {
+          titulo: 'Relatorios padronizados',
+          descricao: 'A area de relatorios usa modal amplo com cards de resumo no topo, grade principal e filtro no cabecalho.',
+          detalhe: 'Vendas, Conversao e Atendimentos ja seguem esse padrao, reaproveitando grades operacionais e cards executivos no mesmo layout.',
+          icone: 'pedido'
         },
         {
           titulo: 'Contato herdado sincronizado',

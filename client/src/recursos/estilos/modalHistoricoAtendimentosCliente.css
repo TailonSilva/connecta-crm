@@ -34,6 +34,11 @@
   white-space: normal;
 }
 
+.modalCliente.modalHistoricoAtendimentosCliente .colunaHistoricoAtendimentoCliente {
+  min-width: 260px;
+  white-space: normal;
+}
+
 .modalCliente.modalHistoricoAtendimentosCliente .colunaHistoricoAtendimentoContato {
   min-width: 240px;
   white-space: normal;

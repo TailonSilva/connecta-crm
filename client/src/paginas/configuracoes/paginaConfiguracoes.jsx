@@ -84,6 +84,7 @@ import { ModalLayoutOrcamento } from './modalLayoutOrcamento';
 import { ModalManualConfiguracoes } from './modalManualConfiguracoes';
 import { ModalMarcas } from './modalMarcas';
 import { ModalPrazosPagamento } from './modalPrazosPagamento';
+import { ModalRelatorioConfiguracao } from './modalRelatorioConfiguracao';
 import { ModalRamosAtividade } from './modalRamosAtividade';
 import { ModalUnidadesMedida } from './modalUnidadesMedida';
 import { ModalUsuarios } from './modalUsuarios';
@@ -213,6 +214,21 @@ const atalhosConfiguracao = [
     id: 'atualizacaoSistema',
     titulo: 'Atualizacao do sistema',
     icone: 'importar'
+  },
+  {
+    id: 'relatorioPedidosFechados',
+    titulo: 'Vendas',
+    icone: 'pedido'
+  },
+  {
+    id: 'relatorioPedidosEntregues',
+    titulo: 'Conversao',
+    icone: 'orcamento'
+  },
+  {
+    id: 'relatorioAtendimentos',
+    titulo: 'Atendimentos',
+    icone: 'atendimentos'
   }
 ];
 
@@ -270,9 +286,17 @@ const secoesConfiguracao = [
         'gruposProduto',
         'marcas',
         'atualizacaoSistema',
+        'relatorioPedidosFechados',
+        'relatorioPedidosEntregues',
+        'relatorioAtendimentos',
         'unidadesMedida',
         'tamanhos'
       ].includes(id))
+  },
+  {
+    id: 'relatorios',
+    titulo: 'Relatorios',
+    atalhos: ['relatorioPedidosFechados', 'relatorioPedidosEntregues', 'relatorioAtendimentos']
   }
 ];
 const IDS_STATUS_VISITA_CRITICOS = new Set([1, 2, 3, 4, 5]);
@@ -325,10 +349,10 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
   const [modalLayoutOrcamentoAberto, definirModalLayoutOrcamentoAberto] = useState(false);
   const [modalUsuariosAberto, definirModalUsuariosAberto] = useState(false);
   const [modalAtualizacaoSistemaAberto, definirModalAtualizacaoSistemaAberto] = useState(false);
+  const [relatorioConfiguracaoAberto, definirRelatorioConfiguracaoAberto] = useState(null);
   const [cadastroConfiguracaoAberto, definirCadastroConfiguracaoAberto] = useState(null);
   const [modoModalEmpresa, definirModoModalEmpresa] = useState('edicao');
   const usuarioSomenteConsulta = usuarioLogado?.tipo === 'Usuario padrao';
-  const usuarioAdministrador = usuarioLogado?.tipo === 'Administrador';
 
   useEffect(() => {
     carregarEmpresa();
@@ -354,6 +378,7 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
         && !modalLayoutOrcamentoAberto
         && !modalUsuariosAberto
         && !modalAtualizacaoSistemaAberto
+        && !relatorioConfiguracaoAberto
         && !cadastroConfiguracaoAberto
       ) {
         definirModalManualAberto(true);
@@ -367,6 +392,7 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
     };
   }, [
     cadastroConfiguracaoAberto,
+    relatorioConfiguracaoAberto,
     modalAtualizacaoSistemaAberto,
     modalEmpresaAberto,
     modalLayoutOrcamentoAberto,
@@ -495,14 +521,26 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
     }
 
     const payload = normalizarPayloadUsuario(dadosUsuario);
+    let usuarioSalvo = null;
 
     if (dadosUsuario.idUsuario) {
-      await atualizarUsuario(dadosUsuario.idUsuario, payload);
+      usuarioSalvo = await atualizarUsuario(dadosUsuario.idUsuario, payload);
     } else {
-      await incluirUsuario(payload);
+      usuarioSalvo = await incluirUsuario(payload);
     }
 
     await carregarUsuarios();
+
+    if (String(usuarioSalvo?.idUsuario || '') === String(usuarioLogado?.idUsuario || '')) {
+      window.dispatchEvent(new CustomEvent('usuario-logado-atualizado', {
+        detail: {
+          usuario: {
+            ...usuarioLogado,
+            ...usuarioSalvo
+          }
+        }
+      }));
+    }
   }
 
   async function inativarUsuario(usuario) {
@@ -1004,11 +1042,24 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
     }
 
     if (atalho.id === 'atualizacaoSistema') {
-      if (!usuarioAdministrador) {
+      if (usuarioSomenteConsulta) {
         return;
       }
 
       definirModalAtualizacaoSistemaAberto(true);
+      return;
+    }
+
+    if ([
+      'relatorioPedidosFechados',
+      'relatorioPedidosEntregues',
+      'relatorioAtendimentos'
+    ].includes(atalho.id)) {
+      if (usuarioSomenteConsulta) {
+        return;
+      }
+
+      definirRelatorioConfiguracaoAberto(atalho.id);
       return;
     }
 
@@ -1056,6 +1107,10 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
     definirModalAtualizacaoSistemaAberto(false);
   }
 
+  function fecharRelatorioConfiguracao() {
+    definirRelatorioConfiguracaoAberto(null);
+  }
+
   function fecharCadastroConfiguracao() {
     definirCadastroConfiguracaoAberto(null);
   }
@@ -1095,7 +1150,15 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
                         className="cartaoConfiguracao"
                         title={atalho.titulo}
                         disabled={
-                          (usuarioSomenteConsulta && ['empresa', 'usuarios', 'layoutOrcamento', 'atualizacaoSistema'].includes(atalho.id))
+                          (usuarioSomenteConsulta && [
+                            'empresa',
+                            'usuarios',
+                            'layoutOrcamento',
+                            'atualizacaoSistema',
+                            'relatorioPedidosFechados',
+                            'relatorioPedidosEntregues',
+                            'relatorioAtendimentos'
+                          ].includes(atalho.id))
                           || (atalho.id === 'layoutOrcamento' && !empresa?.idEmpresa)
                         }
                         onClick={() => abrirConfiguracao(atalho)}
@@ -1152,6 +1215,11 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
         configuracao={configuracaoAtualizacaoSistema}
         aoFechar={fecharModalAtualizacaoSistema}
         aoSalvar={salvarAtualizacaoSistema}
+      />
+      <ModalRelatorioConfiguracao
+        relatorio={relatorioConfiguracaoAberto}
+        usuarioLogado={usuarioLogado}
+        aoFechar={fecharRelatorioConfiguracao}
       />
       <ModalManualConfiguracoes
         aberto={modalManualAberto}

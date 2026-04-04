@@ -1,0 +1,238 @@
+.modalCliente.modalRelatorioGrade {
+  width: min(1720px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
+}
+
+.modalRelatorioGradeConteudo {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 0;
+  height: 100%;
+}
+
+.modalRelatorioGradeCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.modalRelatorioGradeCard {
+  display: grid;
+  align-content: center;
+  gap: 10px;
+  min-height: 108px;
+  padding: 20px;
+  border: 1px solid rgba(23, 145, 226, 0.14);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top right, rgba(91, 189, 245, 0.12), transparent 38%),
+    linear-gradient(180deg, rgba(248, 251, 254, 0.96) 0%, rgba(255, 255, 255, 0.98) 100%);
+  box-shadow: 0 12px 28px rgba(53, 94, 126, 0.1);
+}
+
+.modalRelatorioGradeCardRotulo {
+  color: var(--corTextoSuave);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.modalRelatorioGradeCardValor {
+  color: var(--corPrimariaForte);
+  font-size: 1.7rem;
+  line-height: 1.1;
+}
+
+.modalRelatorioGradePainelTabela {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.modalCliente.modalRelatorioGrade .modalRelatorioGradePainelTabela .gradeContatosModal {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.modalCliente.modalRelatorioGrade .modalHistoricoVendasClienteGrade {
+  border-radius: 22px;
+}
+
+.modalCliente.modalRelatorioGrade .tabelaContatosModal {
+  min-width: 1480px;
+  table-layout: fixed;
+}
+
+.modalCliente.modalRelatorioGrade .tabelaContatosModal th,
+.modalCliente.modalRelatorioGrade .tabelaContatosModal td {
+  padding: 14px 16px;
+  vertical-align: middle;
+}
+
+.modalCliente.modalRelatorioGrade .colunaHistoricoData {
+  width: 118px;
+}
+
+.modalCliente.modalRelatorioGrade .colunaHistoricoPedido {
+  width: 96px;
+}
+
+.modalCliente.modalRelatorioGrade .codigoHistoricoPedido {
+  display: inline;
+  min-width: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font-size: inherit;
+  font-weight: 400;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
+.modalCliente.modalRelatorioGrade .colunaHistoricoCliente {
+  width: 280px;
+  white-space: normal;
+}
+
+.modalCliente.modalRelatorioGrade .colunaHistoricoEtapa {
+  width: 190px;
+}
+
+.modalCliente.modalRelatorioGrade .colunaHistoricoVendedor {
+  width: 190px;
+}
+
+.modalCliente.modalRelatorioGrade .colunaHistoricoPrazoPagamento {
+  width: 220px;
+  white-space: normal;
+}
+
+.modalCliente.modalRelatorioGrade .colunaHistoricoValorTotal {
+  width: 140px;
+}
+
+.modalCliente.modalRelatorioGrade .colunaHistoricoAtendimentoData {
+  width: 120px;
+}
+
+.modalCliente.modalRelatorioGrade .colunaHistoricoAtendimentoHora {
+  width: 96px;
+}
+
+.modalCliente.modalRelatorioGrade .colunaHistoricoAtendimentoCliente {
+  width: 260px;
+  white-space: normal;
+}
+
+.modalCliente.modalRelatorioGrade .colunaHistoricoAtendimentoAssunto {
+  width: 260px;
+  white-space: normal;
+}
+
+.modalCliente.modalRelatorioGrade .colunaHistoricoAtendimentoContato {
+  width: 240px;
+  white-space: normal;
+}
+
+.modalCliente.modalRelatorioGrade .colunaHistoricoAtendimentoCanal {
+  width: 180px;
+}
+
+.modalCliente.modalRelatorioGrade .colunaHistoricoAtendimentoUsuario {
+  width: 200px;
+}
+
+.modalCliente.modalRelatorioGrade .modalHistoricoOrcamentosGrade {
+  border-radius: 22px;
+}
+
+.modalCliente.modalRelatorioGrade .tabelaHistoricoOrcamentos {
+  min-width: 1540px;
+}
+
+.modalCliente.modalRelatorioGrade .colunaHistoricoOrcamentoData {
+  width: 120px;
+}
+
+.modalCliente.modalRelatorioGrade .colunaHistoricoOrcamentoCodigo {
+  width: 110px;
+}
+
+.modalCliente.modalRelatorioGrade .colunaHistoricoOrcamentoCliente {
+  width: 260px;
+  white-space: normal;
+}
+
+.modalCliente.modalRelatorioGrade .colunaHistoricoOrcamentoContato {
+  width: 240px;
+  white-space: normal;
+}
+
+.modalCliente.modalRelatorioGrade .colunaHistoricoOrcamentoEtapa {
+  width: 200px;
+}
+
+.modalCliente.modalRelatorioGrade .colunaHistoricoOrcamentoVendedor {
+  width: 190px;
+}
+
+.modalCliente.modalRelatorioGrade .colunaHistoricoOrcamentoTotal {
+  width: 160px;
+}
+
+.modalRelatorioGradePainelVazio {
+  display: grid;
+  gap: 10px;
+  place-items: center;
+  min-height: 280px;
+  padding: 24px;
+  border: 1px dashed rgba(23, 145, 226, 0.18);
+  border-radius: 22px;
+  background: rgba(248, 251, 254, 0.82);
+  color: var(--corTextoSuave);
+  text-align: center;
+}
+
+.modalRelatorioGradePainelVazio h3 {
+  margin: 0;
+  color: var(--corPrimariaForte);
+}
+
+.modalRelatorioGradePainelVazio p {
+  margin: 0;
+  max-width: 540px;
+  line-height: 1.6;
+}
+
+@media (max-width: 1440px) {
+  .modalRelatorioGradeCards {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 1080px) {
+  .modalRelatorioGradeCards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .modalCliente.modalRelatorioGrade {
+    width: min(100%, calc(100vw - 12px));
+  }
+
+  .modalRelatorioGradeCards {
+    grid-template-columns: 1fr;
+  }
+
+  .modalCliente.modalRelatorioGrade .tabelaContatosModal {
+    min-width: 1180px;
+  }
+}

@@ -122,6 +122,32 @@
   text-align: center;
 }
 
+.painelRelatorioConfiguracao {
+  display: grid;
+  gap: 16px;
+  padding: 18px 20px;
+  border: 1px solid rgba(23, 145, 226, 0.14);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top right, rgba(91, 189, 245, 0.12), transparent 38%),
+    linear-gradient(180deg, rgba(248, 251, 254, 0.96) 0%, rgba(255, 255, 255, 0.98) 100%);
+}
+
+.painelRelatorioConfiguracaoTitulo {
+  margin: 0;
+  color: var(--corPrimariaForte);
+  font-size: 1.05rem;
+}
+
+.painelRelatorioConfiguracaoLista {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 18px;
+  color: var(--corTexto);
+  line-height: 1.6;
+}
+
 .tabelaUsuariosModal th:nth-child(1),
 .tabelaUsuariosModal td:nth-child(1) {
   width: 64px;

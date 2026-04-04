@@ -353,7 +353,7 @@ function validarPayloadOrcamento(payload, etapaOrcamento) {
   }
 
   if (etapaOrcamentoEhFechada(payload.idEtapaOrcamento) && !payload.dataFechamento) {
-    return 'Informe a data de fechamento para orcamentos nas etapas Fechado, Fechado sem pedido ou Pedido excluido.';
+    return 'Informe a data de fechamento para orcamentos nas etapas Fechado, Fechado sem pedido ou Recusado.';
   }
 
   if (etapaOrcamento?.obrigarMotivoPerda && !payload.idMotivoPerda) {

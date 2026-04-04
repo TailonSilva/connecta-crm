@@ -1,5 +1,6 @@
 const express = require('express');
 const {
+  ID_ETAPA_ORCAMENTO_PEDIDO_EXCLUIDO,
   ID_ETAPA_PEDIDO_ENTREGUE,
   consultarTodos,
   consultarUm,
@@ -604,8 +605,9 @@ async function obterEtapaPedidoExcluido() {
   return consultarUm(
     `SELECT idEtapaOrcamento, descricao
     FROM etapaOrcamento
-    WHERE LOWER(TRIM(descricao)) = 'pedido excluido'
+    WHERE idEtapaOrcamento = ?
     LIMIT 1`
+    , [ID_ETAPA_ORCAMENTO_PEDIDO_EXCLUIDO]
   );
 }
 

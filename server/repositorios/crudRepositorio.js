@@ -172,18 +172,31 @@ function desnormalizarCaminhoImagem(valorImagem) {
     return valorImagem;
   }
 
+  const imagemSemSufixo = removerQueryStringImagem(valorImagem.trim());
   const prefixoCompleto = 'http://127.0.0.1:3001/api/arquivos/';
   const prefixoRelativo = '/api/arquivos/';
 
-  if (valorImagem.startsWith(prefixoCompleto)) {
-    return valorImagem.slice(prefixoCompleto.length);
+  if (imagemSemSufixo.startsWith(prefixoCompleto)) {
+    return imagemSemSufixo.slice(prefixoCompleto.length);
   }
 
-  if (valorImagem.startsWith(prefixoRelativo)) {
-    return valorImagem.slice(prefixoRelativo.length);
+  if (imagemSemSufixo.startsWith(prefixoRelativo)) {
+    return imagemSemSufixo.slice(prefixoRelativo.length);
   }
 
-  return valorImagem;
+  return imagemSemSufixo;
+}
+
+function removerQueryStringImagem(valorImagem) {
+  const indiceQuery = valorImagem.indexOf('?');
+  const indiceHash = valorImagem.indexOf('#');
+  const indices = [indiceQuery, indiceHash].filter((indice) => indice >= 0);
+
+  if (indices.length === 0) {
+    return valorImagem;
+  }
+
+  return valorImagem.slice(0, Math.min(...indices));
 }
 
 module.exports = {

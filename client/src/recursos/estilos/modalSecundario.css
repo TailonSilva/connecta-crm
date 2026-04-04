@@ -29,7 +29,7 @@
 }
 
 .modalFiltros {
-  width: min(430px, calc(100vw - 32px));
+  width: min(560px, calc(100vw - 32px));
 }
 
 .camadaModalFiltroPeriodo {
@@ -164,6 +164,9 @@
   padding-inline: 14px;
   text-align: left;
   color: var(--corTexto);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .painelContatosModalCliente {

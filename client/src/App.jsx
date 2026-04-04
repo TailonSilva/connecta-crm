@@ -71,6 +71,25 @@ export default function App() {
   }, [usuarioLogado?.idUsuario]);
 
   useEffect(() => {
+    function tratarUsuarioLogadoAtualizado(evento) {
+      const proximoUsuario = evento.detail?.usuario || null;
+
+      if (!proximoUsuario) {
+        return;
+      }
+
+      salvarSessaoUsuario(proximoUsuario);
+      definirUsuarioLogado(proximoUsuario);
+    }
+
+    window.addEventListener('usuario-logado-atualizado', tratarUsuarioLogadoAtualizado);
+
+    return () => {
+      window.removeEventListener('usuario-logado-atualizado', tratarUsuarioLogadoAtualizado);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!usuarioLogado?.idUsuario) {
       return undefined;
     }

@@ -56,6 +56,7 @@ Observacao importante:
 - Funcoes reutilizaveis do frontend ficam em `client/src/utilitarios`
 - Servicos auxiliares de listagem usados por campos de busca e selecao retornam apenas registros ativos por padrao; listas principais de entidades continuam completas e modais de busca reutilizaveis filtram inativos automaticamente
 - Campos de formulario com botoes laterais de busca, consulta ou cadastro devem usar os contêineres compartilhados de acao do formulario para manter o botao ao lado do input/select sem quebrar a grade
+- Selects de contato devem exibir o rotulo no formato `Nome - Cargo` sempre que o cargo estiver preenchido
 - Sempre que houver mudanca estrutural relevante de banco, fluxo desktop ou release, o README deve ser atualizado
 - Cada componente novo deve ter seu proprio arquivo de estilo com o mesmo nome do componente salvo em `client/src/recursos/estilos/`
 - CSS de pagina deve ficar restrito a layout/composicao da pagina e tambem salvo em `client/src/recursos/estilos/`
@@ -78,12 +79,14 @@ Padroes centralizados no frontend:
 - `ModalBuscaClientes`: busca reutilizavel de clientes
 - `ModalBuscaContatos`: busca reutilizavel de contatos
 - `ModalHistoricoGrade`: base reutilizavel para modais amplos de historico em grade, com cabecalho, abas opcionais e acao de filtro
+- `ModalRelatorioGrade`: base reutilizavel para modais amplos de relatorio, com cards de resumo no topo e filtro no cabecalho
 - `ModalImportacaoCadastro`: modal reutilizavel para importacao por planilha, com download de modelo e tabela de linhas rejeitadas
 - `ModalContatoCliente`: formulario reutilizavel de contato
 - `ModalRamosAtividade`: lista e cadastro reutilizavel de ramos
 - `ModalGruposProduto`: lista e cadastro de grupos de produto com botao dedicado para abrir um submodal compacto de selecao de tamanhos e ordem por grupo
 - `ModalMarcas`: lista e cadastro reutilizavel de marcas
 - `ModalUnidadesMedida`: lista e cadastro reutilizavel de unidades
+- `TabelaHistoricoPedidos`: grade reutilizavel de pedidos para historicos e relatorios, com coluna de acoes opcional
 - `DocumentoOrcamentoPdf`: layout isolado usado para exportacao do orcamento em PDF
 
 Padroes aplicados recentemente:
@@ -95,6 +98,7 @@ Padroes aplicados recentemente:
 - O cadastro de produto reaproveita os mesmos fluxos de configuracao para `Grupo de Produto`, `Marca` e `Unidade`
 - Modais com abas usam cabecalho e faixa de abas fixos, com rolagem apenas no corpo
 - Modais empilhados possuem camadas de z-index separadas para evitar abertura por tras do modal pai
+- O relatorio de Conversao exibe cards de orcamentos gerados, fechados, conversao, cancelados, % perca e em aberto; cancelados e % perca usam a etapa obrigatoria Recusado
 
 Utilitarios importantes:
 
@@ -109,7 +113,7 @@ Utilitarios importantes:
 - Tela de login com a marca `Connecta CRM`
 - Logo personalizada na tela inicial
 - Validacao de `usuario` e `senha` via API local
-- Sessao persistida no frontend
+- Sessao mantida apenas durante a janela atual do app; ao fechar e abrir novamente, o usuario precisa autenticar de novo
 - Filtros das paginas principais ficam persistidos por usuario no `localStorage` do app Electron e reabrem com o ultimo estado aplicado
 
 ### Pagina inicial
@@ -302,15 +306,15 @@ Filtros da agenda:
 - Busca reutilizavel de cliente e contato
 - Itens com selecao direta de produto no proprio modal, com atalho de busca para abrir o grid de produtos sem sair do item
 - Controle de etapa do orcamento
-- Ao entrar nas etapas `Fechado`, `Fechado sem pedido` ou `Pedido excluido`, o orcamento passa a registrar `Data de fechamento` em campo proprio
-- A `Data de fechamento` e obrigatoria nas etapas `Fechado`, `Fechado sem pedido` e `Pedido excluido`
+- Ao entrar nas etapas `Fechado`, `Fechado sem pedido` ou `Recusado`, o orcamento passa a registrar `Data de fechamento` em campo proprio
+- A `Data de fechamento` e obrigatoria nas etapas `Fechado`, `Fechado sem pedido` e `Recusado`
 - Motivo da perda obrigatorio quando a etapa exigir
 - Integracao com abertura de pedido ao fechar o orcamento
 - A troca rapida da etapa para `Fechado` no grid tambem oferece a geracao imediata do pedido
 - Quando a troca para uma etapa final acontece pelo grid, a `Data de fechamento` usa automaticamente a data atual
 - Dentro do modal do orcamento, a `Data de fechamento` pode ser ajustada manualmente antes de salvar
 - O filtro da pagina de orcamentos tem um botao unico de `Datas` que abre um modal com os intervalos de `Data de inclusao` e `Data de fechamento`
-- Quando o orcamento esta nas etapas `Fechado`, `Fechado sem pedido` ou `Pedido excluido`, o perfil `Usuario padrao` passa a consultar sem editar
+- Quando o orcamento esta nas etapas `Fechado`, `Fechado sem pedido` ou `Recusado`, o perfil `Usuario padrao` passa a consultar sem editar
 - Modais de confirmacao do fluxo comercial abrem como sobreposicao fixa acima da pagina, inclusive no lancamento de pedido a partir do grid
 - Campos configuraveis extras para o orcamento
 - Os campos `Prazo de pagamento` nos modais de orcamento e pedido reutilizam o mesmo grid de `Prazos de pagamento` da area de Configuracoes, permitindo cadastrar, editar, inativar e selecionar o prazo sem sair do fluxo
@@ -372,13 +376,30 @@ A tela de configuracoes usa cards grandes e modais padrao. Hoje ela cobre:
 - `Tipos de agenda`
 - `Status da visita`
 - `Atualizacao do sistema`
+- secao inicial de `Relatorios`, com atalhos para `Vendas`, `Conversao` e `Atendimentos`
+- os relatorios seguem o mesmo padrao visual: modal amplo, cards de resumo no topo, grade principal e botao de filtro no cabecalho
+- `Vendas` ja esta funcional e lista pedidos pelas datas de `Inclusao` e `Entrega`, com cards de consolidado, chips de filtros ativos, botao de exportacao em PDF e grade de pedidos sem botoes de acao
+- `Conversao` ja esta funcional e lista orcamentos em grade propria mais simples, com colunas separadas de inclusao, fechamento, cliente e contato, cards de gerados, fechados, conversao e abertos, filtros por cliente, usuario, vendedores, etapas e datas, alem de exportacao em PDF
+- `Atendimentos` ja esta funcional e reaproveita a grade do historico por cliente com a coluna de `Cliente` adicionada, alem de cards com total atendido, clientes distintos, canal lider, origem lider, filtro no cabecalho e exportacao em PDF
+- `Pedidos Entregues` e `Atendimentos` ja usam a mesma base visual e ficam preparados para evolucao das regras especificas
 
 Regras importantes:
 
 - Campos textuais de formularios passam por normalizacao para capitalizacao automatica, evitando persistencia acidental em caixa alta
 - Dados retornados pela busca de CNPJ tambem sao normalizados antes de preencher o formulario, evitando razao social, nome fantasia e endereco em caixa alta
 - O card de `Atualizacao do sistema` fica apenas na aba `Gerais`
-- O card de `Atualizacao do sistema` fica visivel para todos os perfis, mas permanece desabilitado para `Usuario padrao`
+- O card de `Atualizacao do sistema` fica visivel para todos os perfis, mas permanece desabilitado apenas para `Usuario padrao`; `Administrador` e `Gestor` podem abrir o modal
+- A secao inicial de `Relatorios` fica visivel na pagina de `Configuracoes`, mas seus atalhos permanecem desabilitados para `Usuario padrao`
+- O relatorio `Vendas` usa filtros por `Cliente`, um ou mais `Vendedores`, uma ou mais `Etapas`, `Data de inclusao` e `Data de entrega`; o filtro de cliente tambem oferece botao de busca em grade para agilizar a selecao, e o periodo padrao do filtro ja abre no mes corrente
+- O cabecalho do relatorio `Vendas` exibe chips com os filtros ativos ao lado do botao de filtro e um botao dedicado para gerar o PDF do relatorio
+- O PDF do relatorio `Vendas` preserva as cores do cabecalho na impressao e organiza `Gerado em` e `Usuario` em uma coluna alinhada a direita no topo
+- O resumo do relatorio `Vendas` consolida `Pedidos no recorte`, `Valor total`, `Quantidade` somando unidades dos itens e `Positivacao` por clientes distintos
+- O relatorio `Vendas` reaproveita a mesma grade base de pedidos usada no historico comercial, mas sem acoes de linha
+- O relatorio `Conversao` usa uma grade simples de orcamentos sem acoes de linha, com colunas separadas de `Inclusao`, `Fechamento`, `Cliente` e `Contato`, e considera como fechados os orcamentos em etapas de fechamento, fechado sem pedido e recusado para calcular a conversao
+- O resumo do relatorio `Conversao` destaca `Orcamentos gerados`, `Orcamentos fechados`, `Conversao` e `Orcamentos em aberto`
+- O relatorio `Atendimentos` reaproveita a grade base do historico de atendimentos do cliente, adicionando a coluna `Cliente` e removendo as acoes de linha no contexto gerencial
+- O resumo do relatorio `Atendimentos` destaca `Total de atendimentos`, `Clientes atendidos`, `Canal lider` e `Origem lider` a partir da distribuicao atual carregada
+- O relatorio `Atendimentos` tambem usa modal de filtros com `Cliente`, um ou mais `Usuarios`, um ou mais `Canais`, uma ou mais `Origens` e `Data`, mostra chips de filtros ativos no cabecalho e oferece exportacao em PDF
 - `Ramos de atividade` e `Grupos de empresa` tambem ficam liberados para `Usuario padrao` na propria pagina de `Configuracoes`, no mesmo modelo operacional ja adotado dentro do cadastro de clientes
 - O modal de atualizacao permite salvar o link do repositorio GitHub usado para leitura das releases
 - `Etapas do pedido` e `Etapas do orcamento` agora possuem campo `Ordem`; os selects desses status respeitam essa ordem crescente nos formularios
@@ -386,7 +407,7 @@ Regras importantes:
 - A logica operacional de pedidos valida a etapa critica `Entregue` por `idEtapa` fixo (`5`), sem depender da descricao cadastrada
 - A etapa critica de pedido usada pela logica do sistema nao pode ser inativada nem excluida (bloqueio no backend e no modal de Configuracoes)
 - Etapas obrigatorias de orcamento nao podem ser inativadas nem excluidas (regra aplicada no backend e refletida no modal de Configuracoes)
-- Regras obrigatorias das etapas de orcamento sao avaliadas por `idEtapaOrcamento` fixo (`1` Fechado, `2` Fechado sem pedido, `3` Pedido excluido)
+- Regras obrigatorias das etapas de orcamento sao avaliadas por `idEtapaOrcamento` fixo (`1` Fechado, `2` Fechado sem pedido, `3` Recusado)
 - A data de fechamento do orcamento tambem segue a validacao por `idEtapaOrcamento` fixo (`1`, `2` e `3`), sem depender da descricao da etapa
 - Regras criticas de `Status da visita` sao avaliadas por `idStatusVisita` fixo (`1` Agendado, `2` Confirmado, `3` Realizado, `4` Cancelado, `5` Nao compareceu)
 - Status criticos da agenda podem ser editados, mas nao podem ser inativados nem excluidos (bloqueio no modal de Configuracoes e no backend)
@@ -421,6 +442,7 @@ O cadastro de empresa tem modal proprio com abas:
   - itens vendidos
   - taxa de fechamento
 - `Nome fantasia`
+- Quando a logo da empresa e atualizada em Configuracoes, a barra lateral e os pontos que recarregam os dados da empresa passam a refletir a nova imagem sem exigir reinicio do aplicativo
 - Os mesmos filtros da pagina inicial tambem sao aplicados aos cards de vendas, usando pedidos como base para valor total e quantidade total vendida
 - `Documento`
 - O dashboard inclui grafico diario de tendencia para `Atendimentos`, `Orcamentos` e `Pedidos` nos ultimos 7 dias do recorte
@@ -469,6 +491,7 @@ Usuarios possuem:
 - tipo
 - ativo
 - vendedor vinculado
+- quando o proprio usuario logado atualiza sua foto em `Configuracoes`, a barra lateral passa a refletir a nova imagem sem precisar reiniciar ou fazer novo login
 
 Regra importante:
 

@@ -28,6 +28,31 @@
   justify-content: flex-end;
   gap: 12px;
   min-width: 0;
+  flex-wrap: wrap;
+}
+
+.modalHistoricoGradeChipsCabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.modalHistoricoGradeChipCabecalho {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 1px solid rgba(23, 145, 226, 0.18);
+  border-radius: 999px;
+  background: rgba(248, 251, 254, 0.95);
+  color: var(--corPrimariaForte);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .modalHistoricoGradePesquisa {
@@ -80,5 +105,10 @@
     width: 100%;
     min-width: 0;
     overflow: visible;
+  }
+
+  .modalHistoricoGradeChipsCabecalho {
+    width: 100%;
+    justify-content: flex-start;
   }
 }

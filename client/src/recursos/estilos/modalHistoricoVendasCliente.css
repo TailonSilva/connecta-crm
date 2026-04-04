@@ -34,6 +34,19 @@
   width: 96px;
 }
 
+.modalCliente.modalHistoricoVendasCadastro .codigoHistoricoPedido {
+  display: inline;
+  min-width: 0;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font-size: inherit;
+  font-weight: 400;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
 .modalCliente.modalHistoricoVendasCadastro .colunaHistoricoCliente {
   width: 240px;
 }

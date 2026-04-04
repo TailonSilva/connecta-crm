@@ -127,7 +127,7 @@ export function ModalManualOrcamentos({
         },
         {
           titulo: 'Data de fechamento',
-          descricao: 'Ao entrar nas etapas Fechado, Fechado sem pedido ou Pedido excluido, o orcamento passa a usar uma data de fechamento propria e obrigatoria.',
+          descricao: 'Ao entrar nas etapas Fechado, Fechado sem pedido ou Recusado, o orcamento passa a usar uma data de fechamento propria e obrigatoria.',
           detalhe: 'No modal, a data pode ser ajustada antes do salvamento; no grid, a troca usa a data atual automaticamente.',
           icone: 'confirmar'
         },
@@ -140,7 +140,7 @@ export function ModalManualOrcamentos({
         {
           titulo: 'Consulta em etapas finais',
           descricao: usuarioLogado?.tipo === 'Usuario padrao'
-            ? 'Quando o orcamento entra em Fechado, Fechado sem pedido ou Pedido excluido, Usuario padrao passa a consultar sem editar.'
+            ? 'Quando o orcamento entra em Fechado, Fechado sem pedido ou Recusado, Usuario padrao passa a consultar sem editar.'
             : 'As etapas finais do orcamento mantem o bloqueio de edicao apenas para Usuario padrao.',
           detalhe: 'A validacao usa sempre os IDs fixos 1, 2 e 3 das etapas obrigatorias do sistema.',
           icone: 'usuarios'

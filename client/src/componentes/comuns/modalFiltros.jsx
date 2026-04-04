@@ -209,21 +209,24 @@ export function ModalFiltros({
               ) : (
                 <div key={campo.name} className="campoFormulario">
                   <label htmlFor={campo.name}>{campo.label}</label>
-                  <select
-                    id={campo.name}
-                    name={campo.name}
-                    className="entradaFormulario"
-                    value={formulario[campo.name] || ''}
-                    onChange={alterarCampo}
-                    disabled={campo.disabled}
-                  >
-                    <option value="">{campo.placeholder || 'Todos'}</option>
-                    {(campo.options || []).map((opcao) => (
-                      <option key={opcao.valor} value={opcao.valor}>
-                        {opcao.label}
-                      </option>
-                    ))}
-                  </select>
+                  <div className={`campoSelectComAcao ${campo.acaoExtra ? 'temAcao' : ''}`.trim()}>
+                    <select
+                      id={campo.name}
+                      name={campo.name}
+                      className="entradaFormulario"
+                      value={formulario[campo.name] || ''}
+                      onChange={alterarCampo}
+                      disabled={campo.disabled}
+                    >
+                      <option value="">{campo.placeholder || 'Todos'}</option>
+                      {(campo.options || []).map((opcao) => (
+                        <option key={opcao.valor} value={opcao.valor}>
+                          {opcao.label}
+                        </option>
+                      ))}
+                    </select>
+                    {campo.acaoExtra ? <div className="acoesCampoSelect">{campo.acaoExtra}</div> : null}
+                  </div>
                 </div>
               )
             ))}

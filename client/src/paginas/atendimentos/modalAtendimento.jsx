@@ -5,6 +5,7 @@ import { ModalBuscaContatos } from '../../componentes/comuns/modalBuscaContatos'
 import { ModalCliente } from '../clientes/modalCliente';
 import { ModalOrcamento } from '../orcamentos/modalOrcamento';
 import { formatarCodigoCliente } from '../../utilitarios/codigoCliente';
+import { formatarNomeContato } from '../../utilitarios/formatarNomeContato';
 import { normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTextoFormulario';
 
 const estadoInicialFormulario = {
@@ -773,7 +774,7 @@ export function ModalAtendimento({
                   onChange={alterarCampo}
                   options={contatosDoCliente.map((contato) => ({
                     valor: String(contato.idContato),
-                    label: contato.nome
+                    label: formatarNomeContato(contato)
                   }))}
                   disabled={somenteLeitura || !formulario.idCliente}
                   acaoExtra={!somenteLeitura && formulario.idCliente ? (

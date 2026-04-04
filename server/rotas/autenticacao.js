@@ -35,7 +35,37 @@ rota.post('/login', async (requisicao, resposta) => {
 
 function removerSenhaUsuario(usuario) {
   const { senha, ...usuarioSemSenha } = usuario;
-  return usuarioSemSenha;
+
+  return {
+    ...usuarioSemSenha,
+    imagem: normalizarImagemUsuario(usuarioSemSenha.imagem)
+  };
+}
+
+function normalizarImagemUsuario(valorImagem) {
+  if (typeof valorImagem !== 'string') {
+    return '';
+  }
+
+  const imagem = valorImagem.trim();
+
+  if (!imagem) {
+    return '';
+  }
+
+  if (/^https?:\/\//i.test(imagem) || imagem.startsWith('data:image/')) {
+    return imagem;
+  }
+
+  if (imagem.startsWith('/api/arquivos/')) {
+    return `http://127.0.0.1:3001${imagem}`;
+  }
+
+  if (imagem.startsWith('imagens/')) {
+    return `http://127.0.0.1:3001/api/arquivos/${imagem}`;
+  }
+
+  return imagem;
 }
 
 module.exports = {

@@ -1639,7 +1639,7 @@ banco.serialize(() => {
   );
 
   banco.get(
-    "SELECT COUNT(*) AS total FROM etapaOrcamento WHERE LOWER(TRIM(descricao)) = 'pedido excluido'",
+    "SELECT COUNT(*) AS total FROM etapaOrcamento WHERE LOWER(TRIM(descricao)) = 'recusado'",
     (_erroConsulta, resultado) => {
       if ((resultado?.total || 0) > 0) {
         return;
@@ -1653,7 +1653,7 @@ banco.serialize(() => {
           ordem,
           status
         ) VALUES (?, ?, ?, ?, ?)`,
-        ['Pedido excluido', '#E5E7EB', 0, 7, 1]
+        ['Recusado', '#E5E7EB', 1, 7, 1]
       );
     }
   );
@@ -1898,8 +1898,15 @@ async function garantirEtapasOrcamentoObrigatorias() {
   const etapasObrigatorias = [
     { idEtapaOrcamento: ID_ETAPA_ORCAMENTO_FECHAMENTO, descricao: 'Fechado', cor: '#A7E1B8', obrigarMotivoPerda: 0, consideraFunilVendas: 1, ordem: 1, status: 1 },
     { idEtapaOrcamento: ID_ETAPA_ORCAMENTO_FECHADO_SEM_PEDIDO, descricao: 'Fechado sem pedido', cor: '#FDE68A', obrigarMotivoPerda: 0, consideraFunilVendas: 1, ordem: 2, status: 1 },
-    { idEtapaOrcamento: ID_ETAPA_ORCAMENTO_PEDIDO_EXCLUIDO, descricao: 'Pedido excluido', cor: '#E5E7EB', obrigarMotivoPerda: 0, consideraFunilVendas: 0, ordem: 3, status: 1 }
+    { idEtapaOrcamento: ID_ETAPA_ORCAMENTO_PEDIDO_EXCLUIDO, descricao: 'Recusado', cor: '#E5E7EB', obrigarMotivoPerda: 1, consideraFunilVendas: 0, ordem: 3, status: 1 }
   ];
+
+  await executar(
+    `UPDATE etapaOrcamento
+    SET descricao = 'Recusado', cor = '#E5E7EB', obrigarMotivoPerda = 1, consideraFunilVendas = 0, ordem = 3, status = 1
+    WHERE idEtapaOrcamento = ? OR LOWER(TRIM(descricao)) = 'pedido excluido'`,
+    [ID_ETAPA_ORCAMENTO_PEDIDO_EXCLUIDO]
+  );
 
   for (const etapa of etapasObrigatorias) {
     const existente = await consultarUm(
@@ -1916,8 +1923,38 @@ async function garantirEtapasOrcamentoObrigatorias() {
     }
 
     await executar(
-      'UPDATE etapaOrcamento SET descricao = ?, cor = ?, status = ?, obrigarMotivoPerda = COALESCE(obrigarMotivoPerda, ?), consideraFunilVendas = COALESCE(consideraFunilVendas, ?), ordem = COALESCE(ordem, ?) WHERE idEtapaOrcamento = ?',
+      'UPDATE etapaOrcamento SET descricao = ?, cor = ?, status = ?, obrigarMotivoPerda = ?, consideraFunilVendas = ?, ordem = ? WHERE idEtapaOrcamento = ?',
       [etapa.descricao, etapa.cor, etapa.status, etapa.obrigarMotivoPerda, etapa.consideraFunilVendas, etapa.ordem, etapa.idEtapaOrcamento]
+    );
+  }
+
+  const etapasCancelamentoLegadas = await consultarTodos(
+    `SELECT idEtapaOrcamento
+    FROM etapaOrcamento
+    WHERE idEtapaOrcamento <> ?
+      AND LOWER(TRIM(descricao)) IN ('recusado', 'pedido excluido')`,
+    [ID_ETAPA_ORCAMENTO_PEDIDO_EXCLUIDO]
+  );
+
+  const idsEtapasLegadas = etapasCancelamentoLegadas
+    .map((etapa) => Number(etapa.idEtapaOrcamento || 0))
+    .filter((idEtapa) => Number.isFinite(idEtapa) && idEtapa > 0);
+
+  if (idsEtapasLegadas.length > 0) {
+    const marcadores = idsEtapasLegadas.map(() => '?').join(', ');
+
+    await executar(
+      `UPDATE orcamento
+      SET idEtapaOrcamento = ?
+      WHERE idEtapaOrcamento IN (${marcadores})`,
+      [ID_ETAPA_ORCAMENTO_PEDIDO_EXCLUIDO, ...idsEtapasLegadas]
+    );
+
+    await executar(
+      `UPDATE etapaOrcamento
+      SET descricao = 'Recusado (legado)', status = 0, obrigarMotivoPerda = 0, consideraFunilVendas = 0
+      WHERE idEtapaOrcamento IN (${marcadores})`,
+      idsEtapasLegadas
     );
   }
 
@@ -2473,6 +2510,7 @@ function executar(sql, parametros = []) {
 module.exports = {
   banco,
   caminhoBanco,
+  ID_ETAPA_ORCAMENTO_PEDIDO_EXCLUIDO,
   ID_ETAPA_PEDIDO_ENTREGUE,
   consultarUm,
   consultarTodos,

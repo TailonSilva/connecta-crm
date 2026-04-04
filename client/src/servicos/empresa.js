@@ -2,8 +2,12 @@ import { requisitarApi } from './api';
 import { requisitarListaApi } from './listas';
 import { buscarCep } from './clientes';
 
-export function listarEmpresas(opcoes) {
-  return requisitarListaApi('/empresas', opcoes);
+export async function listarEmpresas(opcoes) {
+  const empresas = await requisitarListaApi('/empresas', opcoes);
+
+  return Array.isArray(empresas)
+    ? empresas.map((empresa) => normalizarEmpresa(empresa))
+    : [];
 }
 
 export function incluirEmpresa(payload) {
@@ -27,3 +31,34 @@ export function atualizarEmpresa(idEmpresa, payload) {
 }
 
 export { buscarCep };
+
+function normalizarEmpresa(empresa) {
+  if (!empresa) {
+    return empresa;
+  }
+
+  return {
+    ...empresa,
+    imagem: adicionarCacheBusterImagem(empresa.imagem)
+  };
+}
+
+function adicionarCacheBusterImagem(valorImagem) {
+  if (typeof valorImagem !== 'string') {
+    return '';
+  }
+
+  const imagem = valorImagem.trim();
+
+  if (!imagem || !/^https?:\/\//i.test(imagem)) {
+    return imagem;
+  }
+
+  try {
+    const url = new URL(imagem);
+    url.searchParams.set('v', Date.now().toString());
+    return url.toString();
+  } catch (_erro) {
+    return imagem;
+  }
+}

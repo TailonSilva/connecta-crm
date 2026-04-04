@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Botao } from '../../componentes/comuns/botao';
 import { CampoSelecaoMultiplaModal } from '../../componentes/comuns/campoSelecaoMultiplaModal';
+import { formatarNomeContato } from '../../utilitarios/formatarNomeContato';
 import { normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTextoFormulario';
 
 const estadoInicialFormulario = {
@@ -315,7 +316,7 @@ export function ModalAgendamento({
               onChange={alterarCampo}
               options={contatosDoCliente.map((contato) => ({
                 valor: String(contato.idContato),
-                label: contato.nome
+                label: formatarNomeContato(contato)
               }))}
               disabled={!formulario.idCliente}
               required={clienteObrigatorio}

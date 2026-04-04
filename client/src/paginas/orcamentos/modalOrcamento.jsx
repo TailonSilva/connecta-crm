@@ -6,6 +6,7 @@ import { ModalBuscaContatos } from '../../componentes/comuns/modalBuscaContatos'
 import { ModalItemProduto } from '../../componentes/comuns/modalItemProduto';
 import { PopupAvisos } from '../../componentes/comuns/popupAvisos';
 import { ModalPrazosPagamento } from '../configuracoes/modalPrazosPagamento';
+import { formatarNomeContato } from '../../utilitarios/formatarNomeContato';
 import { useFormularioItemProduto } from '../../utilitarios/useFormularioItemProduto';
 import {
   converterPrecoParaNumero,
@@ -681,7 +682,7 @@ export function ModalOrcamento({
                   onChange={alterarCampo}
                   options={contatosDoCliente.map((contato) => ({
                     valor: String(contato.idContato),
-                    label: contato.nome
+                    label: formatarNomeContato(contato)
                   }))}
                   disabled={somenteLeitura || !formulario.idCliente}
                   acaoExtra={!somenteLeitura && formulario.idCliente ? (
