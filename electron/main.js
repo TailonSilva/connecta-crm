@@ -191,18 +191,20 @@ function montarNomeArquivoBackupBanco() {
 
 async function salvarBackupBancoManual() {
   const diretorioOrigem = obterDiretorioDadosPersistente();
-  const caminhoBancoOrigem = path.join(diretorioOrigem, 'crm.sqlite');
-
-  if (!fs.existsSync(caminhoBancoOrigem)) {
-    throw new Error('Nenhum banco de dados foi encontrado para gerar o backup.');
+  if (!fs.existsSync(diretorioOrigem)) {
+    throw new Error('Nenhuma pasta de dados foi encontrada para gerar o backup.');
   }
+
+  const pathZip = require('node:path');
+  const { createWriteStream } = require('node:fs');
+  const archiver = require('archiver');
 
   const janelaBase = mainWindow && !mainWindow.isDestroyed() ? mainWindow : undefined;
   const respostaSalvar = await dialog.showSaveDialog(janelaBase, {
-    title: 'Salvar backup do banco de dados',
-    defaultPath: path.join(app.getPath('documents'), montarNomeArquivoBackupBanco()),
+    title: 'Salvar backup completo dos dados',
+    defaultPath: path.join(app.getPath('documents'), `Connecta-CRM-backup-${new Date().toISOString().replace(/[.:]/g, '-')}.zip`),
     filters: [
-      { name: 'Banco SQLite', extensions: ['sqlite'] }
+      { name: 'Backup ZIP', extensions: ['zip'] }
     ],
     properties: ['createDirectory', 'showOverwriteConfirmation']
   });
@@ -215,13 +217,22 @@ async function salvarBackupBancoManual() {
     };
   }
 
-  await fs.promises.copyFile(caminhoBancoOrigem, respostaSalvar.filePath);
+  // Cria o arquivo zip com toda a pasta de dados
+  await new Promise((resolve, reject) => {
+    const saida = createWriteStream(respostaSalvar.filePath);
+    const zip = archiver('zip', { zlib: { level: 9 } });
+    saida.on('close', resolve);
+    zip.on('error', reject);
+    zip.pipe(saida);
+    zip.directory(diretorioOrigem, false);
+    zip.finalize();
+  });
 
   return {
     sucesso: true,
     cancelado: false,
     caminhoArquivo: respostaSalvar.filePath,
-    mensagem: 'Backup do banco salvo com sucesso.'
+    mensagem: 'Backup completo dos dados salvo com sucesso.'
   };
 }
 
