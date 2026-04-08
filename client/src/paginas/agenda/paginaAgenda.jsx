@@ -18,8 +18,10 @@ import {
   listarEtapasOrcamentoConfiguracao,
   listarEtapasPedidoConfiguracao,
   listarMetodosPagamentoConfiguracao,
+  listarMotivosDevolucaoConfiguracao,
   listarMotivosPerdaConfiguracao,
-  listarPrazosPagamentoConfiguracao
+  listarPrazosPagamentoConfiguracao,
+  listarTiposPedidoConfiguracao
 } from '../../servicos/configuracoes';
 import { listarClientes, listarContatos, listarRamosAtividade, listarVendedores } from '../../servicos/clientes';
 import { listarEmpresas } from '../../servicos/empresa';
@@ -99,6 +101,8 @@ export function PaginaAgenda({ usuarioLogado }) {
   const [prazosPagamento, definirPrazosPagamento] = useState([]);
   const [etapasOrcamento, definirEtapasOrcamento] = useState([]);
   const [etapasPedido, definirEtapasPedido] = useState([]);
+  const [tiposPedido, definirTiposPedido] = useState([]);
+  const [motivosDevolucao, definirMotivosDevolucao] = useState([]);
   const [motivosPerda, definirMotivosPerda] = useState([]);
   const [produtos, definirProdutos] = useState([]);
   const [camposOrcamento, definirCamposOrcamento] = useState([]);
@@ -308,6 +312,8 @@ export function PaginaAgenda({ usuarioLogado }) {
       listarPrazosPagamentoConfiguracao(),
       listarEtapasOrcamentoConfiguracao(),
       listarEtapasPedidoConfiguracao(),
+      listarTiposPedidoConfiguracao(),
+      listarMotivosDevolucaoConfiguracao(),
       listarMotivosPerdaConfiguracao(),
       listarProdutos(),
       listarCamposOrcamentoConfiguracao(),
@@ -333,6 +339,8 @@ export function PaginaAgenda({ usuarioLogado }) {
       prazosResultado,
       etapasOrcamentoResultado,
       etapasPedidoResultado,
+      tiposPedidoResultado,
+      motivosDevolucaoResultado,
       motivosPerdaResultado,
       produtosResultado,
       camposOrcamentoResultado,
@@ -357,6 +365,8 @@ export function PaginaAgenda({ usuarioLogado }) {
     const prazosCarregados = prazosResultado.status === 'fulfilled' ? prazosResultado.value : [];
     const etapasOrcamentoCarregadas = etapasOrcamentoResultado.status === 'fulfilled' ? etapasOrcamentoResultado.value : [];
     const etapasPedidoCarregadas = etapasPedidoResultado.status === 'fulfilled' ? etapasPedidoResultado.value : [];
+    const tiposPedidoCarregados = tiposPedidoResultado.status === 'fulfilled' ? tiposPedidoResultado.value : [];
+    const motivosDevolucaoCarregados = motivosDevolucaoResultado.status === 'fulfilled' ? motivosDevolucaoResultado.value : [];
     const motivosPerdaCarregados = motivosPerdaResultado.status === 'fulfilled' ? motivosPerdaResultado.value : [];
     const produtosCarregados = produtosResultado.status === 'fulfilled' ? produtosResultado.value : [];
     const camposOrcamentoCarregados = camposOrcamentoResultado.status === 'fulfilled' ? camposOrcamentoResultado.value : [];
@@ -420,6 +430,8 @@ export function PaginaAgenda({ usuarioLogado }) {
       ...etapa,
       idEtapaPedido: etapa.idEtapaPedido ?? etapa.idEtapa
     })));
+    definirTiposPedido(tiposPedidoCarregados);
+    definirMotivosDevolucao(motivosDevolucaoCarregados);
     definirMotivosPerda(motivosPerdaCarregados);
     definirProdutos(produtosAtivos);
     definirCamposOrcamento(camposOrcamentoCarregados);
@@ -1163,6 +1175,8 @@ export function PaginaAgenda({ usuarioLogado }) {
         vendedores={vendedores}
         metodosPagamento={metodosPagamento}
         prazosPagamento={prazosPagamento}
+        tiposPedido={tiposPedido}
+        motivosDevolucao={motivosDevolucao}
         etapasPedido={etapasPedido}
         produtos={produtos}
         camposPedido={camposPedido}
@@ -2199,6 +2213,7 @@ function normalizarPayloadPedido(dadosPedido) {
       idPrazoPagamento: dadosPedido.idPrazoPagamento ? Number(dadosPedido.idPrazoPagamento) : null,
       idTipoPedido: dadosPedido.idTipoPedido ? Number(dadosPedido.idTipoPedido) : null,
       idEtapaPedido: dadosPedido.idEtapaPedido ? Number(dadosPedido.idEtapaPedido) : null,
+      idMotivoDevolucao: dadosPedido.idMotivoDevolucao ? Number(dadosPedido.idMotivoDevolucao) : null,
     comissao: Number(dadosPedido.comissao || 0),
     dataInclusao: dadosPedido.dataInclusao || null,
     dataEntrega: dadosPedido.dataEntrega || null,

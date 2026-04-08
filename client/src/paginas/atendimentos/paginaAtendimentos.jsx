@@ -33,10 +33,12 @@ import {
   listarEtapasPedidoConfiguracao,
   listarEtapasOrcamentoConfiguracao,
   listarMetodosPagamentoConfiguracao,
+  listarMotivosDevolucaoConfiguracao,
   listarMotivosPerdaConfiguracao,
-  listarPrazosPagamentoConfiguracao
+  listarPrazosPagamentoConfiguracao,
+  listarTiposPedidoConfiguracao
 } from '../../servicos/configuracoes';
-import { listarEmpresas } from '../../servicos/empresa';
+import { atualizarEmpresa, criarPayloadAtualizacaoColunasGrid, listarEmpresas } from '../../servicos/empresa';
 import {
   atualizarOrcamento,
   incluirOrcamento,
@@ -58,6 +60,7 @@ import {
   TOTAL_COLUNAS_GRID_ATENDIMENTOS
 } from '../../utilitarios/colunasGridAtendimentos';
 import { obterValorGrid } from '../../utilitarios/valorPadraoGrid';
+import { ModalColunasGridAtendimentos } from '../configuracoes/modalColunasGridAtendimentos';
 
 function criarFiltrosIniciaisAtendimentos(usuarioLogado) {
   return {
@@ -107,6 +110,8 @@ export function PaginaAtendimentos({ usuarioLogado }) {
   const [prazosPagamento, definirPrazosPagamento] = useState([]);
   const [etapasOrcamento, definirEtapasOrcamento] = useState([]);
   const [etapasPedido, definirEtapasPedido] = useState([]);
+  const [tiposPedido, definirTiposPedido] = useState([]);
+  const [motivosDevolucao, definirMotivosDevolucao] = useState([]);
   const [motivosPerda, definirMotivosPerda] = useState([]);
   const [produtos, definirProdutos] = useState([]);
   const [camposOrcamento, definirCamposOrcamento] = useState([]);
@@ -117,6 +122,7 @@ export function PaginaAtendimentos({ usuarioLogado }) {
   const [modalAberto, definirModalAberto] = useState(false);
   const [modalManualAberto, definirModalManualAberto] = useState(false);
   const [modalFiltrosAberto, definirModalFiltrosAberto] = useState(false);
+  const [modalColunasGridAberto, definirModalColunasGridAberto] = useState(false);
   const [modalBuscaClienteFiltrosAberto, definirModalBuscaClienteFiltrosAberto] = useState(false);
   const [filtrosEmEdicao, definirFiltrosEmEdicao] = useState(null);
   const [modalPedidoAberto, definirModalPedidoAberto] = useState(false);
@@ -195,6 +201,8 @@ export function PaginaAtendimentos({ usuarioLogado }) {
         listarPrazosPagamentoConfiguracao(),
         listarEtapasOrcamentoConfiguracao(),
         listarEtapasPedidoConfiguracao(),
+        listarTiposPedidoConfiguracao(),
+        listarMotivosDevolucaoConfiguracao(),
         listarMotivosPerdaConfiguracao(),
         listarProdutos(),
         listarCamposOrcamentoConfiguracao(),
@@ -215,6 +223,8 @@ export function PaginaAtendimentos({ usuarioLogado }) {
         prazosResultado,
         etapasOrcamentoResultado,
         etapasPedidoResultado,
+        tiposPedidoResultado,
+        motivosDevolucaoResultado,
         motivosPerdaResultado,
         produtosResultado,
         camposOrcamentoResultado,
@@ -234,6 +244,8 @@ export function PaginaAtendimentos({ usuarioLogado }) {
       const prazosCarregados = prazosResultado.status === 'fulfilled' ? prazosResultado.value : [];
       const etapasOrcamentoCarregadas = etapasOrcamentoResultado.status === 'fulfilled' ? etapasOrcamentoResultado.value : [];
       const etapasPedidoCarregadas = etapasPedidoResultado.status === 'fulfilled' ? etapasPedidoResultado.value : [];
+      const tiposPedidoCarregados = tiposPedidoResultado.status === 'fulfilled' ? tiposPedidoResultado.value : [];
+      const motivosDevolucaoCarregados = motivosDevolucaoResultado.status === 'fulfilled' ? motivosDevolucaoResultado.value : [];
       const motivosPerdaCarregados = motivosPerdaResultado.status === 'fulfilled' ? motivosPerdaResultado.value : [];
       const produtosCarregados = produtosResultado.status === 'fulfilled' ? produtosResultado.value : [];
       const camposOrcamentoCarregados = camposOrcamentoResultado.status === 'fulfilled' ? camposOrcamentoResultado.value : [];
@@ -271,6 +283,8 @@ export function PaginaAtendimentos({ usuarioLogado }) {
         ...etapa,
         idEtapaPedido: etapa.idEtapaPedido ?? etapa.idEtapa
       })));
+      definirTiposPedido(tiposPedidoCarregados);
+      definirMotivosDevolucao(motivosDevolucaoCarregados);
       definirMotivosPerda(motivosPerdaCarregados);
       definirProdutos(produtosCarregados.filter((produto) => produto.status !== 0));
       definirCamposOrcamento(camposOrcamentoCarregados);
@@ -311,6 +325,22 @@ export function PaginaAtendimentos({ usuarioLogado }) {
 
   async function recarregarPagina() {
     await Promise.all([carregarContexto(), carregarGradeAtendimentos()]);
+  }
+
+  async function salvarColunasGridAtendimentos(dadosColunas) {
+    if (!empresa?.idEmpresa) {
+      throw new Error('Cadastre a empresa antes de configurar as colunas do grid.');
+    }
+
+    await atualizarEmpresa(
+      empresa.idEmpresa,
+      criarPayloadAtualizacaoColunasGrid('colunasGridAtendimentos', dadosColunas.colunasGridAtendimentos)
+    );
+
+    const empresasAtualizadas = await listarEmpresas();
+    definirEmpresa(empresasAtualizadas[0] || null);
+    window.dispatchEvent(new CustomEvent('empresa-atualizada'));
+    definirModalColunasGridAberto(false);
   }
 
   async function salvarAtendimento(dadosAtendimento) {
@@ -543,6 +573,15 @@ export function PaginaAtendimentos({ usuarioLogado }) {
             onClick={abrirModalFiltrosAtendimentos}
           />
           <Botao
+            variante="secundario"
+            icone="configuracoes"
+            somenteIcone
+            title="Configurar grid"
+            aria-label="Configurar grid"
+            onClick={() => definirModalColunasGridAberto(true)}
+            disabled={usuarioSomenteConsultaConfiguracao || !empresa?.idEmpresa}
+          />
+          <Botao
             variante="primario"
             icone="adicionar"
             somenteIcone
@@ -706,6 +745,12 @@ export function PaginaAtendimentos({ usuarioLogado }) {
         filtros={filtros}
         usuarioLogado={usuarioLogado}
       />
+      <ModalColunasGridAtendimentos
+        aberto={modalColunasGridAberto}
+        empresa={empresa}
+        aoFechar={() => definirModalColunasGridAberto(false)}
+        aoSalvar={salvarColunasGridAtendimentos}
+      />
 
       <ModalAtendimento
         aberto={modalAberto}
@@ -759,6 +804,8 @@ export function PaginaAtendimentos({ usuarioLogado }) {
         vendedores={vendedores}
         metodosPagamento={metodosPagamento}
         prazosPagamento={prazosPagamento}
+        tiposPedido={tiposPedido}
+        motivosDevolucao={motivosDevolucao}
         etapasPedido={etapasPedido}
         produtos={produtos}
         camposPedido={camposPedido}
@@ -1322,6 +1369,7 @@ function normalizarPayloadPedido(dadosPedido) {
       idPrazoPagamento: dadosPedido.idPrazoPagamento ? Number(dadosPedido.idPrazoPagamento) : null,
       idTipoPedido: dadosPedido.idTipoPedido ? Number(dadosPedido.idTipoPedido) : null,
       idEtapaPedido: dadosPedido.idEtapaPedido ? Number(dadosPedido.idEtapaPedido) : null,
+      idMotivoDevolucao: dadosPedido.idMotivoDevolucao ? Number(dadosPedido.idMotivoDevolucao) : null,
     comissao: normalizarNumeroDecimal(dadosPedido.comissao),
     dataInclusao: limparTextoOpcional(dadosPedido.dataInclusao),
     dataEntrega: limparTextoOpcional(dadosPedido.dataEntrega),

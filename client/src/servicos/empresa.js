@@ -35,6 +35,35 @@ export function atualizarEmpresa(idEmpresa, payload) {
   });
 }
 
+export function criarPayloadAtualizacaoColunasGrid(chave, colunas) {
+  const normalizadores = {
+    colunasGridClientes: normalizarConfiguracoesColunasGridClientes,
+    colunasGridOrcamentos: normalizarConfiguracoesColunasGridOrcamentos,
+    colunasGridProdutos: normalizarConfiguracoesColunasGridProdutos,
+    colunasGridPedidos: normalizarConfiguracoesColunasGridPedidos,
+    colunasGridAtendimentos: normalizarConfiguracoesColunasGridAtendimentos
+  };
+
+  const normalizar = normalizadores[chave];
+
+  if (!normalizar) {
+    throw new Error('Configuracao de grid invalida.');
+  }
+
+  return {
+    [chave]: JSON.stringify(
+      normalizar(colunas).map((coluna) => ({
+        id: coluna.id,
+        visivel: coluna.visivel !== false,
+        ordem: coluna.ordem,
+        span: coluna.span,
+        rotulo: coluna.rotulo,
+        base: coluna.base
+      }))
+    )
+  };
+}
+
 export { buscarCep };
 
 function normalizarEmpresa(empresa) {

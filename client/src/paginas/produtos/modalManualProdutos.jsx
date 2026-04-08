@@ -109,6 +109,7 @@ export function ModalManualProdutos({
           itens: [
             'A pesquisa textual ajuda a localizar rapidamente referencia e descricao do item.',
             'Os filtros incluem grupo, marca, unidade e status.',
+            'O cabecalho da pagina tambem oferece um atalho direto de Configurar grid para ajustar colunas sem precisar entrar na tela de Configuracoes.',
             'A grade agora separa codigo, referencia e descricao em colunas proprias, mantendo imagem, preco, status e acoes mais contidos.',
             'Textos que ultrapassam duas linhas passam a ser truncados com reticencias para evitar crescimento excessivo das linhas.',
             'A grade ja vem enriquecida com os nomes das classificacoes auxiliares.',

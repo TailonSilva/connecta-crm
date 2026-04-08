@@ -34,6 +34,7 @@ export function ModalCadastroConfiguracao({
   aoSalvar,
   aoSalvarConcluido,
   aoInativar,
+  camadaSecundaria = false,
   podeEditarRegistro = () => true,
   podeInativarRegistro = () => true
 }) {
@@ -90,7 +91,7 @@ export function ModalCadastroConfiguracao({
 
   function abrirNovo() {
     definirRegistroSelecionado(null);
-    definirFormulario(criarFormularioVazio(camposFormulario));
+    definirFormulario(criarFormularioVazio(camposFormulario, registros, chavePrimaria));
     definirModoFormulario('novo');
     definirMensagemErro('');
     definirModalFormularioAberto(true);
@@ -167,6 +168,9 @@ export function ModalCadastroConfiguracao({
         [chavePrimaria]: registroSelecionado?.[chavePrimaria],
         ...formulario
       };
+      if (modoFormulario === 'novo' && chavePrimaria) {
+        delete payloadBase[chavePrimaria];
+      }
       const payload = typeof transformarPayloadSalvar === 'function'
         ? transformarPayloadSalvar({ registroSelecionado, formulario, payloadBase, modoFormulario })
         : payloadBase;
@@ -268,7 +272,7 @@ export function ModalCadastroConfiguracao({
   });
 
   return (
-    <div className="camadaModal" role="presentation" onMouseDown={fecharAoClicarNoFundo}>
+    <div className={`camadaModal ${camadaSecundaria ? 'camadaModalSecundaria' : ''}`.trim()} role="presentation" onMouseDown={fecharAoClicarNoFundo}>
       <section
         className={`modalCliente ${classeModal}`.trim()}
         role="dialog"
@@ -512,13 +516,30 @@ function CampoSelect({ label, name, options, ...props }) {
   );
 }
 
-function criarFormularioVazio(camposFormulario) {
-  return camposFormulario.reduce((acumulador, campo) => ({
+function criarFormularioVazio(camposFormulario, registros = [], chavePrimaria = '') {
+  const formularioBase = camposFormulario.reduce((acumulador, campo) => ({
     ...acumulador,
     [campo.name]: campo.type === 'checkbox'
       ? Boolean(campo.defaultValue ?? true)
       : String(campo.defaultValue ?? '')
   }), {});
+
+  if (chavePrimaria && Object.prototype.hasOwnProperty.call(formularioBase, chavePrimaria)) {
+    formularioBase[chavePrimaria] = String(obterProximoCodigoConfiguracao(registros, chavePrimaria));
+  }
+
+  return formularioBase;
+}
+
+function obterProximoCodigoConfiguracao(registros, chavePrimaria) {
+  const maiorCodigo = Array.isArray(registros)
+    ? registros.reduce((maiorAtual, registro) => {
+      const codigo = Number(registro?.[chavePrimaria] || 0);
+      return Number.isFinite(codigo) && codigo > maiorAtual ? codigo : maiorAtual;
+    }, 0)
+    : 0;
+
+  return maiorCodigo + 1;
 }
 
 function criarFormularioRegistro(registro, camposFormulario) {

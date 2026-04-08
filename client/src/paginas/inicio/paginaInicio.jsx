@@ -6,7 +6,8 @@ import { listarAtendimentosGrid } from '../../servicos/atendimentos';
 import { listarClientes, listarVendedores } from '../../servicos/clientes';
 import {
   listarEtapasOrcamentoConfiguracao,
-  listarEtapasPedidoConfiguracao
+  listarEtapasPedidoConfiguracao,
+  listarMotivosDevolucaoConfiguracao
 } from '../../servicos/configuracoes';
 import { listarEmpresas } from '../../servicos/empresa';
 import { listarOrcamentos } from '../../servicos/orcamentos';
@@ -18,6 +19,7 @@ import { criarResumoFunilVendas } from './utilitarios/criarResumoFunilVendas';
 
 const IDS_ETAPAS_ORCAMENTO_FECHADAS = new Set([1, 2, 3, 4]);
 const ID_ETAPA_PEDIDO_ENTREGUE = 5;
+const ID_TIPO_PEDIDO_DEVOLUCAO = 2;
 
 export function PaginaInicio({ usuarioLogado }) {
   const [carregando, definirCarregando] = useState(true);
@@ -62,6 +64,7 @@ export function PaginaInicio({ usuarioLogado }) {
         listarPedidos(recorteUsuarioPadrao),
         listarEtapasOrcamentoConfiguracao(),
         listarEtapasPedidoConfiguracao(),
+        listarMotivosDevolucaoConfiguracao(),
         listarEmpresas()
       ]);
 
@@ -74,6 +77,7 @@ export function PaginaInicio({ usuarioLogado }) {
         pedidosResultado,
         etapasOrcamentoResultado,
         etapasPedidoResultado,
+        motivosDevolucaoResultado,
         empresasResultado
       ] = resultados;
 
@@ -85,6 +89,7 @@ export function PaginaInicio({ usuarioLogado }) {
       const pedidos = pedidosResultado.status === 'fulfilled' ? pedidosResultado.value : [];
       const etapasOrcamento = etapasOrcamentoResultado.status === 'fulfilled' ? etapasOrcamentoResultado.value : [];
       const etapasPedido = etapasPedidoResultado.status === 'fulfilled' ? etapasPedidoResultado.value : [];
+      const motivosDevolucao = motivosDevolucaoResultado.status === 'fulfilled' ? motivosDevolucaoResultado.value : [];
       const empresas = empresasResultado.status === 'fulfilled' ? empresasResultado.value : [];
 
       definirPainelBruto({
@@ -96,6 +101,7 @@ export function PaginaInicio({ usuarioLogado }) {
         pedidos,
         etapasOrcamento,
         etapasPedido,
+        motivosDevolucao,
         empresa: empresas[0] || null
       });
     } catch (_erro) {
@@ -238,6 +244,47 @@ export function PaginaInicio({ usuarioLogado }) {
                 </div>
               </section>
 
+              <section className="paginaInicioPainel paginaInicioPainelAmplo">
+                <div className="paginaInicioPainelCabecalho">
+                  <div>
+                    <h3>Devolucoes do mes</h3>
+                    <p>Quantidade de devolucoes e valor total por motivo no mes atual, com valores convertidos para leitura positiva.</p>
+                  </div>
+                </div>
+
+                <div className="paginaInicioGraficoFunilEtapas">
+                  {painel.devolucoes.length > 0 ? painel.devolucoes.map((motivo) => (
+                    <article key={motivo.idMotivoDevolucao} className="paginaInicioGraficoFunilItem" tabIndex={0}>
+                      <div className="paginaInicioGraficoFunilCabecalho">
+                        <span className="paginaInicioFluxoConversaoRotulo">{motivo.descricao}</span>
+                        <strong>{motivo.quantidadeDevolucoes}</strong>
+                      </div>
+                      <div className="paginaInicioGraficoFunilLinha">
+                        <div className="paginaInicioGraficoFunilLegenda">
+                          <span>Qtd. de devolucoes</span>
+                          <strong>{motivo.quantidade}</strong>
+                        </div>
+                        <div className="paginaInicioFluxoConversaoBarra">
+                          <span style={{ width: `${motivo.percentualQuantidade}%` }} />
+                        </div>
+                      </div>
+                      <div className="paginaInicioGraficoFunilLinha">
+                        <div className="paginaInicioGraficoFunilLegenda">
+                          <span>Valor total</span>
+                          <strong>{motivo.valor}</strong>
+                        </div>
+                        <div className="paginaInicioFluxoConversaoBarra paginaInicioFluxoConversaoBarraValor paginaInicioFluxoConversaoBarraDevolucao">
+                          <span style={{ width: `${motivo.percentualValor}%` }} />
+                        </div>
+                      </div>
+                      <TooltipExplicacao titulo={motivo.descricao} ajuda={motivo.ajuda} />
+                    </article>
+                  )) : (
+                    <p className="paginaInicioPainelMensagem">Nenhuma devolucao registrada no mes atual.</p>
+                  )}
+                </div>
+              </section>
+
               <section className="paginaInicioPainel">
                 <div className="paginaInicioPainelCabecalho">
                   <div>
@@ -348,6 +395,10 @@ function montarPainel(dados, usuarioLogado) {
   const orcamentosMes = orcamentos.filter((item) => dataNoPeriodo(item.dataInclusao, inicioMes, fimMes));
   const pedidosMes = pedidos.filter((item) => dataNoPeriodo(item.dataInclusao, inicioMes, fimMes));
   const pedidosEntregaMes = pedidos.filter((item) => dataNoPeriodo(item.dataEntrega, inicioMes, fimMes));
+  const devolucoesMes = pedidos.filter((item) => (
+    Number(item.idTipoPedido) === ID_TIPO_PEDIDO_DEVOLUCAO
+    && dataNoPeriodo(item.dataEntrega, inicioMes, fimMes)
+  ));
   const atendimentosMes = atendimentos.filter((item) => dataNoPeriodo(item.data, inicioMes, fimMes));
   const valorAberto = somarTotais(orcamentosAbertos);
   const faturamentoMes = somarTotais(pedidosEntregaMes);
@@ -375,6 +426,7 @@ function montarPainel(dados, usuarioLogado) {
       }
     }));
   const funil = montarFunil(criarResumoFunilVendas(dados.etapasOrcamento, orcamentosAbertos));
+  const devolucoes = montarResumoDevolucoes(devolucoesMes, dados.motivosDevolucao);
 
   return {
     ...base,
@@ -502,6 +554,7 @@ function montarPainel(dados, usuarioLogado) {
     ],
     exibirFunil: dados.empresa?.exibirFunilPaginaInicial !== 0,
     funil,
+    devolucoes,
     alertas: montarAlertas(orcamentosVencidos, orcamentosVencendo, pedidosEntregaProxima, clientesSemAtendimento),
     tituloRanking: usuarioLogado?.tipo === 'Usuario padrao' ? 'Clientes em destaque' : 'Vendedores em destaque',
     descricaoRanking: usuarioLogado?.tipo === 'Usuario padrao'
@@ -537,6 +590,7 @@ function criarPainelBase(usuarioLogado) {
     faixas: [],
     exibirFunil: true,
     funil: [],
+    devolucoes: [],
     alertas: [],
     tituloRanking: 'Ranking',
     descricaoRanking: '',
@@ -676,6 +730,48 @@ function montarAlertas(vencidos, vencendo, entrega, semAtendimento) {
       }
     }
   ];
+}
+
+function montarResumoDevolucoes(pedidos, motivosDevolucao) {
+  const motivosPorId = new Map((motivosDevolucao || []).map((motivo) => [
+    String(motivo.idMotivoDevolucao),
+    motivo
+  ]));
+  const resumoPorMotivo = new Map();
+
+  (pedidos || []).forEach((pedido) => {
+    const chaveMotivo = String(pedido.idMotivoDevolucao || 'sem-motivo');
+    const motivo = motivosPorId.get(chaveMotivo);
+    const atual = resumoPorMotivo.get(chaveMotivo) || {
+      idMotivoDevolucao: chaveMotivo,
+      descricao: motivo
+        ? `${String(motivo.idMotivoDevolucao).padStart(4, '0')} - ${motivo.abreviacao}`
+        : 'Sem motivo informado',
+      quantidade: 0,
+      valorTotal: 0
+    };
+
+    atual.quantidade += 1;
+    atual.valorTotal += Math.abs(totalRegistro(pedido));
+    resumoPorMotivo.set(chaveMotivo, atual);
+  });
+
+  const lista = [...resumoPorMotivo.values()].sort((a, b) => b.valorTotal - a.valorTotal);
+  const maiorQuantidade = Math.max(...lista.map((item) => item.quantidade), 0);
+  const maiorValor = Math.max(...lista.map((item) => item.valorTotal), 0);
+
+  return lista.map((item) => ({
+    ...item,
+    quantidadeDevolucoes: `${item.quantidade} dev.`,
+    valor: normalizarPreco(item.valorTotal),
+    percentualQuantidade: maiorQuantidade > 0 ? Math.max(8, Math.round((item.quantidade / maiorQuantidade) * 100)) : 0,
+    percentualValor: maiorValor > 0 ? Math.max(8, Math.round((item.valorTotal / maiorValor) * 100)) : 0,
+    ajuda: {
+      conceito: `Resumo das devolucoes do mes atual para o motivo ${item.descricao}.`,
+      calculo: `${item.quantidade} pedido(s) de devolucao no mes atual, somando ${normalizarPreco(item.valorTotal)} em valor absoluto.`,
+      observacao: 'O grafico converte os valores negativos das devolucoes para positivo apenas para facilitar a leitura comparativa.'
+    }
+  }));
 }
 
 function montarRankingVendedores(pedidos, vendedoresPorId) {

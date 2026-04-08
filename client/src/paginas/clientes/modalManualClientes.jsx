@@ -118,6 +118,7 @@ export function ModalManualClientes({
           itens: [
             'A pesquisa textual filtra rapidamente a grade combinando dados relevantes do cliente.',
             'Os filtros incluem estado, cidade, grupo de empresa, ramo, vendedor, tipo e status do cadastro.',
+            'O cabecalho da pagina tambem oferece um atalho direto de Configurar grid para ajustar colunas sem precisar entrar na tela de Configuracoes.',
             'A busca tambem considera o Codigo alternativo quando ele estiver preenchido.',
             'A grade prioriza leitura sem rolagem horizontal e agora separa codigo, cliente, documento, contato e e-mail em colunas proprias.',
             'Quando um texto passa de duas linhas, a propria celula aplica reticencias para manter a altura da listagem mais previsivel.',

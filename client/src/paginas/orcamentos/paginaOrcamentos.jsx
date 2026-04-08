@@ -18,8 +18,10 @@ import {
   listarCamposOrcamentoConfiguracao,
   listarEtapasOrcamentoConfiguracao,
   listarMetodosPagamentoConfiguracao,
+  listarMotivosDevolucaoConfiguracao,
   listarMotivosPerdaConfiguracao,
-  listarPrazosPagamentoConfiguracao
+  listarPrazosPagamentoConfiguracao,
+  listarTiposPedidoConfiguracao
 } from '../../servicos/configuracoes';
 import { incluirPedido } from '../../servicos/pedidos';
 import {
@@ -28,7 +30,7 @@ import {
   excluirOrcamento,
   incluirOrcamento
 } from '../../servicos/orcamentos';
-import { listarEmpresas } from '../../servicos/empresa';
+import { atualizarEmpresa, criarPayloadAtualizacaoColunasGrid, listarEmpresas } from '../../servicos/empresa';
 import { listarProdutos } from '../../servicos/produtos';
 import { listarUsuarios } from '../../servicos/usuarios';
 import {
@@ -46,6 +48,7 @@ import {
 import { ModalOrcamento } from './modalOrcamento';
 import { ModalManualOrcamentos } from './modalManualOrcamentos';
 import { ModalPedido } from '../pedidos/modalPedido';
+import { ModalColunasGridOrcamentos } from '../configuracoes/modalColunasGridOrcamentos';
 
 function criarFiltrosIniciaisOrcamentos(usuarioLogado, empresa = null) {
   return {
@@ -95,6 +98,8 @@ export function PaginaOrcamentos({ usuarioLogado }) {
   const [camposOrcamento, definirCamposOrcamento] = useState([]);
   const [camposPedido, definirCamposPedido] = useState([]);
   const [etapasPedido, definirEtapasPedido] = useState([]);
+  const [tiposPedido, definirTiposPedido] = useState([]);
+  const [motivosDevolucao, definirMotivosDevolucao] = useState([]);
   const [empresa, definirEmpresa] = useState(null);
   const [carregandoContexto, definirCarregandoContexto] = useState(true);
   const [carregandoGrade, definirCarregandoGrade] = useState(true);
@@ -102,6 +107,7 @@ export function PaginaOrcamentos({ usuarioLogado }) {
   const [modalAberto, definirModalAberto] = useState(false);
   const [modalManualAberto, definirModalManualAberto] = useState(false);
   const [modalFiltrosAberto, definirModalFiltrosAberto] = useState(false);
+  const [modalColunasGridAberto, definirModalColunasGridAberto] = useState(false);
   const [modalBuscaClienteFiltrosAberto, definirModalBuscaClienteFiltrosAberto] = useState(false);
   const [filtrosEmEdicao, definirFiltrosEmEdicao] = useState(null);
   const [orcamentoSelecionado, definirOrcamentoSelecionado] = useState(null);
@@ -221,6 +227,8 @@ export function PaginaOrcamentos({ usuarioLogado }) {
         listarCamposOrcamentoConfiguracao(),
         listarCamposPedidoConfiguracao(),
         listarEtapasPedidoConfiguracao(),
+        listarTiposPedidoConfiguracao(),
+        listarMotivosDevolucaoConfiguracao(),
         listarEmpresas()
       ]);
 
@@ -237,6 +245,8 @@ export function PaginaOrcamentos({ usuarioLogado }) {
         camposResultado,
         camposPedidoResultado,
         etapasPedidoResultado,
+        tiposPedidoResultado,
+        motivosDevolucaoResultado,
         empresasResultado
       ] = resultados;
 
@@ -252,6 +262,8 @@ export function PaginaOrcamentos({ usuarioLogado }) {
       const camposCarregados = camposResultado.status === 'fulfilled' ? camposResultado.value : [];
       const camposPedidoCarregados = camposPedidoResultado.status === 'fulfilled' ? camposPedidoResultado.value : [];
       const etapasPedidoCarregadas = etapasPedidoResultado.status === 'fulfilled' ? etapasPedidoResultado.value : [];
+      const tiposPedidoCarregados = tiposPedidoResultado.status === 'fulfilled' ? tiposPedidoResultado.value : [];
+      const motivosDevolucaoCarregados = motivosDevolucaoResultado.status === 'fulfilled' ? motivosDevolucaoResultado.value : [];
       const empresasCarregadas = empresasResultado.status === 'fulfilled' ? empresasResultado.value : [];
 
       const clientesCarteira = usuarioSomenteVendedor
@@ -273,6 +285,8 @@ export function PaginaOrcamentos({ usuarioLogado }) {
       definirCamposOrcamento(camposCarregados);
       definirCamposPedido(camposPedidoCarregados);
       definirEtapasPedido(etapasPedidoCarregadas);
+      definirTiposPedido(tiposPedidoCarregados);
+      definirMotivosDevolucao(motivosDevolucaoCarregados);
       definirEmpresa(empresasCarregadas[0] || null);
 
       return {
@@ -288,6 +302,8 @@ export function PaginaOrcamentos({ usuarioLogado }) {
         camposOrcamento: camposCarregados,
         camposPedido: camposPedidoCarregados,
         etapasPedido: etapasPedidoCarregadas,
+        tiposPedido: tiposPedidoCarregados,
+        motivosDevolucao: motivosDevolucaoCarregados,
         empresa: empresasCarregadas[0] || null
       };
     } catch (_erro) {
@@ -351,6 +367,22 @@ export function PaginaOrcamentos({ usuarioLogado }) {
     if (contextoAtual) {
       await carregarGradeOrcamentos(contextoAtual);
     }
+  }
+
+  async function salvarColunasGridOrcamentos(dadosColunas) {
+    if (!empresa?.idEmpresa) {
+      throw new Error('Cadastre a empresa antes de configurar as colunas do grid.');
+    }
+
+    await atualizarEmpresa(
+      empresa.idEmpresa,
+      criarPayloadAtualizacaoColunasGrid('colunasGridOrcamentos', dadosColunas.colunasGridOrcamentos)
+    );
+
+    const empresasAtualizadas = await listarEmpresas();
+    definirEmpresa(empresasAtualizadas[0] || null);
+    window.dispatchEvent(new CustomEvent('empresa-atualizada'));
+    definirModalColunasGridAberto(false);
   }
 
   async function salvarOrcamento(dadosOrcamento) {
@@ -717,6 +749,15 @@ export function PaginaOrcamentos({ usuarioLogado }) {
             onClick={abrirModalFiltrosOrcamentos}
           />
           <Botao
+            variante="secundario"
+            icone="configuracoes"
+            somenteIcone
+            title="Configurar grid"
+            aria-label="Configurar grid"
+            onClick={() => definirModalColunasGridAberto(true)}
+            disabled={usuarioSomenteConsultaConfiguracao || !empresa?.idEmpresa}
+          />
+          <Botao
             variante="primario"
             icone="adicionar"
             somenteIcone
@@ -907,6 +948,8 @@ export function PaginaOrcamentos({ usuarioLogado }) {
         vendedores={vendedores}
         metodosPagamento={metodosPagamento}
         prazosPagamento={prazosPagamento}
+        tiposPedido={tiposPedido}
+        motivosDevolucao={motivosDevolucao}
         etapasPedido={etapasPedido}
         produtos={produtos}
         camposPedido={camposPedido}
@@ -930,6 +973,12 @@ export function PaginaOrcamentos({ usuarioLogado }) {
         filtros={filtros}
         empresa={empresa}
         usuarioLogado={usuarioLogado}
+      />
+      <ModalColunasGridOrcamentos
+        aberto={modalColunasGridAberto}
+        empresa={empresa}
+        aoFechar={() => definirModalColunasGridAberto(false)}
+        aoSalvar={salvarColunasGridOrcamentos}
       />
 
       {orcamentoExclusaoPendente ? (
@@ -1683,6 +1732,7 @@ function normalizarPayloadPedido(dadosPedido) {
       idPrazoPagamento: dadosPedido.idPrazoPagamento ? Number(dadosPedido.idPrazoPagamento) : null,
       idTipoPedido: dadosPedido.idTipoPedido ? Number(dadosPedido.idTipoPedido) : null,
       idEtapaPedido: dadosPedido.idEtapaPedido ? Number(dadosPedido.idEtapaPedido) : null,
+      idMotivoDevolucao: dadosPedido.idMotivoDevolucao ? Number(dadosPedido.idMotivoDevolucao) : null,
     comissao: normalizarNumeroDecimal(dadosPedido.comissao),
     dataInclusao: limparTextoOpcional(dadosPedido.dataInclusao),
     dataEntrega: limparTextoOpcional(dadosPedido.dataEntrega),

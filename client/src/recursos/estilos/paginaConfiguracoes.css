@@ -245,6 +245,7 @@
   display: inline-flex;
   align-items: center;
   min-height: 32px;
+  max-width: 220px;
   padding: 6px 12px;
   border-radius: 999px;
   background: rgba(23, 145, 226, 0.12);
@@ -252,11 +253,18 @@
   font-size: 0.76rem;
   font-weight: 700;
   line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .chipResumoGridAtendimentos.inativo {
   background: rgba(148, 163, 184, 0.16);
   color: var(--corTextoSuave);
+}
+
+.chipResumoGridAtendimentosRotulo {
+  max-width: 260px;
 }
 
 .chipResumoGridAtendimentosObrigatorio {
@@ -750,6 +758,26 @@
 
 .gradeFormularioStatusVisita .campoCheckboxFormulario {
   grid-column: 4;
+}
+
+.gradeFormularioMotivosDevolucao {
+  grid-template-columns: 72px 140px minmax(280px, 1fr) auto;
+  column-gap: 16px;
+  align-items: end;
+}
+
+.gradeFormularioMotivosDevolucao .campoFormulario-idMotivoDevolucao .entradaFormulario {
+  text-align: center;
+}
+
+.gradeFormularioMotivosDevolucao .campoCheckbox-status {
+  min-height: 44px;
+  padding: 0 0 10px;
+  align-self: end;
+}
+
+.gradeFormularioMotivosDevolucao .campoCheckbox-status span {
+  white-space: nowrap;
 }
 
 .modalAtualizacaoSistema {

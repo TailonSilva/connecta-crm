@@ -382,6 +382,14 @@
   background: linear-gradient(90deg, color-mix(in srgb, var(--corPrimaria) 62%, white), var(--corPrimariaForte));
 }
 
+.paginaInicioFluxoConversaoBarraDevolucao {
+  background: rgba(214, 69, 32, 0.12);
+}
+
+.paginaInicioFluxoConversaoBarraDevolucao span {
+  background: linear-gradient(90deg, #f59e0b 0%, #d64520 100%);
+}
+
 .paginaInicioConversaoValorCabecalho,
 .paginaInicioDesfechoTopo {
   display: flex;

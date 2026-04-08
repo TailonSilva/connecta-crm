@@ -196,6 +196,13 @@ const entidades = [
     camposPermitidos: ['descricao', 'status']
   },
   {
+    nome: 'motivoDevolucao',
+    rota: '/api/motivosDevolucao',
+    chavePrimaria: 'idMotivoDevolucao',
+    camposObrigatorios: ['abreviacao', 'descricao'],
+    camposPermitidos: ['abreviacao', 'descricao', 'status']
+  },
+  {
     nome: 'etapaPedido',
     rota: '/api/etapasPedido',
     chavePrimaria: 'idEtapa',
@@ -434,7 +441,9 @@ const entidades = [
       'idVendedor',
       'comissao',
       'idPrazoPagamento',
+      'idTipoPedido',
       'idEtapaPedido',
+      'idMotivoDevolucao',
       'dataInclusao',
       'dataEntrega',
       'dataValidade',
@@ -446,6 +455,7 @@ const entidades = [
       'nomeVendedorSnapshot',
       'nomeMetodoPagamentoSnapshot',
       'nomePrazoPagamentoSnapshot',
+      'nomeTipoPedidoSnapshot',
       'nomeEtapaPedidoSnapshot'
     ]
   },

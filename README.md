@@ -66,6 +66,7 @@ Observacao importante:
 - Sempre que o conteudo textual de uma celula ultrapassar duas linhas, a grade deve truncar visualmente com reticencias para preservar altura previsivel e leitura da listagem
 - Quando uma grade tiver muitas colunas ou textos longos, a distribuicao horizontal deve usar presets de largura por contexto dentro do `GradePadrao`, em vez de voltar para tabelas isoladas ou CSS solto por pagina
 - Quando a empresa puder escolher colunas visiveis de uma grade, essa configuracao deve ficar persistida no cadastro da `Empresa`, refletir todas as colunas persistidas daquele modulo e usar renderizacao dinamica de cabecalho, linhas e `colgroup`
+- Grades configuraveis tambem devem permitir personalizar o `rotulo` exibido no cabecalho de cada coluna, mantendo `Acoes`, `Codigo` e `Status` com espacos fixos quando essa regra existir no modulo
 - Grades principais com pesquisa e filtros devem priorizar filtro no backend: a interface envia os parametros atuais da tela para a API e a listagem retorna somente o recorte solicitado
 - Quando a pagina precisar dados auxiliares para modais e selects, esse contexto deve ser carregado separado da grade principal, para evitar recarregar listas inteiras a cada digitacao ou troca de filtro
 - Cada componente novo deve ter seu proprio arquivo de estilo com o mesmo nome do componente salvo em `client/src/recursos/estilos/`
@@ -312,8 +313,9 @@ Filtros da agenda:
 - Manual visual da pagina acessado por `F1`, com fluxo, validacoes, permissoes e atalhos reais da tela
 - A grade principal usa distribuicao dinamica por coluna, mantendo dados curtos e previsiveis como `Data`, `Inicio`, `Fim`, `Origem` e `Acoes` mais contidos, deixando `Assunto` e `Descricao` ocuparem a maior parte do espaco util
 - A empresa pode definir em `Configuracoes > Atendimentos > Colunas do grid` quais colunas do cadastro aparecem na listagem principal, incluindo `Codigo`, `Agendamento`, `Data`, `Inicio`, `Fim`, `Cliente`, `Contato`, `Assunto`, `Descricao`, `Canal`, `Origem` e `Usuario`
-- A configuracao do grid principal de `Atendimentos` tambem permite definir a ordem e o espaco ocupado por cada informacao em uma malha de `24` colunas, com `Acoes` sempre visivel
-- O atalho geral `Colunas do grid` abre um seletor por modulo; hoje `Atendimentos`, `Clientes`, `Produtos`, `Orcamentos` e `Pedidos` ja permitem configurar visibilidade, ordem e espaco das colunas por empresa
+- A configuracao do grid principal de `Atendimentos` tambem permite definir a ordem e o espaco ocupado por cada informacao em uma malha de `100` partes, com `Acoes` sempre visivel
+- O atalho geral `Colunas do grid` abre um seletor por modulo; hoje `Atendimentos`, `Clientes`, `Produtos`, `Orcamentos` e `Pedidos` ja permitem configurar visibilidade, ordem, espaco e o `rotulo` do cabecalho por empresa
+- As paginas principais desses modulos tambem exibem um botao direto de `Configurar grid` no cabecalho; `Usuario padrao` continua sem permissao para abrir esse ajuste
 - Campos de cliente, contato e orcamento no mesmo fluxo comercial
 - Busca de cliente por modal reutilizavel
 - Busca de contato por modal reutilizavel com inclusao rapida de novo contato quando o cliente ja estiver definido; o contato criado volta selecionado automaticamente no atendimento
@@ -368,6 +370,10 @@ Filtros da agenda:
 - A tabela `Tipos de pedido` nasce com `Venda` e `Devolucao` como registros obrigatorios do sistema, protegidos contra inativacao e exclusao
 - Quando o `Tipo de pedido` for `Devolucao`, o sistema ajusta automaticamente o valor unitario dos itens para negativo e recalcula o total do pedido com valor negativo
 - Em pedidos do tipo `Devolucao`, a quantidade dos itens tambem fica negativa e a etapa do pedido passa a ser travada automaticamente em `Entregue`
+- Quando um pedido de `Devolucao` estiver em `Entregue`, o sistema exige um `Motivo da devolucao` em modal externo, vindo da tabela auxiliar de configuracao e validado sempre por `id`
+- A mesma exigencia do `Motivo da devolucao` tambem vale para a troca rapida de etapa direto no grid de pedidos
+- O modal de `Pedidos` agora possui a aba `Outros`, que concentra `Orcamento vinculado` e o campo visual do motivo, trazendo o valor preenchido quando existir ou vazio quando ainda nao houver motivo
+- A pagina inicial agora exibe a secao `Devolucoes do mes`, agrupando pedidos do tipo `Devolucao` por `Motivo da devolucao`, com quantidade por motivo e valor total convertido para positivo apenas para leitura do grafico
 - O modal de filtros da pagina de pedidos permite selecionar multiplas etapas ao mesmo tempo e salva esse recorte por usuario
 - A etapa do pedido pode ser alterada direto no grid, no mesmo padrao visual adotado em Orcamentos
 - O filtro da pagina de pedidos tem um botao unico de `Datas` que abre um modal com os intervalos de `Data de inclusao` e `Data de entrega`
@@ -398,6 +404,7 @@ A tela de configuracoes usa cards grandes e modais padrao. Hoje ela cobre:
 - `Unidades`
 - `Metodos de pagamento`
 - `Tipos de pedido`
+- `Motivos da devolucao`
 - `Prazos de pagamento`
 - `Motivo da perda`
 - `Etapas do pedido`
@@ -632,6 +639,8 @@ Rotas CRUD atualmente expostas:
 - `/api/origensAtendimento`
 - `/api/metodosPagamento`
 - `/api/prazosPagamento`
+- `/api/tiposPedido`
+- `/api/motivosDevolucao`
 - `/api/motivosPerda`
 - `/api/etapasPedido`
 - `/api/etapasOrcamento`

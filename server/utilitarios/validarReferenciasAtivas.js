@@ -258,6 +258,13 @@ const validacoesPorEntidade = {
       mensagem: 'Selecione um tipo de pedido ativo.'
     },
     {
+      campo: 'idMotivoDevolucao',
+      tabela: 'motivoDevolucao',
+      chavePrimaria: 'idMotivoDevolucao',
+      colunaAtiva: 'status',
+      mensagem: 'Selecione um motivo da devolucao ativo.'
+    },
+    {
       campo: 'idEtapaPedido',
       tabela: 'etapaPedido',
       chavePrimaria: 'idEtapa',

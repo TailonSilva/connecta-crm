@@ -56,8 +56,7 @@
   padding: 10px 16px;
   vertical-align: middle;
   text-align: left;
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  min-width: 0;
 }
 
 .cabecalhoGradeClientes,
@@ -86,6 +85,8 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .linhaCliente td,
@@ -104,6 +105,7 @@
 .tabelaGradePadrao .colunaGradeCodigo {
   width: 1%;
   white-space: nowrap;
+  text-align: center;
 }
 
 .tabelaGradePadrao .colunaGradeSigla {
@@ -155,6 +157,8 @@
 .tabelaGradePadrao td.colunaGradeTextoCurto,
 .tabelaGradePadrao td.colunaGradeTexto {
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tabelaGradePadrao td.colunaGradeTextoPrincipal {
@@ -162,7 +166,7 @@
 }
 
 .tabelaGradePadrao td.colunaGradeTextoCurto {
-  white-space: normal;
+  white-space: nowrap;
 }
 
 .textoGradeClamp {
@@ -216,6 +220,8 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .linhaLayoutGradePadrao {
@@ -227,6 +233,7 @@
 .linhaLayoutGradePadrao > * {
   min-width: 0;
   padding: 10px 0;
+  overflow: hidden;
 }
 
 .celulaLayoutGradePadrao {
@@ -234,10 +241,16 @@
   flex-direction: column;
   justify-content: center;
   min-width: 0;
+  overflow: hidden;
 }
 
 .celulaLayoutGradePadrao.colunaGradeAcoes {
   align-items: flex-start;
+}
+
+.celulaLayoutGradePadrao.colunaGradeCodigo,
+.celulaLayoutGradePadrao.colunaGradeStatus {
+  align-items: center;
 }
 
 .rotuloCelulaLayoutGradePadrao {

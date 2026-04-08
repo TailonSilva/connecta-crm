@@ -17,7 +17,7 @@ export function ModalColunasGridPedidos({
 }) {
   const [configuracoesColunas, definirConfiguracoesColunas] = useState([]);
   const [colunaEmEdicao, definirColunaEmEdicao] = useState(null);
-  const [formularioEdicao, definirFormularioEdicao] = useState({ ordem: 1, span: 1 });
+  const [formularioEdicao, definirFormularioEdicao] = useState({ ordem: 1, span: 1, rotulo: '' });
   const [salvando, definirSalvando] = useState(false);
   const [mensagemErro, definirMensagemErro] = useState('');
 
@@ -30,7 +30,7 @@ export function ModalColunasGridPedidos({
       normalizarConfiguracoesColunasGridPedidos(empresa?.colunasGridPedidos)
     );
     definirColunaEmEdicao(null);
-    definirFormularioEdicao({ ordem: 1, span: 1 });
+    definirFormularioEdicao({ ordem: 1, span: 1, rotulo: '' });
     definirSalvando(false);
     definirMensagemErro('');
   }, [aberto, empresa]);
@@ -96,7 +96,8 @@ export function ModalColunasGridPedidos({
     definirColunaEmEdicao(coluna.id);
     definirFormularioEdicao({
       ordem: coluna.ordem || obterMaiorOrdem(colunasOrdenadas) + 1,
-      span: coluna.spanFixo || coluna.span || 1
+      span: coluna.spanFixo || coluna.span || 1,
+      rotulo: coluna.rotulo || coluna.rotuloPadrao || ''
     });
   }
 
@@ -123,6 +124,7 @@ export function ModalColunasGridPedidos({
 
         return {
           ...coluna,
+          rotulo: normalizarRotuloCabecalho(formularioEdicao.rotulo, coluna.rotuloPadrao || coluna.rotulo),
           span: normalizarSpan(formularioEdicao.span, coluna.spanFixo || coluna.spanPadrao || 1),
           ordem: coluna.visivel || coluna.obrigatoria
             ? normalizarNumeroInteiro(formularioEdicao.ordem, coluna.ordem || 1)
@@ -172,6 +174,8 @@ export function ModalColunasGridPedidos({
       await aoSalvar({
         colunasGridPedidos: colunasNormalizadas.map((coluna) => ({
           id: coluna.id,
+          base: coluna.base,
+          rotulo: normalizarRotuloCabecalho(coluna.rotulo, coluna.rotuloPadrao || coluna.rotulo),
           visivel: coluna.obrigatoria ? true : Boolean(coluna.visivel),
           ordem: coluna.visivel || coluna.obrigatoria ? coluna.ordem : null,
           span: normalizarSpan(coluna.span, coluna.spanFixo || coluna.spanPadrao || 1)
@@ -229,6 +233,7 @@ export function ModalColunasGridPedidos({
               {colunasOrdenadas.map((coluna) => {
                 const chipOrdem = coluna.visivel || coluna.obrigatoria ? `Ordem ${coluna.ordem}` : 'Sem ordem';
                 const chipEspaco = `Espaco ${coluna.span}`;
+                const chipRotulo = coluna.rotulo || coluna.rotuloPadrao;
 
                 return (
                   <div
@@ -250,6 +255,7 @@ export function ModalColunasGridPedidos({
                         {coluna.obrigatoria ? (
                           <span className="chipResumoGridAtendimentos chipResumoGridAtendimentosObrigatorio">Obrigatoria</span>
                         ) : null}
+                        <span className="chipResumoGridAtendimentos chipResumoGridAtendimentosRotulo" title={chipRotulo}>{chipRotulo}</span>
                         <span className={`chipResumoGridAtendimentos ${coluna.visivel ? 'ativo' : 'inativo'}`}>{chipOrdem}</span>
                         <span className="chipResumoGridAtendimentos">{chipEspaco}</span>
                       </div>
@@ -297,6 +303,16 @@ export function ModalColunasGridPedidos({
 
             <div className="corpoModalContato">
               <div className="painelEdicaoColunaGridAtendimentos">
+                <label className="campoEdicaoColunaGridAtendimentos">
+                  <span>Rotulo</span>
+                  <input
+                    type="text"
+                    maxLength="60"
+                    value={formularioEdicao.rotulo}
+                    onChange={(evento) => definirFormularioEdicao((estadoAtual) => ({ ...estadoAtual, rotulo: evento.target.value }))}
+                  />
+                </label>
+
                 <label className="campoEdicaoColunaGridAtendimentos">
                   <span>Ordem</span>
                   <input
@@ -417,4 +433,9 @@ function normalizarNumeroInteiro(valor, valorPadrao = 1) {
 
 function normalizarSpan(valor, valorPadrao = 1) {
   return Math.min(TOTAL_COLUNAS_GRID_PEDIDOS, normalizarNumeroInteiro(valor, valorPadrao));
+}
+
+function normalizarRotuloCabecalho(valor, valorPadrao = '') {
+  const texto = String(valor ?? '').trim();
+  return texto || String(valorPadrao || '').trim();
 }

@@ -590,6 +590,15 @@ banco.serialize(() => {
   `);
 
   banco.run(`
+    CREATE TABLE IF NOT EXISTS motivoDevolucao (
+      idMotivoDevolucao INTEGER PRIMARY KEY AUTOINCREMENT,
+      abreviacao VARCHAR(30) NOT NULL,
+      descricao VARCHAR(150) NOT NULL,
+      status BOOLEAN NOT NULL DEFAULT 1
+    )
+  `);
+
+  banco.run(`
     CREATE TABLE IF NOT EXISTS etapaPedido (
       idEtapa INTEGER PRIMARY KEY AUTOINCREMENT,
       descricao VARCHAR(150) NOT NULL,
@@ -1325,6 +1334,7 @@ banco.serialize(() => {
       idPrazoPagamento INTEGER,
       idTipoPedido INTEGER,
       idEtapaPedido INTEGER,
+      idMotivoDevolucao INTEGER,
       dataInclusao DATE,
       dataEntrega DATE,
       dataValidade DATE,
@@ -1346,7 +1356,8 @@ banco.serialize(() => {
       FOREIGN KEY (idVendedor) REFERENCES vendedor (idVendedor),
       FOREIGN KEY (idPrazoPagamento) REFERENCES prazoPagamento (idPrazoPagamento),
       FOREIGN KEY (idTipoPedido) REFERENCES tipoPedido (idTipoPedido),
-      FOREIGN KEY (idEtapaPedido) REFERENCES etapaPedido (idEtapaPedido)
+      FOREIGN KEY (idEtapaPedido) REFERENCES etapaPedido (idEtapaPedido),
+      FOREIGN KEY (idMotivoDevolucao) REFERENCES motivoDevolucao (idMotivoDevolucao)
     )
   `);
 
@@ -1491,6 +1502,14 @@ banco.serialize(() => {
   `, (erro) => {
     if (erro && !String(erro.message || '').includes('duplicate column name')) {
       console.error('Nao foi possivel garantir a coluna nomeEtapaPedidoSnapshot do pedido.', erro);
+    }
+  });
+
+  banco.run(`
+    ALTER TABLE pedido ADD COLUMN idMotivoDevolucao INTEGER
+  `, (erro) => {
+    if (erro && !String(erro.message || '').includes('duplicate column name')) {
+      console.error('Nao foi possivel garantir a coluna idMotivoDevolucao do pedido.', erro);
     }
   });
 

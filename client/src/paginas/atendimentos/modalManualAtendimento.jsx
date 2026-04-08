@@ -129,6 +129,7 @@ export function ModalManualAtendimento({
           titulo: 'Como usar a listagem principal',
           itens: [
             'A grade permite pesquisar por texto e filtrar por cliente, usuario do registro, vendedor, canal e origem.',
+            'O cabecalho da pagina tambem oferece um atalho direto de Configurar grid para ajustar colunas sem precisar entrar na tela de Configuracoes.',
             'Os filtros ficam persistidos por usuario para reabrir a pagina no mesmo contexto de trabalho.',
             'As colunas da listagem foram ajustadas para evitar rolagem horizontal e agora separam cliente, contato, assunto e descricao em campos proprios.',
             'A distribuicao da largura prioriza colunas curtas e previsiveis, como data, inicio, fim, origem e acoes, para sobrar mais espaco util a assunto e descricao.',

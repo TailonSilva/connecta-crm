@@ -14,6 +14,7 @@ import {
   atualizarLocalAgenda,
   atualizarMarca,
   atualizarMetodoPagamento,
+  atualizarMotivoDevolucao,
   atualizarMotivoPerda,
   atualizarOrigemAtendimento,
   atualizarPrazoPagamento,
@@ -36,6 +37,7 @@ import {
   incluirLocalAgenda,
   incluirMarca,
   incluirMetodoPagamento,
+  incluirMotivoDevolucao,
   incluirMotivoPerda,
   incluirOrigemAtendimento,
   incluirPrazoPagamento,
@@ -58,6 +60,7 @@ import {
   listarLocaisAgendaConfiguracao,
   listarMarcasConfiguracao,
   listarMetodosPagamentoConfiguracao,
+  listarMotivosDevolucaoConfiguracao,
   listarMotivosPerdaConfiguracao,
   obterConfiguracaoAtualizacaoSistema,
   listarOrigensAtendimentoConfiguracao,
@@ -197,6 +200,11 @@ const atalhosConfiguracao = [
   {
     id: 'motivosPerda',
     titulo: 'Motivos da perda',
+    icone: 'cadastro'
+  },
+  {
+    id: 'motivosDevolucao',
+    titulo: 'Motivos da devolucao',
     icone: 'cadastro'
   },
   {
@@ -371,6 +379,7 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
   const [origensAtendimento, definirOrigensAtendimento] = useState([]);
   const [statusVisita, definirStatusVisita] = useState([]);
   const [motivosPerda, definirMotivosPerda] = useState([]);
+  const [motivosDevolucao, definirMotivosDevolucao] = useState([]);
   const [etapasPedido, definirEtapasPedido] = useState([]);
   const [etapasOrcamento, definirEtapasOrcamento] = useState([]);
   const [camposOrcamento, definirCamposOrcamento] = useState([]);
@@ -609,6 +618,7 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
       listarCanaisAtendimentoConfiguracao({ incluirInativos: true }),
       listarOrigensAtendimentoConfiguracao({ incluirInativos: true }),
         listarStatusVisitaConfiguracao({ incluirInativos: true }),
+        listarMotivosDevolucaoConfiguracao({ incluirInativos: true }),
         listarMotivosPerdaConfiguracao({ incluirInativos: true }),
         listarEtapasPedidoConfiguracao({ incluirInativos: true }),
         listarEtapasOrcamentoConfiguracao({ incluirInativos: true }),
@@ -634,12 +644,13 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
     definirCanaisAtendimento(obterResultadoLista(resultados[14]));
     definirOrigensAtendimento(obterResultadoLista(resultados[15]));
     definirStatusVisita(ordenarRegistrosPorOrdem(obterResultadoLista(resultados[16]), 'idStatusVisita'));
-    definirMotivosPerda(obterResultadoLista(resultados[17]));
-    definirEtapasPedido(ordenarRegistrosPorOrdem(obterResultadoLista(resultados[18]), 'idEtapa'));
-    definirEtapasOrcamento(ordenarRegistrosPorOrdem(obterResultadoLista(resultados[19]), 'idEtapaOrcamento'));
-    definirCamposOrcamento(obterResultadoLista(resultados[20]));
-    definirCamposPedido(obterResultadoLista(resultados[21]));
-    definirTamanhos(obterResultadoLista(resultados[22]));
+    definirMotivosDevolucao(obterResultadoLista(resultados[17]));
+    definirMotivosPerda(obterResultadoLista(resultados[18]));
+    definirEtapasPedido(ordenarRegistrosPorOrdem(obterResultadoLista(resultados[19]), 'idEtapa'));
+    definirEtapasOrcamento(ordenarRegistrosPorOrdem(obterResultadoLista(resultados[20]), 'idEtapaOrcamento'));
+    definirCamposOrcamento(obterResultadoLista(resultados[21]));
+    definirCamposPedido(obterResultadoLista(resultados[22]));
+    definirTamanhos(obterResultadoLista(resultados[23]));
   }
 
   async function salvarUsuario(dadosUsuario) {
@@ -862,6 +873,22 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
       await atualizarMotivoPerda(dadosMotivo.idMotivo, payload);
     } else {
       await incluirMotivoPerda(payload);
+    }
+
+    await carregarCadastrosConfiguracao();
+  }
+
+  async function salvarMotivoDevolucao(dadosMotivo) {
+    const payload = {
+      abreviacao: String(dadosMotivo.abreviacao || '').trim(),
+      descricao: dadosMotivo.descricao.trim(),
+      status: dadosMotivo.status ? 1 : 0
+    };
+
+    if (dadosMotivo.idMotivoDevolucao) {
+      await atualizarMotivoDevolucao(dadosMotivo.idMotivoDevolucao, payload);
+    } else {
+      await incluirMotivoDevolucao(payload);
     }
 
     await carregarCadastrosConfiguracao();
@@ -1111,6 +1138,11 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
     await carregarCadastrosConfiguracao();
   }
 
+  async function inativarMotivoDevolucao(registro) {
+    await atualizarMotivoDevolucao(registro.idMotivoDevolucao, { status: 0 });
+    await carregarCadastrosConfiguracao();
+  }
+
   async function inativarLocalAgenda(registro) {
     await atualizarLocalAgenda(registro.idLocal, { status: 0 });
     await carregarCadastrosConfiguracao();
@@ -1232,6 +1264,7 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
       'etapasOrcamento',
       'marcas',
       'metodosPagamento',
+      'motivosDevolucao',
       'motivosPerda',
       'locaisAgenda',
       'orcamentos',
@@ -1780,6 +1813,29 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
         podeInativarRegistro={(registro) => !statusVisitaEhCritico(registro)}
       />
       <ModalCadastroConfiguracao
+        aberto={cadastroConfiguracaoAberto === 'motivosDevolucao'}
+        titulo="Motivos da devolucao"
+        rotuloIncluir="Incluir motivo"
+        registros={motivosDevolucao}
+        chavePrimaria="idMotivoDevolucao"
+        classeFormulario="gradeFormularioMotivosDevolucao"
+        somenteConsulta={usuarioSomenteConsulta}
+        colunas={[
+          { key: 'idMotivoDevolucao', label: 'Codigo' },
+          { key: 'abreviacao', label: 'Abreviacao' },
+          { key: 'descricao', label: 'Descricao' }
+        ]}
+        camposFormulario={[
+          { name: 'idMotivoDevolucao', label: 'Codigo', type: 'number', disabled: true },
+          { name: 'abreviacao', label: 'Abreviacao', required: true },
+          { name: 'descricao', label: 'Descricao', required: true },
+          { name: 'status', label: 'Registro ativo', type: 'checkbox', defaultValue: true }
+        ]}
+        aoFechar={fecharCadastroConfiguracao}
+        aoSalvar={salvarMotivoDevolucao}
+        aoInativar={inativarMotivoDevolucao}
+      />
+      <ModalCadastroConfiguracao
         aberto={cadastroConfiguracaoAberto === 'motivosPerda'}
         titulo="Motivos da perda"
         rotuloIncluir="Incluir motivo"
@@ -1945,6 +2001,8 @@ function normalizarPayloadEmpresa(dadosEmpresa) {
     colunasGridClientes: JSON.stringify(
       normalizarConfiguracoesColunasGridClientes(dadosEmpresa.colunasGridClientes).map((coluna) => ({
         id: coluna.id,
+        base: coluna.base,
+        rotulo: coluna.rotulo,
         visivel: coluna.obrigatoria ? true : Boolean(coluna.visivel),
         ordem: coluna.ordem,
         span: coluna.span
@@ -1953,6 +2011,8 @@ function normalizarPayloadEmpresa(dadosEmpresa) {
     colunasGridOrcamentos: JSON.stringify(
       normalizarConfiguracoesColunasGridOrcamentos(dadosEmpresa.colunasGridOrcamentos).map((coluna) => ({
         id: coluna.id,
+        base: coluna.base,
+        rotulo: coluna.rotulo,
         visivel: coluna.obrigatoria ? true : Boolean(coluna.visivel),
         ordem: coluna.ordem,
         span: coluna.span
@@ -1961,6 +2021,8 @@ function normalizarPayloadEmpresa(dadosEmpresa) {
     colunasGridProdutos: JSON.stringify(
       normalizarConfiguracoesColunasGridProdutos(dadosEmpresa.colunasGridProdutos).map((coluna) => ({
         id: coluna.id,
+        base: coluna.base,
+        rotulo: coluna.rotulo,
         visivel: coluna.obrigatoria ? true : Boolean(coluna.visivel),
         ordem: coluna.ordem,
         span: coluna.span
@@ -1969,6 +2031,8 @@ function normalizarPayloadEmpresa(dadosEmpresa) {
     colunasGridPedidos: JSON.stringify(
       normalizarConfiguracoesColunasGridPedidos(dadosEmpresa.colunasGridPedidos).map((coluna) => ({
         id: coluna.id,
+        base: coluna.base,
+        rotulo: coluna.rotulo,
         visivel: coluna.obrigatoria ? true : Boolean(coluna.visivel),
         ordem: coluna.ordem,
         span: coluna.span
@@ -1977,6 +2041,8 @@ function normalizarPayloadEmpresa(dadosEmpresa) {
     colunasGridAtendimentos: JSON.stringify(
       normalizarConfiguracoesColunasGridAtendimentos(dadosEmpresa.colunasGridAtendimentos).map((coluna) => ({
         id: coluna.id,
+        base: coluna.base,
+        rotulo: coluna.rotulo,
         visivel: coluna.obrigatoria ? true : Boolean(coluna.visivel),
         ordem: coluna.ordem,
         span: coluna.span

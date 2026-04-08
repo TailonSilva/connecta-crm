@@ -17,7 +17,7 @@ export function ModalColunasGridOrcamentos({
 }) {
   const [configuracoesColunas, definirConfiguracoesColunas] = useState([]);
   const [colunaEmEdicao, definirColunaEmEdicao] = useState(null);
-  const [formularioEdicao, definirFormularioEdicao] = useState({ ordem: 1, span: 1 });
+  const [formularioEdicao, definirFormularioEdicao] = useState({ ordem: 1, span: 1, rotulo: '' });
   const [salvando, definirSalvando] = useState(false);
   const [mensagemErro, definirMensagemErro] = useState('');
 
@@ -30,7 +30,7 @@ export function ModalColunasGridOrcamentos({
       normalizarConfiguracoesColunasGridOrcamentos(empresa?.colunasGridOrcamentos)
     );
     definirColunaEmEdicao(null);
-    definirFormularioEdicao({ ordem: 1, span: 1 });
+    definirFormularioEdicao({ ordem: 1, span: 1, rotulo: '' });
     definirSalvando(false);
     definirMensagemErro('');
   }, [aberto, empresa]);
@@ -93,7 +93,8 @@ export function ModalColunasGridOrcamentos({
     definirColunaEmEdicao(coluna.id);
     definirFormularioEdicao({
       ordem: coluna.ordem || obterMaiorOrdem(colunasOrdenadas) + 1,
-      span: coluna.spanFixo || coluna.span || 1
+      span: coluna.spanFixo || coluna.span || 1,
+      rotulo: coluna.rotulo || coluna.rotuloPadrao || ''
     });
   }
 
@@ -120,6 +121,7 @@ export function ModalColunasGridOrcamentos({
 
         return {
           ...coluna,
+          rotulo: normalizarRotuloCabecalho(formularioEdicao.rotulo, coluna.rotuloPadrao || coluna.rotulo),
           span: normalizarSpan(formularioEdicao.span, coluna.spanFixo || coluna.spanPadrao || 1),
           ordem: coluna.visivel || coluna.obrigatoria
             ? normalizarNumeroInteiro(formularioEdicao.ordem, coluna.ordem || 1)
@@ -169,6 +171,8 @@ export function ModalColunasGridOrcamentos({
       await aoSalvar({
         colunasGridOrcamentos: colunasNormalizadas.map((coluna) => ({
           id: coluna.id,
+          base: coluna.base,
+          rotulo: normalizarRotuloCabecalho(coluna.rotulo, coluna.rotuloPadrao || coluna.rotulo),
           visivel: coluna.obrigatoria ? true : Boolean(coluna.visivel),
           ordem: coluna.visivel || coluna.obrigatoria ? coluna.ordem : null,
           span: normalizarSpan(coluna.span, coluna.spanFixo || coluna.spanPadrao || 1)
@@ -218,6 +222,7 @@ export function ModalColunasGridOrcamentos({
               {colunasOrdenadas.map((coluna) => {
                 const chipOrdem = coluna.visivel || coluna.obrigatoria ? `Ordem ${coluna.ordem}` : 'Sem ordem';
                 const chipEspaco = `Espaco ${coluna.span}`;
+                const chipRotulo = coluna.rotulo || coluna.rotuloPadrao;
 
                 return (
                   <div key={coluna.id} className={`itemCheckboxGridAtendimentos ${coluna.visivel ? 'ativo' : ''} ${coluna.obrigatoria ? 'obrigatorio' : ''}`}>
@@ -229,6 +234,7 @@ export function ModalColunasGridOrcamentos({
                     <div className="acoesItemCheckboxGridAtendimentos">
                       <div className="grupoChipsGridAtendimentos">
                         {coluna.obrigatoria ? <span className="chipResumoGridAtendimentos chipResumoGridAtendimentosObrigatorio">Obrigatoria</span> : null}
+                        <span className="chipResumoGridAtendimentos chipResumoGridAtendimentosRotulo" title={chipRotulo}>{chipRotulo}</span>
                         <span className={`chipResumoGridAtendimentos ${coluna.visivel ? 'ativo' : 'inativo'}`}>{chipOrdem}</span>
                         <span className="chipResumoGridAtendimentos">{chipEspaco}</span>
                       </div>
@@ -257,6 +263,11 @@ export function ModalColunasGridOrcamentos({
 
             <div className="corpoModalContato">
               <div className="painelEdicaoColunaGridAtendimentos">
+                <label className="campoEdicaoColunaGridAtendimentos">
+                  <span>Rotulo</span>
+                  <input type="text" maxLength="60" value={formularioEdicao.rotulo} onChange={(evento) => definirFormularioEdicao((estadoAtual) => ({ ...estadoAtual, rotulo: evento.target.value }))} />
+                </label>
+
                 <label className="campoEdicaoColunaGridAtendimentos">
                   <span>Ordem</span>
                   <input type="number" min="1" value={formularioEdicao.ordem} onChange={(evento) => definirFormularioEdicao((estadoAtual) => ({ ...estadoAtual, ordem: evento.target.value }))} />
@@ -366,4 +377,9 @@ function normalizarNumeroInteiro(valor, valorPadrao = 1) {
 
 function normalizarSpan(valor, valorPadrao = 1) {
   return Math.min(TOTAL_COLUNAS_GRID_ORCAMENTOS, normalizarNumeroInteiro(valor, valorPadrao));
+}
+
+function normalizarRotuloCabecalho(valor, valorPadrao = '') {
+  const texto = String(valor ?? '').trim();
+  return texto || String(valorPadrao || '').trim();
 }

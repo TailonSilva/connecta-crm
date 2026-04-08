@@ -5,7 +5,13 @@ import { GradePadrao } from '../../componentes/comuns/gradePadrao';
 import { ModalBuscaClientes } from '../../componentes/comuns/modalBuscaClientes';
 import { ModalBuscaContatos } from '../../componentes/comuns/modalBuscaContatos';
 import { ModalItemProduto } from '../../componentes/comuns/modalItemProduto';
+import { ModalCadastroConfiguracao } from '../configuracoes/modalCadastroConfiguracao';
 import { ModalPrazosPagamento } from '../configuracoes/modalPrazosPagamento';
+import {
+  atualizarMotivoDevolucao,
+  incluirMotivoDevolucao,
+  listarMotivosDevolucaoConfiguracao
+} from '../../servicos/configuracoes';
 import { formatarNomeContato } from '../../utilitarios/formatarNomeContato';
 import { useFormularioItemProduto } from '../../utilitarios/useFormularioItemProduto';
 import {
@@ -19,6 +25,7 @@ import { normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTe
 const abasModalPedido = [
   { id: 'dadosGerais', label: 'Dados gerais' },
   { id: 'itens', label: 'Itens' },
+  { id: 'outros', label: 'Outros' },
   { id: 'campos', label: 'Campos do pedido' }
 ];
 
@@ -33,6 +40,7 @@ const estadoInicialFormulario = {
   idVendedor: '',
   idPrazoPagamento: '',
   idTipoPedido: '',
+  idMotivoDevolucao: '',
   dataInclusao: '',
   dataEntrega: '',
   nomeClienteSnapshot: '',
@@ -111,6 +119,7 @@ export function ModalPedido({
   metodosPagamento = [],
   prazosPagamento,
   tiposPedido = [],
+  motivosDevolucao = [],
   etapasPedido,
   produtos,
   camposPedido,
@@ -133,6 +142,10 @@ export function ModalPedido({
   const [modalBuscaContatoAberto, definirModalBuscaContatoAberto] = useState(false);
   const [contatosCriadosLocalmente, definirContatosCriadosLocalmente] = useState([]);
   const [modalPrazosPagamentoAberto, definirModalPrazosPagamentoAberto] = useState(false);
+  const [modalMotivoDevolucaoAberto, definirModalMotivoDevolucaoAberto] = useState(false);
+  const [modalCadastroMotivoDevolucaoAberto, definirModalCadastroMotivoDevolucaoAberto] = useState(false);
+  const [motivoDevolucaoPendente, definirMotivoDevolucaoPendente] = useState('');
+  const [motivosDevolucaoLocais, definirMotivosDevolucaoLocais] = useState(motivosDevolucao);
   const somenteLeitura = modo === 'consulta';
   const modoInclusao = !pedido;
   const registroBase = pedido || dadosIniciais || null;
@@ -143,6 +156,7 @@ export function ModalPedido({
   const vendedoresAtivos = vendedores.filter((vendedor) => vendedor.status !== 0);
   const prazosAtivos = prazosPagamento.filter((prazo) => prazo.status !== 0);
   const tiposPedidoAtivos = tiposPedido.filter((tipoPedido) => tipoPedido.status !== 0);
+  const motivosDevolucaoAtivos = motivosDevolucaoLocais.filter((motivo) => motivo.status !== 0);
   const produtosAtivos = produtos.filter((produto) => produto.status !== 0);
   const etapasPedidoNormalizadas = useMemo(
     () => normalizarEtapasPedido(etapasPedido).filter((etapa) => etapa.status !== 0),
@@ -208,8 +222,16 @@ export function ModalPedido({
     definirModalBuscaContatoAberto(false);
     definirContatosCriadosLocalmente([]);
     definirModalPrazosPagamentoAberto(false);
+    definirModalMotivoDevolucaoAberto(false);
+    definirModalCadastroMotivoDevolucaoAberto(false);
+    definirMotivosDevolucaoLocais(motivosDevolucao);
+    definirMotivoDevolucaoPendente('');
     redefinirItemModal();
   }, [aberto, chaveRegistroBase, usuarioLogado?.idUsuario, quantidadeCamposPedido, chaveEmpresa]);
+
+  useEffect(() => {
+    definirMotivosDevolucaoLocais(motivosDevolucao);
+  }, [motivosDevolucao]);
 
   useEffect(() => {
     if (!aberto) {
@@ -246,6 +268,11 @@ export function ModalPedido({
         return;
       }
 
+      if (modalMotivoDevolucaoAberto) {
+        fecharModalMotivoDevolucao();
+        return;
+      }
+
       if (confirmandoSaida) {
         definirConfirmandoSaida(false);
         return;
@@ -259,7 +286,7 @@ export function ModalPedido({
     return () => {
       window.removeEventListener('keydown', tratarTecla);
     };
-  }, [aberto, confirmandoSaida, modalBuscaClienteAberto, modalBuscaContatoAberto, modalBuscaProdutoAberto, modalItemAberto, modalPrazosPagamentoAberto, salvando]);
+  }, [aberto, confirmandoSaida, modalBuscaClienteAberto, modalBuscaContatoAberto, modalBuscaProdutoAberto, modalItemAberto, modalMotivoDevolucaoAberto, modalPrazosPagamentoAberto, salvando]);
 
   if (!aberto) {
     return null;
@@ -320,6 +347,8 @@ export function ModalPedido({
         if (tipoPedidoEhDevolucao(value)) {
           proximoEstado.idEtapaPedido = String(ID_ETAPA_PEDIDO_ENTREGUE);
           proximoEstado.nomeEtapaPedidoSnapshot = etapasPedidoNormalizadas.find((etapa) => Number(etapa.idEtapaPedido) === ID_ETAPA_PEDIDO_ENTREGUE)?.descricao || '';
+        } else {
+          proximoEstado.idMotivoDevolucao = '';
         }
       }
 
@@ -360,28 +389,38 @@ export function ModalPedido({
     salvarFormulario();
   }
 
-  async function salvarFormulario() {
+  async function salvarFormulario(formularioParaSalvar = formulario) {
     if (somenteLeitura) {
       return;
     }
 
-    if (!String(formulario.idCliente || '').trim()) {
+    if (!String(formularioParaSalvar.idCliente || '').trim()) {
       definirMensagemErro('Selecione o cliente do pedido.');
       return;
     }
 
-    if (!String(formulario.idUsuario || '').trim()) {
+    if (!String(formularioParaSalvar.idUsuario || '').trim()) {
       definirMensagemErro('Selecione o usuario do registro.');
       return;
     }
 
-    if (!String(formulario.idVendedor || '').trim()) {
+    if (!String(formularioParaSalvar.idVendedor || '').trim()) {
       definirMensagemErro('Selecione o vendedor.');
       return;
     }
 
-    if (formulario.itens.length === 0) {
+    if (formularioParaSalvar.itens.length === 0) {
       definirMensagemErro('Inclua ao menos um item no pedido.');
+      return;
+    }
+
+    if (
+      tipoPedidoEhDevolucao(formularioParaSalvar.idTipoPedido)
+      && etapaPedidoEhEntregue(formularioParaSalvar.idEtapaPedido)
+      && !String(formularioParaSalvar.idMotivoDevolucao || '').trim()
+    ) {
+      definirMotivoDevolucaoPendente('');
+      definirModalMotivoDevolucaoAberto(true);
       return;
     }
 
@@ -389,7 +428,7 @@ export function ModalPedido({
     definirMensagemErro('');
 
     try {
-      await aoSalvar(formulario);
+      await aoSalvar(formularioParaSalvar);
     } catch (erro) {
       definirMensagemErro(erro.message || 'Nao foi possivel salvar o pedido.');
       definirSalvando(false);
@@ -500,6 +539,49 @@ export function ModalPedido({
 
   function fecharModalPrazosPagamento() {
     definirModalPrazosPagamentoAberto(false);
+  }
+
+  function abrirModalMotivoDevolucao() {
+    definirMensagemErro('');
+    definirMotivoDevolucaoPendente(String(formulario.idMotivoDevolucao || ''));
+    definirModalMotivoDevolucaoAberto(true);
+  }
+
+  function fecharModalMotivoDevolucao() {
+    if (salvando) {
+      return;
+    }
+
+    definirModalMotivoDevolucaoAberto(false);
+  }
+
+  async function confirmarMotivoDevolucao() {
+    if (!String(motivoDevolucaoPendente || '').trim()) {
+      definirMensagemErro('Selecione o motivo da devolucao.');
+      return;
+    }
+
+    const proximoFormulario = {
+      ...formulario,
+      idMotivoDevolucao: String(motivoDevolucaoPendente)
+    };
+
+    definirFormulario(proximoFormulario);
+    definirModalMotivoDevolucaoAberto(false);
+    await salvarFormulario(proximoFormulario);
+  }
+
+  async function salvarMotivoDevolucaoRapido(payload) {
+    const registroSalvo = payload.idMotivoDevolucao
+      ? await atualizarMotivoDevolucao(payload.idMotivoDevolucao, payload)
+      : await incluirMotivoDevolucao(payload);
+
+    const motivosAtualizados = await listarMotivosDevolucaoConfiguracao({ incluirInativos: true });
+    definirMotivosDevolucaoLocais(motivosAtualizados);
+    if (registroSalvo?.idMotivoDevolucao) {
+      definirMotivoDevolucaoPendente(String(registroSalvo.idMotivoDevolucao));
+    }
+    return registroSalvo;
   }
 
   function selecionarPrazoPagamento(prazo) {
@@ -707,14 +789,6 @@ export function ModalPedido({
               </div>
 
               <div className="linhaOrcamentoFechamento">
-                <CampoFormulario
-                  label="Orcamento vinculado"
-                  name="orcamentoOrigemPedido"
-                  value={formulario.codigoOrcamentoOrigem
-                    ? `#${String(formulario.codigoOrcamentoOrigem).padStart(4, '0')}`
-                    : 'Nao vinculado'}
-                  disabled
-                />
                 <CampoSelect
                   label="Etapa do pedido"
                   name="idEtapaPedido"
@@ -803,6 +877,41 @@ export function ModalPedido({
               <div className="resumoTotalItensOrcamento resumoTotalItensOrcamentoRodape">
                 <span className="rotuloResumoTotalItensOrcamento">Total dos itens</span>
                 <strong className="valorResumoTotalItensOrcamento">{normalizarPreco(totalPedido)}</strong>
+              </div>
+            </section>
+          ) : null}
+
+          {abaAtiva === 'outros' ? (
+            <section className="layoutModalOrcamentoAba">
+              <div className="linhaOrcamentoFechamento">
+                <CampoFormulario
+                  label="Orcamento vinculado"
+                  name="orcamentoOrigemPedido"
+                  value={formulario.codigoOrcamentoOrigem
+                    ? `#${String(formulario.codigoOrcamentoOrigem).padStart(4, '0')}`
+                    : ''}
+                  placeholder="Sem orcamento vinculado"
+                  disabled
+                />
+                <CampoFormularioComAcao
+                  label="Motivo do cancelamento"
+                  name="motivoDevolucaoPedido"
+                  value={obterRotuloMotivoDevolucao(motivosDevolucaoAtivos, formulario.idMotivoDevolucao)}
+                  placeholder="Sem motivo informado"
+                  disabled
+                  acaoExtra={!somenteLeitura && tipoPedidoEhDevolucao(formulario.idTipoPedido) && etapaPedidoEhEntregue(formulario.idEtapaPedido) ? (
+                    <Botao
+                      variante="secundario"
+                      type="button"
+                      icone="pesquisa"
+                      className="botaoCampoAcao"
+                      somenteIcone
+                      title="Selecionar motivo da devolucao"
+                      aria-label="Selecionar motivo da devolucao"
+                      onClick={abrirModalMotivoDevolucao}
+                    />
+                  ) : null}
+                />
               </div>
             </section>
           ) : null}
@@ -918,6 +1027,81 @@ export function ModalPedido({
             selecionarPrazoPagamento(prazo);
           }}
         />
+
+        {modalMotivoDevolucaoAberto ? (
+          <div className="camadaConfirmacaoModal" role="presentation" onMouseDown={fecharModalMotivoDevolucao}>
+            <div
+              className="modalConfirmacaoAgenda modalEtapaRapidaOrcamento"
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="tituloMotivoDevolucaoPedido"
+              onMouseDown={(evento) => evento.stopPropagation()}
+            >
+              <div className="cabecalhoConfirmacaoModal">
+                <h4 id="tituloMotivoDevolucaoPedido">Motivo da devolucao</h4>
+              </div>
+              <div className="corpoConfirmacaoModal">
+                <p>Selecione o motivo da devolucao para concluir o pedido.</p>
+                <CampoSelect
+                  label="Motivo"
+                  name="motivoDevolucaoPendente"
+                  value={motivoDevolucaoPendente}
+                  onChange={(evento) => definirMotivoDevolucaoPendente(evento.target.value)}
+                  disabled={salvando}
+                  options={motivosDevolucaoAtivos.map((motivo) => ({
+                    valor: String(motivo.idMotivoDevolucao),
+                    label: `${String(motivo.idMotivoDevolucao).padStart(4, '0')} - ${motivo.abreviacao}`
+                  }))}
+                  acaoExtra={!somenteLeitura ? (
+                    <Botao
+                      variante="secundario"
+                      type="button"
+                      icone="pesquisa"
+                      className="botaoCampoAcao"
+                      somenteIcone
+                      title="Abrir motivos da devolucao"
+                      aria-label="Abrir motivos da devolucao"
+                      onClick={() => definirModalCadastroMotivoDevolucaoAberto(true)}
+                    />
+                  ) : null}
+                />
+              </div>
+              <div className="acoesConfirmacaoModal">
+                <Botao variante="secundario" type="button" onClick={fecharModalMotivoDevolucao} disabled={salvando}>
+                  Cancelar
+                </Botao>
+                <Botao variante="primario" type="button" onClick={confirmarMotivoDevolucao} disabled={salvando}>
+                  Confirmar
+                </Botao>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        <ModalCadastroConfiguracao
+          aberto={modalCadastroMotivoDevolucaoAberto}
+          titulo="Motivos da devolucao"
+          rotuloIncluir="Incluir motivo"
+          registros={motivosDevolucaoLocais}
+          chavePrimaria="idMotivoDevolucao"
+          camadaSecundaria
+          classeFormulario="gradeFormularioMotivosDevolucao"
+          somenteConsulta={somenteLeitura}
+          colunas={[
+            { key: 'idMotivoDevolucao', label: 'Codigo' },
+            { key: 'abreviacao', label: 'Abreviacao' },
+            { key: 'descricao', label: 'Descricao' }
+          ]}
+          camposFormulario={[
+            { name: 'idMotivoDevolucao', label: 'Codigo', type: 'number', disabled: true },
+            { name: 'abreviacao', label: 'Abreviacao', required: true },
+            { name: 'descricao', label: 'Descricao', required: true },
+            { name: 'status', label: 'Registro ativo', type: 'checkbox', defaultValue: true }
+          ]}
+          aoFechar={() => definirModalCadastroMotivoDevolucaoAberto(false)}
+          aoSalvar={salvarMotivoDevolucaoRapido}
+          aoInativar={async () => null}
+        />
       </form>
     </div>
   );
@@ -928,6 +1112,18 @@ function CampoFormulario({ label, name, type = 'text', ...props }) {
     <div className="campoFormulario">
       <label htmlFor={name}>{label}</label>
       <input id={name} name={name} type={type} className="entradaFormulario" {...props} />
+    </div>
+  );
+}
+
+function CampoFormularioComAcao({ label, name, acaoExtra = null, ...props }) {
+  return (
+    <div className="campoFormulario">
+      <label htmlFor={name}>{label}</label>
+      <div className={`campoSelectComAcao ${acaoExtra ? 'temAcao' : ''}`.trim()}>
+        <input id={name} name={name} type="text" className="entradaFormulario" {...props} />
+        {acaoExtra ? <div className="acoesCampoSelect">{acaoExtra}</div> : null}
+      </div>
     </div>
   );
 }
@@ -962,6 +1158,7 @@ function criarFormularioInicialPedido(pedido, usuarioLogado, camposPedido, empre
       idVendedor: pedido?.idVendedor ? String(pedido.idVendedor) : '',
       idPrazoPagamento: pedido?.idPrazoPagamento ? String(pedido.idPrazoPagamento) : '',
       idTipoPedido: pedido?.idTipoPedido ? String(pedido.idTipoPedido) : '',
+      idMotivoDevolucao: pedido?.idMotivoDevolucao ? String(pedido.idMotivoDevolucao) : '',
       dataInclusao: pedido?.dataInclusao || obterDataAtualFormatoInput(),
       dataEntrega: pedido?.dataEntrega || somarDiasNaData(
         pedido?.dataInclusao || obterDataAtualFormatoInput(),
@@ -1018,6 +1215,7 @@ function criarFormularioInicialPedido(pedido, usuarioLogado, camposPedido, empre
     idVendedor: pedido.idVendedor ? String(pedido.idVendedor) : '',
     idPrazoPagamento: pedido.idPrazoPagamento ? String(pedido.idPrazoPagamento) : '',
     idTipoPedido: pedido.idTipoPedido ? String(pedido.idTipoPedido) : '',
+    idMotivoDevolucao: pedido.idMotivoDevolucao ? String(pedido.idMotivoDevolucao) : '',
     dataInclusao: pedido.dataInclusao || '',
     dataEntrega: pedido.dataEntrega || pedido.dataValidade || '',
     nomeClienteSnapshot: pedido.nomeClienteSnapshot || '',
@@ -1117,6 +1315,18 @@ function formatarPrecoInput(valor) {
 
 function tipoPedidoEhDevolucao(idTipoPedido) {
   return Number(idTipoPedido) === ID_TIPO_PEDIDO_DEVOLUCAO;
+}
+
+function obterRotuloMotivoDevolucao(motivosDevolucao, idMotivoDevolucao) {
+  const motivoSelecionado = motivosDevolucao.find(
+    (motivo) => String(motivo.idMotivoDevolucao) === String(idMotivoDevolucao || '')
+  );
+
+  if (!motivoSelecionado) {
+    return '';
+  }
+
+  return `${String(motivoSelecionado.idMotivoDevolucao).padStart(4, '0')} - ${motivoSelecionado.abreviacao}`;
 }
 
 function aplicarSinalTipoPedidoNaQuantidade(valor, idTipoPedido) {

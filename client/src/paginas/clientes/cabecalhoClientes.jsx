@@ -6,9 +6,11 @@ export function CabecalhoClientes({
   pesquisa,
   aoAlterarPesquisa,
   aoAbrirFiltros,
+  aoAbrirConfiguracaoGrid,
   aoAbrirImportacao,
   aoNovoCliente,
-  filtrosAtivos = false
+  filtrosAtivos = false,
+  configuracaoGridBloqueada = false
 }) {
   return (
     <header className="cabecalhoPagina">
@@ -31,6 +33,15 @@ export function CabecalhoClientes({
           title="Filtrar"
           aria-label="Filtrar"
           onClick={aoAbrirFiltros}
+        />
+        <Botao
+          variante="secundario"
+          icone="configuracoes"
+          somenteIcone
+          title="Configurar grid"
+          aria-label="Configurar grid"
+          onClick={aoAbrirConfiguracaoGrid}
+          disabled={configuracaoGridBloqueada}
         />
         <Botao variante="secundario" icone="importar" somenteIcone title="Importar" aria-label="Importar" onClick={aoAbrirImportacao} />
         <Botao

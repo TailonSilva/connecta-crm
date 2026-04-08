@@ -7,10 +7,11 @@ import {
   incluirProduto,
   listarGruposProduto,
   listarMarcas,
+  listarProdutos,
   listarProdutosGrid,
   listarUnidadesMedida
 } from '../../servicos/produtos';
-import { listarEmpresas } from '../../servicos/empresa';
+import { atualizarEmpresa, criarPayloadAtualizacaoColunasGrid, listarEmpresas } from '../../servicos/empresa';
 import {
   atualizarGrupoProduto,
   atualizarMarca,
@@ -31,6 +32,7 @@ import { ModalFiltros } from '../../componentes/comuns/modalFiltros';
 import { ModalProduto } from './modalProduto';
 import { ModalImportacaoCadastro } from '../../componentes/comuns/modalImportacaoCadastro';
 import { ModalManualProdutos } from './modalManualProdutos';
+import { ModalColunasGridProdutos } from '../configuracoes/modalColunasGridProdutos';
 
 const filtrosIniciaisProdutos = {
   idGrupo: [],
@@ -55,10 +57,12 @@ export function PaginaProdutos({ usuarioLogado }) {
   const [carregandoContexto, definirCarregandoContexto] = useState(true);
   const [carregandoGrade, definirCarregandoGrade] = useState(true);
   const [mensagemErro, definirMensagemErro] = useState('');
+  const [proximoCodigoProduto, definirProximoCodigoProduto] = useState(1);
   const [modalAberto, definirModalAberto] = useState(false);
   const [modalManualAberto, definirModalManualAberto] = useState(false);
   const [modalFiltrosAberto, definirModalFiltrosAberto] = useState(false);
   const [modalImportacaoAberto, definirModalImportacaoAberto] = useState(false);
+  const [modalColunasGridAberto, definirModalColunasGridAberto] = useState(false);
   const [resultadoImportacao, definirResultadoImportacao] = useState(null);
   const [importando, definirImportando] = useState(false);
   const [produtoSelecionado, definirProdutoSelecionado] = useState(null);
@@ -133,9 +137,15 @@ export function PaginaProdutos({ usuarioLogado }) {
       definirGruposProduto(gruposResultado.status === 'fulfilled' ? gruposResultado.value : []);
       definirMarcas(marcasResultado.status === 'fulfilled' ? marcasResultado.value : []);
       definirUnidadesMedida(unidadesResultado.status === 'fulfilled' ? unidadesResultado.value : []);
+      await carregarProximoCodigoProduto();
     } finally {
       definirCarregandoContexto(false);
     }
+  }
+
+  async function carregarProximoCodigoProduto() {
+    const todosProdutos = await listarProdutos();
+    definirProximoCodigoProduto(obterPrimeiroCodigoDisponivel(todosProdutos, 'idProduto'));
   }
 
   async function carregarGradeProdutos() {
@@ -175,6 +185,22 @@ export function PaginaProdutos({ usuarioLogado }) {
     await recarregarPagina();
   }
 
+  async function salvarColunasGridProdutos(dadosColunas) {
+    if (!empresa?.idEmpresa) {
+      throw new Error('Cadastre a empresa antes de configurar as colunas do grid.');
+    }
+
+    await atualizarEmpresa(
+      empresa.idEmpresa,
+      criarPayloadAtualizacaoColunasGrid('colunasGridProdutos', dadosColunas.colunasGridProdutos)
+    );
+
+    const empresasAtualizadas = await listarEmpresas();
+    definirEmpresa(empresasAtualizadas[0] || null);
+    window.dispatchEvent(new CustomEvent('empresa-atualizada'));
+    definirModalColunasGridAberto(false);
+  }
+
   async function salvarProduto(dadosProduto) {
     const payload = normalizarPayloadProduto({
       ...dadosProduto,
@@ -188,6 +214,7 @@ export function PaginaProdutos({ usuarioLogado }) {
     }
 
     await recarregarGradeProdutos();
+    await carregarProximoCodigoProduto();
     fecharModalProduto();
   }
 
@@ -198,6 +225,7 @@ export function PaginaProdutos({ usuarioLogado }) {
       const resultado = await importarProdutosPlanilha({ linhas });
       definirResultadoImportacao(resultado);
       await recarregarGradeProdutos();
+      await carregarProximoCodigoProduto();
     } finally {
       definirImportando(false);
     }
@@ -210,6 +238,7 @@ export function PaginaProdutos({ usuarioLogado }) {
 
     await atualizarProduto(produto.idProduto, { status: 0 });
     await recarregarGradeProdutos();
+    await carregarProximoCodigoProduto();
   }
 
   async function salvarGrupoProduto(dadosGrupo) {
@@ -284,11 +313,12 @@ export function PaginaProdutos({ usuarioLogado }) {
     await recarregarContextoProdutos();
   }
 
-  function abrirNovoProduto() {
+  async function abrirNovoProduto() {
     if (usuarioSomenteConsulta) {
       return;
     }
 
+    await carregarProximoCodigoProduto();
     definirProdutoSelecionado(null);
     definirModoModalProduto('novo');
     definirModalAberto(true);
@@ -318,7 +348,6 @@ export function PaginaProdutos({ usuarioLogado }) {
   }
 
   const carregando = carregandoContexto || carregandoGrade;
-  const proximoCodigoProduto = obterPrimeiroCodigoDisponivel(produtos, 'idProduto');
   const filtrosAtivos = Object.values(filtros).some((valor) => (
     Array.isArray(valor) ? valor.length > 0 : Boolean(valor)
   ));
@@ -349,6 +378,7 @@ export function PaginaProdutos({ usuarioLogado }) {
         pesquisa={pesquisa}
         aoAlterarPesquisa={definirPesquisa}
         aoAbrirFiltros={() => definirModalFiltrosAberto(true)}
+        aoAbrirConfiguracaoGrid={() => definirModalColunasGridAberto(true)}
         aoAbrirImportacao={() => {
           definirResultadoImportacao(null);
           definirModalImportacaoAberto(true);
@@ -356,6 +386,7 @@ export function PaginaProdutos({ usuarioLogado }) {
         aoNovoProduto={abrirNovoProduto}
         filtrosAtivos={filtrosAtivos}
         somenteConsulta={usuarioSomenteConsulta}
+        configuracaoGridBloqueada={usuarioLogado?.tipo === 'Usuario padrao' || !empresa?.idEmpresa}
       />
       <CorpoProdutos
         empresa={empresa}
@@ -449,6 +480,12 @@ export function PaginaProdutos({ usuarioLogado }) {
         unidadesMedida={unidadesMedida}
         filtros={filtros}
         usuarioLogado={usuarioLogado}
+      />
+      <ModalColunasGridProdutos
+        aberto={modalColunasGridAberto}
+        empresa={empresa}
+        aoFechar={() => definirModalColunasGridAberto(false)}
+        aoSalvar={salvarColunasGridProdutos}
       />
       <ModalImportacaoCadastro
         aberto={modalImportacaoAberto}

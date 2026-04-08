@@ -17,7 +17,7 @@ import {
   listarRamosAtividade,
   listarVendedores
 } from '../../servicos/clientes';
-import { listarEmpresas } from '../../servicos/empresa';
+import { atualizarEmpresa, criarPayloadAtualizacaoColunasGrid, listarEmpresas } from '../../servicos/empresa';
 import {
   atualizarContatoGrupoEmpresa,
   incluirContatoGrupoEmpresa,
@@ -35,6 +35,7 @@ import { ModalFiltros } from '../../componentes/comuns/modalFiltros';
 import { ModalCliente } from './modalCliente';
 import { ModalImportacaoCadastro } from '../../componentes/comuns/modalImportacaoCadastro';
 import { ModalManualClientes } from './modalManualClientes';
+import { ModalColunasGridClientes } from '../configuracoes/modalColunasGridClientes';
 
 const filtrosIniciaisClientes = {
   estado: [],
@@ -62,6 +63,7 @@ export function PaginaClientes({ usuarioLogado }) {
   const [modalManualAberto, definirModalManualAberto] = useState(false);
   const [modalFiltrosAberto, definirModalFiltrosAberto] = useState(false);
   const [modalImportacaoAberto, definirModalImportacaoAberto] = useState(false);
+  const [modalColunasGridAberto, definirModalColunasGridAberto] = useState(false);
   const [resultadoImportacao, definirResultadoImportacao] = useState(null);
   const [importando, definirImportando] = useState(false);
   const [clienteEmEdicao, definirClienteEmEdicao] = useState(null);
@@ -200,6 +202,22 @@ export function PaginaClientes({ usuarioLogado }) {
 
   async function recarregarPagina() {
     await Promise.all([carregarContexto(), carregarGradeClientes()]);
+  }
+
+  async function salvarColunasGridClientes(dadosColunas) {
+    if (!empresa?.idEmpresa) {
+      throw new Error('Cadastre a empresa antes de configurar as colunas do grid.');
+    }
+
+    await atualizarEmpresa(
+      empresa.idEmpresa,
+      criarPayloadAtualizacaoColunasGrid('colunasGridClientes', dadosColunas.colunasGridClientes)
+    );
+
+    const empresasAtualizadas = await listarEmpresas();
+    definirEmpresa(empresasAtualizadas[0] || null);
+    window.dispatchEvent(new CustomEvent('empresa-atualizada'));
+    definirModalColunasGridAberto(false);
   }
 
   async function salvarCliente(dadosCliente) {
@@ -383,12 +401,14 @@ export function PaginaClientes({ usuarioLogado }) {
         pesquisa={pesquisa}
         aoAlterarPesquisa={definirPesquisa}
         aoAbrirFiltros={() => definirModalFiltrosAberto(true)}
+        aoAbrirConfiguracaoGrid={() => definirModalColunasGridAberto(true)}
         aoAbrirImportacao={() => {
           definirResultadoImportacao(null);
           definirModalImportacaoAberto(true);
         }}
         aoNovoCliente={abrirNovoCliente}
         filtrosAtivos={filtrosAtivos}
+        configuracaoGridBloqueada={usuarioLogado?.tipo === 'Usuario padrao' || !empresa?.idEmpresa}
       />
       <CorpoClientes
         empresa={empresa}
@@ -502,6 +522,12 @@ export function PaginaClientes({ usuarioLogado }) {
         ramosAtividade={ramosAtividade}
         filtros={filtros}
         usuarioLogado={usuarioLogado}
+      />
+      <ModalColunasGridClientes
+        aberto={modalColunasGridAberto}
+        empresa={empresa}
+        aoFechar={() => definirModalColunasGridAberto(false)}
+        aoSalvar={salvarColunasGridClientes}
       />
       <ModalImportacaoCadastro
         aberto={modalImportacaoAberto}

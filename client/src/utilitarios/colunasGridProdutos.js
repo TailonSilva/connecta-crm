@@ -1,4 +1,5 @@
-export const TOTAL_COLUNAS_GRID_PRODUTOS = 24;
+export const TOTAL_COLUNAS_GRID_PRODUTOS = 100;
+const BASE_LEGADA_COLUNAS_GRID_PRODUTOS = 24;
 
 export const colunasGridProdutos = [
   {
@@ -150,29 +151,48 @@ export function normalizarConfiguracoesColunasGridProdutos(valor) {
     }
 
     const colunaBase = mapaColunasGridProdutos.get(id);
+    const spanPadraoColuna = normalizarSpanDefinicaoColuna(colunaBase?.spanPadrao || 1);
+    const spanFixoColuna = normalizarSpanDefinicaoColuna(colunaBase?.spanFixo);
+    const baseConfiguracao = normalizarBaseConfiguracao(item.base);
     const visivel = item.visivel === undefined ? true : Boolean(item.visivel);
     const ordem = normalizarNumeroInteiro(item.ordem, indice + 1);
-    const span = normalizarSpanColuna(item.span, colunaBase?.spanPadrao || 1, colunaBase?.spanFixo);
+    const span = normalizarSpanColuna(item.span, spanPadraoColuna, spanFixoColuna, baseConfiguracao);
     const configuracaoExistente = configuracoesPorId.get(id);
 
     configuracoesPorId.set(id, {
       id,
+      base: item.base === undefined ? (configuracaoExistente?.base ?? baseConfiguracao) : baseConfiguracao,
       visivel: item.visivel === undefined ? (configuracaoExistente?.visivel ?? visivel) : visivel,
       ordem: item.ordem === undefined ? (configuracaoExistente?.ordem ?? ordem) : ordem,
-      span: item.span === undefined ? (configuracaoExistente?.span ?? span) : span
+      span: item.span === undefined ? (configuracaoExistente?.span ?? span) : span,
+      rotulo: item.rotulo === undefined
+        ? (configuracaoExistente?.rotulo ?? colunaBase?.rotulo)
+        : normalizarRotuloColuna(item.rotulo, colunaBase?.rotulo)
     });
   });
 
   const configuracoesNormalizadas = colunasGridProdutos.map((coluna, indice) => {
     const configuracao = configuracoesPorId.get(coluna.id);
+    const spanPadraoColuna = normalizarSpanDefinicaoColuna(coluna.spanPadrao || 1);
+    const spanFixoColuna = normalizarSpanDefinicaoColuna(coluna.spanFixo);
 
     return {
       ...coluna,
+      base: TOTAL_COLUNAS_GRID_PRODUTOS,
+      rotuloPadrao: coluna.rotulo,
+      rotulo: normalizarRotuloColuna(configuracao?.rotulo, coluna.rotulo),
+      spanPadrao: spanPadraoColuna,
+      spanFixo: spanFixoColuna,
       visivel: coluna.obrigatoria ? true : (configuracao?.visivel ?? coluna.visivelPadrao),
       ordem: coluna.obrigatoria || (configuracao?.visivel ?? coluna.visivelPadrao)
         ? normalizarNumeroInteiro(configuracao?.ordem, coluna.ordemPadrao || (indice + 1))
         : null,
-      span: normalizarSpanColuna(configuracao?.span, coluna.spanPadrao || 1, coluna.spanFixo)
+      span: normalizarSpanColuna(
+        configuracao?.span,
+        spanPadraoColuna,
+        spanFixoColuna,
+        normalizarBaseConfiguracao(configuracao?.base, TOTAL_COLUNAS_GRID_PRODUTOS)
+      )
     };
   });
 
@@ -273,6 +293,8 @@ function normalizarItensConfiguracao(lista) {
 
       return {
         id: String(item.id || '').trim(),
+        base: item.base,
+        rotulo: item.rotulo,
         visivel: item.visivel,
         ordem: item.ordem,
         span: item.span
@@ -294,11 +316,42 @@ function normalizarNumeroInteiro(valor, valorPadrao = 1) {
   return Number.isFinite(numero) && numero > 0 ? numero : valorPadrao;
 }
 
-function normalizarSpanColuna(valor, valorPadrao = 1, valorFixo = null) {
+function normalizarSpanColuna(valor, valorPadrao = 1, valorFixo = null, baseConfiguracao = TOTAL_COLUNAS_GRID_PRODUTOS) {
   if (Number.isFinite(Number(valorFixo)) && Number(valorFixo) > 0) {
-    return Number(valorFixo);
+    return Math.min(TOTAL_COLUNAS_GRID_PRODUTOS, Math.max(1, Number(valorFixo)));
   }
 
   const numero = normalizarNumeroInteiro(valor, valorPadrao);
-  return Math.min(TOTAL_COLUNAS_GRID_PRODUTOS, Math.max(1, numero));
+  return converterSpanParaBaseAtual(numero, baseConfiguracao);
+}
+
+function normalizarRotuloColuna(valor, valorPadrao = '') {
+  const texto = String(valor ?? '').trim();
+  return texto || String(valorPadrao || '').trim();
+}
+
+function normalizarBaseConfiguracao(valor, valorPadrao = BASE_LEGADA_COLUNAS_GRID_PRODUTOS) {
+  const numero = Number.parseInt(String(valor ?? '').trim(), 10);
+  return Number.isFinite(numero) && numero > 0 ? numero : valorPadrao;
+}
+
+function normalizarSpanDefinicaoColuna(valor) {
+  if (!Number.isFinite(Number(valor)) || Number(valor) <= 0) {
+    return null;
+  }
+
+  return converterSpanParaBaseAtual(Number(valor), BASE_LEGADA_COLUNAS_GRID_PRODUTOS);
+}
+
+function converterSpanParaBaseAtual(valor, baseOrigem = TOTAL_COLUNAS_GRID_PRODUTOS) {
+  const numero = normalizarNumeroInteiro(valor, 1);
+
+  if (baseOrigem === TOTAL_COLUNAS_GRID_PRODUTOS) {
+    return Math.min(TOTAL_COLUNAS_GRID_PRODUTOS, Math.max(1, numero));
+  }
+
+  return Math.min(
+    TOTAL_COLUNAS_GRID_PRODUTOS,
+    Math.max(1, Math.floor((numero * TOTAL_COLUNAS_GRID_PRODUTOS) / baseOrigem))
+  );
 }

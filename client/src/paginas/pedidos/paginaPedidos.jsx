@@ -15,10 +15,11 @@ import {
   listarCamposPedidoConfiguracao,
   listarEtapasPedidoConfiguracao,
   listarMetodosPagamentoConfiguracao,
+  listarMotivosDevolucaoConfiguracao,
   listarPrazosPagamentoConfiguracao,
   listarTiposPedidoConfiguracao
 } from '../../servicos/configuracoes';
-import { listarEmpresas } from '../../servicos/empresa';
+import { atualizarEmpresa, criarPayloadAtualizacaoColunasGrid, listarEmpresas } from '../../servicos/empresa';
 import { atualizarPedido, excluirPedido, incluirPedido, listarPedidos } from '../../servicos/pedidos';
 import { listarProdutos } from '../../servicos/produtos';
 import { listarUsuarios } from '../../servicos/usuarios';
@@ -35,8 +36,10 @@ import {
 } from '../../utilitarios/useFiltrosPersistidos';
 import { ModalPedido } from './modalPedido';
 import { ModalManualPedidos } from './modalManualPedidos';
+import { ModalColunasGridPedidos } from '../configuracoes/modalColunasGridPedidos';
 
 const ID_ETAPA_PEDIDO_ENTREGUE = 5;
+const ID_TIPO_PEDIDO_DEVOLUCAO = 2;
 
 function criarFiltrosIniciaisPedidos() {
   return {
@@ -107,6 +110,7 @@ export function PaginaPedidos({ usuarioLogado }) {
   const [metodosPagamento, definirMetodosPagamento] = useState([]);
   const [prazosPagamento, definirPrazosPagamento] = useState([]);
   const [tiposPedido, definirTiposPedido] = useState([]);
+  const [motivosDevolucao, definirMotivosDevolucao] = useState([]);
   const [produtos, definirProdutos] = useState([]);
   const [camposPedido, definirCamposPedido] = useState([]);
   const [etapasPedido, definirEtapasPedido] = useState([]);
@@ -119,7 +123,10 @@ export function PaginaPedidos({ usuarioLogado }) {
   const [modalAberto, definirModalAberto] = useState(false);
   const [modalManualAberto, definirModalManualAberto] = useState(false);
   const [modalFiltrosAberto, definirModalFiltrosAberto] = useState(false);
+  const [modalColunasGridAberto, definirModalColunasGridAberto] = useState(false);
   const [pedidoExclusaoPendente, definirPedidoExclusaoPendente] = useState(null);
+  const [alteracaoEtapaPendente, definirAlteracaoEtapaPendente] = useState(null);
+  const [motivoDevolucaoEtapaRapida, definirMotivoDevolucaoEtapaRapida] = useState('');
   const usuarioSomenteConsultaConfiguracao = usuarioLogado?.tipo === 'Usuario padrao';
   const permitirExcluir = usuarioLogado?.tipo !== 'Usuario padrao';
 
@@ -195,6 +202,7 @@ export function PaginaPedidos({ usuarioLogado }) {
         listarMetodosPagamentoConfiguracao(),
         listarPrazosPagamentoConfiguracao(),
         listarTiposPedidoConfiguracao(),
+        listarMotivosDevolucaoConfiguracao(),
         listarProdutos(),
         listarCamposPedidoConfiguracao(),
         listarEmpresas()
@@ -209,6 +217,7 @@ export function PaginaPedidos({ usuarioLogado }) {
         metodosResultado,
         prazosResultado,
         tiposPedidoResultado,
+        motivosDevolucaoResultado,
         produtosResultado,
         camposResultado,
         empresasResultado
@@ -222,6 +231,7 @@ export function PaginaPedidos({ usuarioLogado }) {
       const metodosCarregados = metodosResultado.status === 'fulfilled' ? metodosResultado.value : [];
       const prazosCarregados = prazosResultado.status === 'fulfilled' ? prazosResultado.value : [];
       const tiposPedidoCarregados = tiposPedidoResultado.status === 'fulfilled' ? tiposPedidoResultado.value : [];
+      const motivosDevolucaoCarregados = motivosDevolucaoResultado.status === 'fulfilled' ? motivosDevolucaoResultado.value : [];
       const produtosCarregados = produtosResultado.status === 'fulfilled' ? produtosResultado.value : [];
       const camposCarregados = camposResultado.status === 'fulfilled' ? camposResultado.value : [];
       const empresasCarregadas = empresasResultado.status === 'fulfilled' ? empresasResultado.value : [];
@@ -236,6 +246,7 @@ export function PaginaPedidos({ usuarioLogado }) {
       definirMetodosPagamento(metodosCarregados);
       definirPrazosPagamento(enriquecerPrazosPagamento(prazosCarregados, metodosCarregados));
       definirTiposPedido(tiposPedidoCarregados);
+      definirMotivosDevolucao(motivosDevolucaoCarregados);
       definirProdutos(produtosCarregados);
       definirCamposPedido(camposCarregados);
       definirEmpresa(empresasCarregadas[0] || null);
@@ -249,6 +260,7 @@ export function PaginaPedidos({ usuarioLogado }) {
         metodosPagamento: metodosCarregados,
         prazosPagamento: prazosCarregados,
         tiposPedido: tiposPedidoCarregados,
+        motivosDevolucao: motivosDevolucaoCarregados,
         produtos: produtosCarregados,
         camposPedido: camposCarregados,
         empresa: empresasCarregadas[0] || null
@@ -289,6 +301,22 @@ export function PaginaPedidos({ usuarioLogado }) {
   async function recarregarPagina() {
     const contextoAtualizado = await carregarContexto();
     await carregarGradePedidos(contextoAtualizado);
+  }
+
+  async function salvarColunasGridPedidos(dadosColunas) {
+    if (!empresa?.idEmpresa) {
+      throw new Error('Cadastre a empresa antes de configurar as colunas do grid.');
+    }
+
+    await atualizarEmpresa(
+      empresa.idEmpresa,
+      criarPayloadAtualizacaoColunasGrid('colunasGridPedidos', dadosColunas.colunasGridPedidos)
+    );
+
+    const empresasAtualizadas = await listarEmpresas();
+    definirEmpresa(empresasAtualizadas[0] || null);
+    window.dispatchEvent(new CustomEvent('empresa-atualizada'));
+    definirModalColunasGridAberto(false);
   }
 
   function abrirNovoPedido() {
@@ -386,10 +414,28 @@ export function PaginaPedidos({ usuarioLogado }) {
     await recarregarPagina();
   }
 
-  async function alterarEtapaRapidamente(pedido, proximoIdEtapaPedido) {
+  async function alterarEtapaRapidamente(pedido, proximoIdEtapaPedido, idMotivoDevolucao = null) {
     const valorEtapa = String(proximoIdEtapaPedido || '').trim();
 
     if (!pedido?.idPedido || String(pedido.idEtapaPedido || '') === valorEtapa) {
+      return;
+    }
+
+    if (
+      pedidoEhDevolucao(pedido?.idTipoPedido)
+      && etapaPedidoEhEntregue(valorEtapa)
+      && !String(idMotivoDevolucao || pedido.idMotivoDevolucao || '').trim()
+    ) {
+      const etapaSelecionadaPendente = etapasPedido.find(
+        (etapa) => String(etapa.idEtapaPedido) === valorEtapa
+      );
+
+      definirAlteracaoEtapaPendente({
+        pedido,
+        idEtapaPedido: valorEtapa,
+        nomeEtapa: etapaSelecionadaPendente?.descricao || 'Entregue'
+      });
+      definirMotivoDevolucaoEtapaRapida('');
       return;
     }
 
@@ -399,6 +445,7 @@ export function PaginaPedidos({ usuarioLogado }) {
     const payload = normalizarPayloadPedido({
       ...pedido,
       idEtapaPedido: valorEtapa,
+      idMotivoDevolucao: idMotivoDevolucao ?? pedido.idMotivoDevolucao ?? null,
       nomeEtapaPedidoSnapshot: etapaSelecionada?.descricao || '',
       dataEntrega: entrouNaEtapaEntregue(pedido.idEtapaPedido, valorEtapa)
         ? obterDataAtualFormatoInput()
@@ -438,6 +485,15 @@ export function PaginaPedidos({ usuarioLogado }) {
             title="Filtrar"
             aria-label="Filtrar"
             onClick={() => definirModalFiltrosAberto(true)}
+          />
+          <Botao
+            variante="secundario"
+            icone="configuracoes"
+            somenteIcone
+            title="Configurar grid"
+            aria-label="Configurar grid"
+            onClick={() => definirModalColunasGridAberto(true)}
+            disabled={usuarioSomenteConsultaConfiguracao || !empresa?.idEmpresa}
           />
           <Botao
             variante="primario"
@@ -560,6 +616,7 @@ export function PaginaPedidos({ usuarioLogado }) {
         metodosPagamento={metodosPagamento}
         prazosPagamento={prazosPagamento}
         tiposPedido={tiposPedido}
+        motivosDevolucao={motivosDevolucao}
         etapasPedido={etapasPedido}
         produtos={produtos}
         camposPedido={camposPedido}
@@ -581,6 +638,12 @@ export function PaginaPedidos({ usuarioLogado }) {
         prazosPagamento={prazosPagamento}
         filtros={filtros}
         usuarioLogado={usuarioLogado}
+      />
+      <ModalColunasGridPedidos
+        aberto={modalColunasGridAberto}
+        empresa={empresa}
+        aoFechar={() => definirModalColunasGridAberto(false)}
+        aoSalvar={salvarColunasGridPedidos}
       />
 
       {pedidoExclusaoPendente ? (
@@ -606,6 +669,81 @@ export function PaginaPedidos({ usuarioLogado }) {
               </Botao>
               <Botao variante="perigo" type="button" onClick={confirmarExclusaoPedido}>
                 Sim
+              </Botao>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {alteracaoEtapaPendente ? (
+        <div className="camadaConfirmacaoModal" role="presentation" onMouseDown={() => {
+          definirAlteracaoEtapaPendente(null);
+          definirMotivoDevolucaoEtapaRapida('');
+        }}>
+          <div
+            className="modalConfirmacaoAgenda modalEtapaRapidaOrcamento"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="tituloMotivoDevolucaoEtapaRapida"
+            onMouseDown={(evento) => evento.stopPropagation()}
+          >
+            <div className="cabecalhoConfirmacaoModal">
+              <h4 id="tituloMotivoDevolucaoEtapaRapida">Motivo da devolucao</h4>
+            </div>
+
+            <div className="corpoConfirmacaoModal corpoModalEtapaRapidaOrcamento">
+              <p>
+                A etapa <strong>{alteracaoEtapaPendente.nomeEtapa}</strong> exige um motivo da devolucao.
+              </p>
+              <div className="campoFormulario campoFormularioIntegral">
+                <label htmlFor="motivoDevolucaoEtapaRapida">Selecione o motivo</label>
+                <select
+                  id="motivoDevolucaoEtapaRapida"
+                  className="entradaFormulario"
+                  value={motivoDevolucaoEtapaRapida}
+                  onChange={(evento) => definirMotivoDevolucaoEtapaRapida(evento.target.value)}
+                >
+                  <option value="">Selecione</option>
+                  {motivosDevolucao.map((motivo) => (
+                    <option key={motivo.idMotivoDevolucao} value={motivo.idMotivoDevolucao}>
+                      {String(motivo.idMotivoDevolucao).padStart(4, '0')} - {motivo.abreviacao}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="acoesConfirmacaoModal">
+              <Botao
+                variante="secundario"
+                type="button"
+                onClick={() => {
+                  definirAlteracaoEtapaPendente(null);
+                  definirMotivoDevolucaoEtapaRapida('');
+                }}
+              >
+                Cancelar
+              </Botao>
+              <Botao
+                variante="primario"
+                type="button"
+                onClick={async () => {
+                  if (!String(motivoDevolucaoEtapaRapida || '').trim()) {
+                    return;
+                  }
+
+                  const alteracao = alteracaoEtapaPendente;
+                  const motivoSelecionado = motivoDevolucaoEtapaRapida;
+                  definirAlteracaoEtapaPendente(null);
+                  definirMotivoDevolucaoEtapaRapida('');
+                  await alterarEtapaRapidamente(
+                    alteracao.pedido,
+                    Number(alteracao.idEtapaPedido),
+                    Number(motivoSelecionado)
+                  );
+                }}
+              >
+                Confirmar
               </Botao>
             </div>
           </div>
@@ -910,6 +1048,10 @@ function etapaPedidoEhEntregue(idEtapaPedido) {
   return Number(idEtapaPedido) === ID_ETAPA_PEDIDO_ENTREGUE;
 }
 
+function pedidoEhDevolucao(idTipoPedido) {
+  return Number(idTipoPedido) === ID_TIPO_PEDIDO_DEVOLUCAO;
+}
+
 function normalizarPayloadPedido(dadosPedido) {
   return {
     idOrcamento: dadosPedido.idOrcamento ? Number(dadosPedido.idOrcamento) : null,
@@ -920,6 +1062,7 @@ function normalizarPayloadPedido(dadosPedido) {
       idPrazoPagamento: dadosPedido.idPrazoPagamento ? Number(dadosPedido.idPrazoPagamento) : null,
       idTipoPedido: dadosPedido.idTipoPedido ? Number(dadosPedido.idTipoPedido) : null,
       idEtapaPedido: dadosPedido.idEtapaPedido ? Number(dadosPedido.idEtapaPedido) : null,
+      idMotivoDevolucao: dadosPedido.idMotivoDevolucao ? Number(dadosPedido.idMotivoDevolucao) : null,
     comissao: normalizarNumeroDecimal(dadosPedido.comissao),
     dataInclusao: limparTextoOpcional(dadosPedido.dataInclusao),
     dataEntrega: limparTextoOpcional(dadosPedido.dataEntrega),

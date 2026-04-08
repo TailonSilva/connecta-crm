@@ -113,6 +113,7 @@ rotaPedidos.post('/', async (requisicao, resposta) => {
         idPrazoPagamento,
         idTipoPedido,
         idEtapaPedido,
+        idMotivoDevolucao,
         dataInclusao,
         dataEntrega,
         dataValidade,
@@ -137,6 +138,7 @@ rotaPedidos.post('/', async (requisicao, resposta) => {
         payload.idPrazoPagamento,
         payload.idTipoPedido,
         payload.idEtapaPedido,
+        payload.idMotivoDevolucao,
         payload.dataInclusao,
         payload.dataEntrega,
         payload.dataValidade,
@@ -209,6 +211,7 @@ rotaPedidos.put('/:id', async (requisicao, resposta) => {
         idPrazoPagamento = ?,
         idTipoPedido = ?,
         idEtapaPedido = ?,
+        idMotivoDevolucao = ?,
         dataInclusao = ?,
         dataEntrega = ?,
         dataValidade = ?,
@@ -233,6 +236,7 @@ rotaPedidos.put('/:id', async (requisicao, resposta) => {
         payload.idPrazoPagamento,
         payload.idTipoPedido,
         payload.idEtapaPedido,
+        payload.idMotivoDevolucao,
         payload.dataInclusao,
         payload.dataEntrega,
         payload.dataValidade,
@@ -347,6 +351,7 @@ function normalizarPayloadPedido(payload = {}) {
     idPrazoPagamento: payload.idPrazoPagamento ? Number(payload.idPrazoPagamento) : null,
     idTipoPedido: payload.idTipoPedido ? Number(payload.idTipoPedido) : null,
     idEtapaPedido: payload.idEtapaPedido ? Number(payload.idEtapaPedido) : null,
+    idMotivoDevolucao: payload.idMotivoDevolucao ? Number(payload.idMotivoDevolucao) : null,
     dataInclusao: limparTexto(payload.dataInclusao),
     dataEntrega: limparTexto(payload.dataEntrega || payload.dataValidade),
     dataValidade: limparTexto(payload.dataValidade),
@@ -375,6 +380,8 @@ function aplicarAutomacoesPedido(payload, pedidoAtual = null) {
 
   if (pedidoEhDevolucao) {
     proximoPayload.idEtapaPedido = ID_ETAPA_PEDIDO_ENTREGUE;
+  } else {
+    proximoPayload.idMotivoDevolucao = null;
   }
 
   if (entrouNaEtapaEntregue && (!proximoPayload.dataEntrega || proximoPayload.dataEntrega === limparTexto(pedidoAtual?.dataEntrega))) {
@@ -474,6 +481,14 @@ function validarPayloadPedido(payload) {
     return 'Inclua ao menos um item no pedido.';
   }
 
+  if (
+    Number(payload.idTipoPedido) === ID_TIPO_PEDIDO_DEVOLUCAO
+    && Number(payload.idEtapaPedido) === ID_ETAPA_PEDIDO_ENTREGUE
+    && !payload.idMotivoDevolucao
+  ) {
+    return 'Selecione o motivo da devolucao.';
+  }
+
   return '';
 }
 
@@ -486,6 +501,7 @@ async function montarSnapshotsPedido(payload) {
     prazo,
     tipoPedido,
     etapaPedido,
+    motivoDevolucao,
     orcamento
   ] = await Promise.all([
     obterCliente(payload.idCliente),
@@ -495,6 +511,7 @@ async function montarSnapshotsPedido(payload) {
     obterPrazoPagamento(payload.idPrazoPagamento),
     obterTipoPedido(payload.idTipoPedido),
     obterEtapaPedido(payload.idEtapaPedido),
+    obterMotivoDevolucao(payload.idMotivoDevolucao),
     obterOrcamento(payload.idOrcamento)
   ]);
 
@@ -696,6 +713,22 @@ async function obterTipoPedido(idTipoPedido) {
     FROM tipoPedido
     WHERE idTipoPedido = ?`,
     [idTipoPedido]
+  );
+}
+
+async function obterMotivoDevolucao(idMotivoDevolucao) {
+  if (!idMotivoDevolucao) {
+    return null;
+  }
+
+  return consultarUm(
+    `SELECT
+      idMotivoDevolucao,
+      abreviacao,
+      descricao
+    FROM motivoDevolucao
+    WHERE idMotivoDevolucao = ?`,
+    [idMotivoDevolucao]
   );
 }
 

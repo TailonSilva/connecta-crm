@@ -6,10 +6,12 @@ export function CabecalhoProdutos({
   pesquisa,
   aoAlterarPesquisa,
   aoAbrirFiltros,
+  aoAbrirConfiguracaoGrid,
   aoAbrirImportacao,
   aoNovoProduto,
   filtrosAtivos = false,
-  somenteConsulta = false
+  somenteConsulta = false,
+  configuracaoGridBloqueada = false
 }) {
   return (
     <header className="cabecalhoPagina">
@@ -32,6 +34,15 @@ export function CabecalhoProdutos({
           title="Filtrar"
           aria-label="Filtrar"
           onClick={aoAbrirFiltros}
+        />
+        <Botao
+          variante="secundario"
+          icone="configuracoes"
+          somenteIcone
+          title="Configurar grid"
+          aria-label="Configurar grid"
+          onClick={aoAbrirConfiguracaoGrid}
+          disabled={configuracaoGridBloqueada}
         />
         <Botao
           variante="secundario"

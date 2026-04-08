@@ -47,7 +47,7 @@ export function ModalManualPedidos({
         {
           titulo: 'Classificacao do pedido',
           descricao: 'O pedido agora pode receber um Tipo de pedido definido em tabela auxiliar propria.',
-          detalhe: 'Quando o tipo for Devolucao, quantidade, valores e total ficam negativos, e a etapa do pedido passa automaticamente para Entregue.',
+          detalhe: 'Quando o tipo for Devolucao, quantidade, valores e total ficam negativos, a etapa passa automaticamente para Entregue e o sistema exige um motivo da devolucao em modal externo.',
           icone: 'pedido'
         },
         {
@@ -94,10 +94,12 @@ export function ModalManualPedidos({
           itens: [
             'Cliente, contato, usuario do registro e vendedor compoem a base comercial do pedido, com atalhos de busca para cliente e contato no modo de inclusao.',
             'Ao abrir a busca de contatos com um cliente ja definido, o proprio modal permite cadastrar um novo contato e devolver esse contato ja selecionado no pedido.',
-              'O campo Tipo de pedido usa uma tabela auxiliar propria para classificar o registro sem depender da etapa comercial.',
-              'Quando o tipo escolhido for Devolucao, o sistema transforma automaticamente a quantidade, os valores dos itens e o total do pedido para negativo.',
-              'Pedidos de Devolucao usam automaticamente a etapa Entregue e esse campo fica travado no modal.',
-              'Itens, valores e pagamento sao herdados do fluxo comercial e podem ser ajustados no modal.',
+            'O campo Tipo de pedido usa uma tabela auxiliar propria para classificar o registro sem depender da etapa comercial.',
+            'Quando o tipo escolhido for Devolucao, o sistema transforma automaticamente a quantidade, os valores dos itens e o total do pedido para negativo.',
+            'Pedidos de Devolucao usam automaticamente a etapa Entregue e esse campo fica travado no modal.',
+            'A aba Outros concentra o Orcamento vinculado e o Motivo do cancelamento, trazendo o motivo preenchido quando existir e vazio quando ainda nao houver selecao.',
+            'Quando o pedido estiver como Devolucao e na etapa Entregue, o sistema abre um modal externo para selecionar o Motivo da devolucao cadastrado em Configuracoes.',
+            'Itens, valores e pagamento sao herdados do fluxo comercial e podem ser ajustados no modal.',
             'A imagem do item pode herdar o que veio do orcamento; quando o usuario trocar essa imagem no pedido, ela passa a ser exclusiva daquele item e e recortada em 1024 x 1024 px.',
             'Prazos de pagamento podem ser cadastrados no proprio fluxo, respeitando o perfil.',
             'Campos personalizados do pedido aparecem conforme a configuracao carregada no sistema.'
@@ -108,8 +110,10 @@ export function ModalManualPedidos({
           titulo: 'Como usar a listagem principal',
           itens: [
             'A pesquisa textual ajuda a localizar rapidamente pedidos por dados do cliente e do registro.',
+            'O cabecalho da pagina tambem oferece um atalho direto de Configurar grid para ajustar colunas sem precisar entrar na tela de Configuracoes.',
             'Os filtros incluem cliente, usuario do registro, vendedor, uma ou mais etapas e um botao Datas que abre o painel com os periodos de inclusao e entrega.',
             'A grade permite trocar a etapa do pedido sem abrir o modal completo.',
+            'Se a troca rapida levar um pedido de Devolucao para Entregue, a tela abre o mesmo modal externo para selecionar o Motivo da devolucao antes de concluir a alteracao.',
             'As colunas foram ajustadas para leitura sem rolagem horizontal e agora separam codigo, cliente, contato, etapa, vendedor e total em campos proprios.',
             'Textos que excedem duas linhas passam a ser truncados com reticencias para manter a altura da grade sob controle.',
             'Ao reabrir a tela, os filtros anteriores sao restaurados automaticamente.'
