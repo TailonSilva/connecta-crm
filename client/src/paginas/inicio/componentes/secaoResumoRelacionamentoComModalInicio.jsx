@@ -28,6 +28,7 @@ export function SecaoResumoRelacionamentoComModalInicio({
 }) {
   const [modalAberto, definirModalAberto] = useState(false);
   const itensExibidos = Array.isArray(itens) ? itens.slice(0, 5) : [];
+  const exibirAcaoCompleta = Array.isArray(itens) && itens.length > 5;
 
   return (
     <>
@@ -55,7 +56,7 @@ export function SecaoResumoRelacionamentoComModalInicio({
         obterCorValor={obterCorValor}
         obterCorQuantidade={obterCorQuantidade}
         varianteValor={varianteValor}
-        acoesCabecalho={(
+        acoesCabecalho={exibirAcaoCompleta ? (
           <Botao
             variante="secundario"
             icone="lista"
@@ -64,7 +65,7 @@ export function SecaoResumoRelacionamentoComModalInicio({
             aria-label={ariaAcao}
             onClick={() => definirModalAberto(true)}
           />
-        )}
+        ) : null}
       />
 
       <ModalResumoRelacionamentoInicio

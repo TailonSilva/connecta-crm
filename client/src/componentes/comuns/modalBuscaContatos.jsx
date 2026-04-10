@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { incluirContato } from '../../servicos/clientes';
 import { ModalContatoCliente } from '../../paginas/clientes/modalContatoCliente';
 import { ModalBuscaTabela } from './modalBuscaTabela';
@@ -23,13 +23,17 @@ export function ModalBuscaContatos({
   aoSelecionar,
   aoFechar
 }) {
-  const [contatosLocais, definirContatosLocais] = useState(contatos);
+  const [contatosCriadosLocalmente, definirContatosCriadosLocalmente] = useState([]);
   const [modalContatoAberto, definirModalContatoAberto] = useState(false);
   const [formularioContato, definirFormularioContato] = useState(estadoInicialContato);
+  const contatosLocais = useMemo(
+    () => combinarContatosUnicos(contatos, contatosCriadosLocalmente),
+    [contatos, contatosCriadosLocalmente]
+  );
 
   useEffect(() => {
-    definirContatosLocais((estadoAtual) => combinarContatosUnicos(contatos, estadoAtual));
-  }, [contatos]);
+    definirContatosCriadosLocalmente([]);
+  }, [idCliente]);
 
   function abrirModalNovoContato() {
     if (!idCliente) {
@@ -75,12 +79,9 @@ export function ModalBuscaContatos({
       principal: contatoCriado?.principal ?? (formularioContato.principal ? 1 : 0)
     };
 
-    definirContatosLocais((estadoAtual) => {
+    definirContatosCriadosLocalmente((estadoAtual) => {
       const listaAtual = Array.isArray(estadoAtual) ? estadoAtual : [];
-
-      return [...listaAtual, contatoNormalizado].sort(
-        (contatoA, contatoB) => Number(Boolean(contatoB?.status)) - Number(Boolean(contatoA?.status))
-      );
+      return combinarContatosUnicos(listaAtual, [contatoNormalizado]);
     });
 
     if (typeof aoCriarContato === 'function') {

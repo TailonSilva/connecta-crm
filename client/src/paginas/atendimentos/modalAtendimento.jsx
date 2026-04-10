@@ -748,7 +748,7 @@ export function ModalAtendimento({
                   type="time"
                   value={formulario.horaFim}
                   onChange={alterarCampo}
-                  disabled={somenteLeitura || !modoEdicao}
+                  disabled={somenteLeitura}
                 />
               </div>
               <CampoFormulario

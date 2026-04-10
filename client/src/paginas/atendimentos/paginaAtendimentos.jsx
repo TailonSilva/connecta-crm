@@ -63,9 +63,13 @@ import { obterValorGrid } from '../../utilitarios/valorPadraoGrid';
 import { ModalColunasGridAtendimentos } from '../configuracoes/modalColunasGridAtendimentos';
 
 function criarFiltrosIniciaisAtendimentos(usuarioLogado) {
+  const idUsuarioPadrao = usuarioLogado?.tipo === 'Usuario padrao' && usuarioLogado?.idUsuario
+    ? [String(usuarioLogado.idUsuario)]
+    : [];
+
   return {
     idCliente: '',
-    idUsuario: usuarioLogado?.idUsuario ? [String(usuarioLogado.idUsuario)] : [],
+    idUsuario: idUsuarioPadrao,
     idVendedorCliente: [],
     idCanalAtendimento: [],
     idOrigemAtendimento: [],
@@ -136,7 +140,7 @@ export function PaginaAtendimentos({ usuarioLogado }) {
   const usuarioSomenteConsultaConfiguracao = usuarioLogado?.tipo === 'Usuario padrao';
   const filtrosIniciais = useMemo(
     () => criarFiltrosIniciaisAtendimentos(usuarioLogado),
-    [usuarioLogado?.idUsuario]
+    [usuarioLogado?.idUsuario, usuarioLogado?.tipo]
   );
   const [filtros, definirFiltros] = useFiltrosPersistidos({
     chave: 'paginaAtendimentos',
@@ -346,12 +350,11 @@ export function PaginaAtendimentos({ usuarioLogado }) {
 
   async function salvarAtendimento(dadosAtendimento) {
     const estaEditando = modoModal === 'edicao' && Boolean(atendimentoSelecionado?.idAtendimento);
+    const horaFimNormalizada = String(dadosAtendimento?.horaFim || '').trim() || obterHoraAtualFormatoInput();
 
     const payload = normalizarPayloadAtendimento({
       ...dadosAtendimento,
-      horaFim: estaEditando
-        ? dadosAtendimento.horaFim
-        : obterHoraAtualFormatoInput(),
+      horaFim: horaFimNormalizada,
       idUsuario: estaEditando ? atendimentoSelecionado.idUsuario : usuarioLogado.idUsuario
     });
 

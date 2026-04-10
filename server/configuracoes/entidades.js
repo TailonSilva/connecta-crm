@@ -263,6 +263,7 @@ const entidades = [
       'colunasGridAtendimentos',
       'graficosPaginaInicialOrcamentos',
       'graficosPaginaInicialVendas',
+      'graficosPaginaInicialAtendimentos',
       'cardsPaginaInicial',
       'corPrimariaOrcamento',
       'corSecundariaOrcamento',

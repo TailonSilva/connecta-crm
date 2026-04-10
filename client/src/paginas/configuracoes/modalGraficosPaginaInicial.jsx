@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import '../../recursos/estilos/modalGraficosPaginaInicial.css';
 import { Botao } from '../../componentes/comuns/botao';
 import { BotaoAcaoGrade } from '../../componentes/comuns/botaoAcaoGrade';
+import { Icone } from '../../componentes/comuns/icone';
 import { MensagemErroPopup } from '../../componentes/comuns/mensagemErroPopup';
 
 export function ModalGraficosPaginaInicial({
@@ -251,15 +252,27 @@ export function ModalGraficosPaginaInicial({
                   key={grafico.id}
                   className={`itemCheckboxGridAtendimentos ${grafico.visivel ? 'ativo' : ''}`}
                 >
-                  <label className="cabecalhoItemCheckboxGridAtendimentos">
-                    <input
-                      type="checkbox"
-                      checked={grafico.visivel}
-                      onChange={(evento) => atualizarVisibilidade(grafico.id, evento.target.checked)}
-                      disabled={somenteConsulta || salvando}
-                    />
-                    <span>{grafico.rotulo}</span>
-                  </label>
+                  <div className="cabecalhoItemCheckboxGridAtendimentos">
+                    <button
+                      type="button"
+                      className="botaoInfoConfiguracaoPaginaInicial"
+                      aria-label={`Informacoes sobre ${grafico.rotulo}`}
+                    >
+                      <Icone nome="informacao" className="iconeInfoConfiguracaoPaginaInicial" />
+                      <span className="tooltipInfoConfiguracaoPaginaInicial" role="tooltip">
+                        {obterDescricaoConfiguracao(grafico)}
+                      </span>
+                    </button>
+                    <label className="rotuloItemCheckboxGridAtendimentos">
+                      <input
+                        type="checkbox"
+                        checked={grafico.visivel}
+                        onChange={(evento) => atualizarVisibilidade(grafico.id, evento.target.checked)}
+                        disabled={somenteConsulta || salvando}
+                      />
+                      <span>{grafico.rotulo}</span>
+                    </label>
+                  </div>
 
                   <div className="acoesItemCheckboxGridAtendimentos">
                     <div className="grupoChipsGridAtendimentos">
@@ -389,6 +402,16 @@ function normalizarNumeroInteiro(valor, fallback = 1) {
 function normalizarRotulo(valor, fallback = '') {
   const texto = String(valor || '').trim();
   return texto || fallback;
+}
+
+function obterDescricaoConfiguracao(item) {
+  const descricao = String(item?.ajudaConfiguracao || '').trim();
+
+  if (descricao) {
+    return descricao;
+  }
+
+  return 'Define se esse item aparece na pagina inicial, com qual ordem, largura e rotulo.';
 }
 
 function calcularResumoLinhas(configuracoes, totalColunas) {

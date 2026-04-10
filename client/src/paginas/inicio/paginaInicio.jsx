@@ -5,15 +5,18 @@ import { listarAgendamentos } from '../../servicos/agenda';
 import { listarAtendimentosGrid } from '../../servicos/atendimentos';
 import { listarClientes, listarVendedores } from '../../servicos/clientes';
 import {
+  listarCanaisAtendimentoConfiguracao,
   listarEtapasOrcamentoConfiguracao,
   listarEtapasPedidoConfiguracao,
   listarMotivosPerdaConfiguracao,
-  listarMotivosDevolucaoConfiguracao
+  listarMotivosDevolucaoConfiguracao,
+  listarOrigensAtendimentoConfiguracao
 } from '../../servicos/configuracoes';
 import { listarEmpresas } from '../../servicos/empresa';
 import { listarOrcamentos } from '../../servicos/orcamentos';
 import { listarPedidos } from '../../servicos/pedidos';
 import { listarGruposProduto, listarMarcas, listarProdutos } from '../../servicos/produtos';
+import { listarUsuarios } from '../../servicos/usuarios';
 import { formatarCodigoCliente } from '../../utilitarios/codigoCliente';
 import { normalizarPreco } from '../../utilitarios/normalizarPreco';
 import { registroEstaAtivo } from '../../utilitarios/statusRegistro';
@@ -33,6 +36,10 @@ import { SecaoVendasMarcaInicio } from './componentes/secaoVendasMarcaInicio';
 import { SecaoVendasClientesInicio } from './componentes/secaoVendasClientesInicio';
 import { SecaoVendasProdutosInicio } from './componentes/secaoVendasProdutosInicio';
 import { SecaoVendasUfInicio } from './componentes/secaoVendasUfInicio';
+import { SecaoAtendimentosCanalInicio } from './componentes/secaoAtendimentosCanalInicio';
+import { SecaoAtendimentosOrigemInicio } from './componentes/secaoAtendimentosOrigemInicio';
+import { SecaoAtendimentosClientesInicio } from './componentes/secaoAtendimentosClientesInicio';
+import { SecaoAtendimentosUsuariosInicio } from './componentes/secaoAtendimentosUsuariosInicio';
 import { SecaoConfiguravelInicio } from './componentes/secaoConfiguravelInicio';
 import { ModalManualInicio } from './modalManualInicio';
 import { criarResumoFunilVendas } from './utilitarios/criarResumoFunilVendas';
@@ -99,6 +106,10 @@ export function PaginaInicio({ usuarioLogado }) {
     () => montarSecoesVendas(painel),
     [painel]
   );
+  const secoesAtendimentosConfiguradas = useMemo(
+    () => montarSecoesAtendimentos(painel),
+    [painel]
+  );
 
   async function carregarPainel() {
     definirCarregando(true);
@@ -134,6 +145,9 @@ export function PaginaInicio({ usuarioLogado }) {
         listarEtapasPedidoConfiguracao(),
         listarMotivosPerdaConfiguracao(),
         listarMotivosDevolucaoConfiguracao(),
+        listarCanaisAtendimentoConfiguracao(),
+        listarOrigensAtendimentoConfiguracao(),
+        listarUsuarios({ incluirInativos: true }),
         listarEmpresas()
       ]);
 
@@ -151,6 +165,9 @@ export function PaginaInicio({ usuarioLogado }) {
         etapasPedidoResultado,
         motivosPerdaResultado,
         motivosDevolucaoResultado,
+        canaisAtendimentoResultado,
+        origensAtendimentoResultado,
+        usuariosResultado,
         empresasResultado
       ] = resultados;
 
@@ -167,6 +184,9 @@ export function PaginaInicio({ usuarioLogado }) {
       const etapasPedido = etapasPedidoResultado.status === 'fulfilled' ? etapasPedidoResultado.value : [];
       const motivosPerda = motivosPerdaResultado.status === 'fulfilled' ? motivosPerdaResultado.value : [];
       const motivosDevolucao = motivosDevolucaoResultado.status === 'fulfilled' ? motivosDevolucaoResultado.value : [];
+      const canaisAtendimento = canaisAtendimentoResultado.status === 'fulfilled' ? canaisAtendimentoResultado.value : [];
+      const origensAtendimento = origensAtendimentoResultado.status === 'fulfilled' ? origensAtendimentoResultado.value : [];
+      const usuarios = usuariosResultado.status === 'fulfilled' ? usuariosResultado.value : [];
       const empresas = empresasResultado.status === 'fulfilled' ? empresasResultado.value : [];
 
       definirPainelBruto({
@@ -183,6 +203,9 @@ export function PaginaInicio({ usuarioLogado }) {
         etapasPedido,
         motivosPerda,
         motivosDevolucao,
+        canaisAtendimento,
+        origensAtendimento,
+        usuarios,
         empresa: empresas[0] || null
       });
     } catch (_erro) {
@@ -199,7 +222,8 @@ export function PaginaInicio({ usuarioLogado }) {
         resumo={painel.resumo}
         abas={[
           { id: 'orcamentos', rotulo: 'Orcamentos' },
-          { id: 'vendas', rotulo: 'Vendas' }
+          { id: 'vendas', rotulo: 'Vendas' },
+          { id: 'atendimentos', rotulo: 'Atendimentos' }
         ]}
         abaAtiva={abaAtiva}
         aoSelecionarAba={definirAbaAtiva}
@@ -236,8 +260,14 @@ export function PaginaInicio({ usuarioLogado }) {
                     {secao.renderizar()}
                   </SecaoConfiguravelInicio>
                 ))
-              ) : (
+              ) : abaAtiva === 'vendas' ? (
                 secoesVendasConfiguradas.map((secao) => (
+                  <SecaoConfiguravelInicio key={secao.id} colunas={secao.span}>
+                    {secao.renderizar()}
+                  </SecaoConfiguravelInicio>
+                ))
+              ) : (
+                secoesAtendimentosConfiguradas.map((secao) => (
                   <SecaoConfiguravelInicio key={secao.id} colunas={secao.span}>
                     {secao.renderizar()}
                   </SecaoConfiguravelInicio>
@@ -308,8 +338,12 @@ function montarPainel(dados, usuarioLogado) {
     && dataNoPeriodo(item.dataInclusao, inicioMes, fimMes)
   ));
   const atendimentosMes = atendimentos.filter((item) => dataNoPeriodo(item.data, inicioMes, fimMes));
+  const atendimentosMesIndicador = usuarioLogado?.tipo === 'Usuario padrao'
+    ? atendimentosMes.filter((item) => String(item.idUsuario) === String(usuarioLogado?.idUsuario || ''))
+    : atendimentosMes;
   const valorAberto = somarTotais(orcamentosAbertos);
   const faturamentoMes = somarTotais(pedidosEntregaMes);
+  const quantidadeVendidaMesBruta = somarQuantidadeItensBruta(pedidosMes);
   const comissaoMes = somarComissoes(pedidosMes);
   const ticketMedio = pedidosEntregaMes.length ? faturamentoMes / pedidosEntregaMes.length : 0;
   const convertidosMes = orcamentosMes.filter((item) => Boolean(item.idPedidoVinculado)).length;
@@ -409,6 +443,31 @@ function montarPainel(dados, usuarioLogado) {
   );
   const vendasPorUf = montarResumoPorUf(pedidosMes, clientesVisiveis);
   const vendasPorCliente = montarResumoPorCliente(pedidosMes, clientesVisiveis, dados.empresa);
+  const atendimentosPorCanal = montarResumoAtendimentosPorRelacionamento(
+    atendimentosMes,
+    dados.canaisAtendimento,
+    'idCanalAtendimento',
+    'idCanalAtendimento',
+    'descricao',
+    'Sem canal'
+  );
+  const atendimentosPorOrigem = montarResumoAtendimentosPorRelacionamento(
+    atendimentosMes,
+    dados.origensAtendimento,
+    'idOrigemAtendimento',
+    'idOrigemAtendimento',
+    'descricao',
+    'Sem origem'
+  );
+  const atendimentosPorCliente = montarResumoAtendimentosPorCliente(
+    atendimentosMes,
+    clientesVisiveis,
+    dados.empresa
+  );
+  const atendimentosPorUsuario = montarResumoAtendimentosPorUsuario(
+    atendimentosMes,
+    dados.usuarios
+  );
 
   return {
     ...base,
@@ -438,6 +497,28 @@ function montarPainel(dados, usuarioLogado) {
         destaque: normalizarPreco(faturamentoMes),
         ajuda: {
           composicao: 'Quantidade de pedidos e valor liquido dos itens.',
+          periodo: 'Mes corrente pela data de inclusao do pedido.'
+        }
+      },
+      {
+        id: 'atendimentosMes',
+        icone: 'atendimentos',
+        titulo: 'Atendimentos no mes',
+        valor: String(atendimentosMesIndicador.length),
+        descricao: 'Quantidade total de atendimentos no mes atual.',
+        ajuda: {
+          composicao: 'Soma de todos os atendimentos registrados no mes corrente.',
+          periodo: 'Mes corrente pela data do atendimento.'
+        }
+      },
+      {
+        id: 'quantidadeVendidaMes',
+        icone: 'caixa',
+        titulo: 'Quantidade vendida no mes',
+        valor: String(quantidadeVendidaMesBruta),
+        descricao: 'Quantidade bruta de itens vendidos no mes atual.',
+        ajuda: {
+          composicao: 'Soma da quantidade de itens dos pedidos do mes corrente (sem debitar devolucoes).',
           periodo: 'Mes corrente pela data de inclusao do pedido.'
         }
       },
@@ -580,6 +661,10 @@ function montarPainel(dados, usuarioLogado) {
     vendasPorUf,
     vendasPorCliente,
     vendasPorProduto,
+    atendimentosPorCanal,
+    atendimentosPorOrigem,
+    atendimentosPorCliente,
+    atendimentosPorUsuario,
     alertas: montarAlertas(orcamentosVencidos, orcamentosVencendo, pedidosEntregaProxima, clientesSemAtendimento),
     tituloRanking: usuarioLogado?.tipo === 'Usuario padrao' ? 'Clientes em destaque' : 'Vendedores em destaque',
     descricaoRanking: usuarioLogado?.tipo === 'Usuario padrao'
@@ -696,6 +781,36 @@ function montarSecoesVendas(painel) {
     .filter((item) => typeof item.renderizar === 'function');
 }
 
+function montarSecoesAtendimentos(painel) {
+  const configuracoes = Array.isArray(painel?.empresa?.graficosPaginaInicialAtendimentos)
+    ? painel.empresa.graficosPaginaInicialAtendimentos
+    : [];
+  const definicoes = new Map([
+    ['atendimentosCanal', {
+      renderizar: (configuracao) => <SecaoAtendimentosCanalInicio itens={painel.atendimentosPorCanal} titulo={configuracao.rotulo} />
+    }],
+    ['atendimentosOrigem', {
+      renderizar: (configuracao) => <SecaoAtendimentosOrigemInicio itens={painel.atendimentosPorOrigem} titulo={configuracao.rotulo} />
+    }],
+    ['atendimentosCliente', {
+      renderizar: (configuracao) => <SecaoAtendimentosClientesInicio itens={painel.atendimentosPorCliente} titulo={configuracao.rotulo} />
+    }],
+    ['atendimentosUsuario', {
+      renderizar: (configuracao) => <SecaoAtendimentosUsuariosInicio itens={painel.atendimentosPorUsuario} titulo={configuracao.rotulo} />
+    }]
+  ]);
+
+  return configuracoes
+    .filter((item) => item?.visivel !== false)
+    .sort((itemA, itemB) => Number(itemA?.ordem || 0) - Number(itemB?.ordem || 0))
+    .map((item) => ({
+      id: item.id,
+      span: item.span,
+      renderizar: () => definicoes.get(item.id)?.renderizar(item)
+    }))
+    .filter((item) => typeof item.renderizar === 'function');
+}
+
 function criarPainelBase(usuarioLogado) {
   return {
     descricao: usuarioLogado?.tipo === 'Usuario padrao'
@@ -729,6 +844,28 @@ function criarPainelBase(usuarioLogado) {
         descricao: '',
         ajuda: {
           composicao: 'Quantidade de pedidos e valor liquido dos itens.',
+          periodo: 'Mes corrente pela data de inclusao do pedido.'
+        }
+      },
+      {
+        id: 'atendimentosMes',
+        icone: 'atendimentos',
+        titulo: 'Atendimentos no mes',
+        valor: '0',
+        descricao: '',
+        ajuda: {
+          composicao: 'Soma de todos os atendimentos registrados no mes corrente.',
+          periodo: 'Mes corrente pela data do atendimento.'
+        }
+      },
+      {
+        id: 'quantidadeVendidaMes',
+        icone: 'caixa',
+        titulo: 'Quantidade vendida no mes',
+        valor: '0',
+        descricao: '',
+        ajuda: {
+          composicao: 'Soma da quantidade de itens dos pedidos do mes corrente (sem debitar devolucoes).',
           periodo: 'Mes corrente pela data de inclusao do pedido.'
         }
       },
@@ -803,6 +940,10 @@ function criarPainelBase(usuarioLogado) {
     vendasPorUf: [],
     vendasPorCliente: [],
     vendasPorProduto: [],
+    atendimentosPorCanal: [],
+    atendimentosPorOrigem: [],
+    atendimentosPorCliente: [],
+    atendimentosPorUsuario: [],
     alertas: [],
     tituloRanking: 'Ranking',
     descricaoRanking: '',
@@ -1014,8 +1155,7 @@ function montarResumoMotivosPerda(orcamentos, motivosPerda) {
 
   const lista = [...resumoPorMotivo.values()]
     .filter((item) => item.quantidadeOrcamentos > 0 || item.valorTotal !== 0)
-    .sort((a, b) => b.valorTotal - a.valorTotal)
-    .slice(0, 8);
+    .sort((a, b) => b.valorTotal - a.valorTotal);
   const totalQuantidade = lista.reduce((acumulado, item) => acumulado + (Number(item.quantidadeOrcamentos) || 0), 0);
   const totalValor = lista.reduce((acumulado, item) => acumulado + Math.max(Number(item.valorTotal) || 0, 0), 0);
 
@@ -1082,8 +1222,7 @@ function montarResumoPorRelacionamento(
       pedidos: undefined
     }))
     .filter((item) => item.quantidadeItens !== 0 || item.valorTotal !== 0)
-    .sort((a, b) => b.valorTotal - a.valorTotal)
-    .slice(0, 8);
+    .sort((a, b) => b.valorTotal - a.valorTotal);
   const totalQuantidade = lista.reduce(
     (acumulado, item) => acumulado + Math.max(Number(item.quantidadeItens) || 0, 0),
     0
@@ -1140,8 +1279,7 @@ function montarResumoPorUf(pedidos, clientes) {
       pedidos: undefined
     }))
     .filter((item) => item.quantidadeItens !== 0 || item.valorTotal !== 0)
-    .sort((a, b) => b.valorTotal - a.valorTotal)
-    .slice(0, 8);
+    .sort((a, b) => b.valorTotal - a.valorTotal);
 
   const totalQuantidade = lista.reduce(
     (acumulado, item) => acumulado + Math.max(Number(item.quantidadeItens) || 0, 0),
@@ -1201,8 +1339,7 @@ function montarResumoPorCliente(pedidos, clientes, empresa) {
       pedidos: undefined
     }))
     .filter((item) => item.quantidadeItens !== 0 || item.valorTotal !== 0)
-    .sort((a, b) => b.valorTotal - a.valorTotal)
-    .slice(0, 8);
+    .sort((a, b) => b.valorTotal - a.valorTotal);
 
   const totalQuantidade = lista.reduce(
     (acumulado, item) => acumulado + Math.max(Number(item.quantidadeItens) || 0, 0),
@@ -1221,6 +1358,152 @@ function montarResumoPorCliente(pedidos, clientes, empresa) {
     ajuda: {
       composicao: `${item.quantidadePedidos}, ${item.quantidadeItens} itens e ${normalizarPreco(item.valorTotal)} para ${item.descricao}.`,
       periodo: 'Mes corrente pela data de entrada do pedido.'
+    }
+  }));
+}
+
+function montarResumoAtendimentosPorRelacionamento(
+  atendimentos,
+  relacionamentos,
+  chaveAtendimento,
+  chaveRelacionamento,
+  chaveDescricao,
+  descricaoFallback
+) {
+  const relacionamentoPorId = new Map((relacionamentos || []).map((registro) => [
+    String(registro?.[chaveRelacionamento]),
+    registro
+  ]));
+  const resumoPorRelacionamento = new Map();
+
+  (atendimentos || []).forEach((atendimento) => {
+    const idRelacionamento = String(atendimento?.[chaveAtendimento] || 'sem-relacionamento');
+    const relacionamento = relacionamentoPorId.get(idRelacionamento);
+    const resumoAtual = resumoPorRelacionamento.get(idRelacionamento) || {
+      id: idRelacionamento,
+      descricao: relacionamento?.[chaveDescricao] || descricaoFallback,
+      quantidadeAtendimentos: 0,
+      quantidadeClientesSet: new Set()
+    };
+
+    resumoAtual.quantidadeAtendimentos += 1;
+    if (atendimento?.idCliente) {
+      resumoAtual.quantidadeClientesSet.add(String(atendimento.idCliente));
+    }
+    resumoPorRelacionamento.set(idRelacionamento, resumoAtual);
+  });
+
+  const lista = [...resumoPorRelacionamento.values()]
+    .map((item) => ({
+      ...item,
+      quantidadeClientes: item.quantidadeClientesSet.size,
+      quantidadeClientesSet: undefined
+    }))
+    .sort((itemA, itemB) => itemB.quantidadeAtendimentos - itemA.quantidadeAtendimentos);
+  const totalAtendimentos = lista.reduce((total, item) => total + Number(item.quantidadeAtendimentos || 0), 0);
+  const totalClientes = lista.reduce((total, item) => total + Number(item.quantidadeClientes || 0), 0);
+
+  return lista.map((item) => ({
+    ...item,
+    percentualAtendimentos: calcularPercentualParteDoTotal(item.quantidadeAtendimentos, totalAtendimentos),
+    percentualClientes: calcularPercentualParteDoTotal(item.quantidadeClientes, totalClientes),
+    ajuda: {
+      composicao: `${item.quantidadeAtendimentos} atendimentos e ${item.quantidadeClientes} clientes para ${item.descricao}.`,
+      periodo: 'Mes corrente pela data do atendimento.'
+    }
+  }));
+}
+
+function montarResumoAtendimentosPorCliente(atendimentos, clientes, empresa) {
+  const clientesPorId = new Map((clientes || []).map((cliente) => [
+    String(cliente.idCliente),
+    cliente
+  ]));
+  const resumoPorCliente = new Map();
+
+  (atendimentos || []).forEach((atendimento) => {
+    const idCliente = String(atendimento?.idCliente || '');
+    const cliente = clientesPorId.get(idCliente);
+    const descricaoCliente = cliente
+      ? `${formatarCodigoCliente(cliente, empresa)} - ${cliente.nomeFantasia || cliente.razaoSocial || 'Cliente sem nome'}`
+      : 'Cliente sem nome';
+    const resumoAtual = resumoPorCliente.get(idCliente) || {
+      id: idCliente || 'sem-cliente',
+      descricao: descricaoCliente,
+      quantidadeAtendimentos: 0,
+      usuariosSet: new Set()
+    };
+
+    resumoAtual.quantidadeAtendimentos += 1;
+    if (atendimento?.idUsuario) {
+      resumoAtual.usuariosSet.add(String(atendimento.idUsuario));
+    }
+    resumoPorCliente.set(idCliente, resumoAtual);
+  });
+
+  const lista = [...resumoPorCliente.values()]
+    .map((item) => ({
+      ...item,
+      quantidadeUsuarios: item.usuariosSet.size,
+      usuariosSet: undefined
+    }))
+    .sort((itemA, itemB) => itemB.quantidadeAtendimentos - itemA.quantidadeAtendimentos);
+  const totalAtendimentos = lista.reduce((total, item) => total + Number(item.quantidadeAtendimentos || 0), 0);
+  const totalUsuarios = lista.reduce((total, item) => total + Number(item.quantidadeUsuarios || 0), 0);
+
+  return lista.map((item) => ({
+    ...item,
+    percentualAtendimentos: calcularPercentualParteDoTotal(item.quantidadeAtendimentos, totalAtendimentos),
+    percentualUsuarios: calcularPercentualParteDoTotal(item.quantidadeUsuarios, totalUsuarios),
+    ajuda: {
+      composicao: `${item.quantidadeAtendimentos} atendimentos e ${item.quantidadeUsuarios} usuarios no cliente ${item.descricao}.`,
+      periodo: 'Mes corrente pela data do atendimento.'
+    }
+  }));
+}
+
+function montarResumoAtendimentosPorUsuario(atendimentos, usuarios) {
+  const usuariosPorId = new Map((usuarios || []).map((usuario) => [
+    String(usuario.idUsuario),
+    usuario
+  ]));
+  const resumoPorUsuario = new Map();
+
+  (atendimentos || []).forEach((atendimento) => {
+    const idUsuario = String(atendimento?.idUsuario || '');
+    const usuario = usuariosPorId.get(idUsuario);
+    const descricaoUsuario = usuario?.nome || 'Usuario sem nome';
+    const resumoAtual = resumoPorUsuario.get(idUsuario) || {
+      id: idUsuario || 'sem-usuario',
+      descricao: descricaoUsuario,
+      quantidadeAtendimentos: 0,
+      clientesSet: new Set()
+    };
+
+    resumoAtual.quantidadeAtendimentos += 1;
+    if (atendimento?.idCliente) {
+      resumoAtual.clientesSet.add(String(atendimento.idCliente));
+    }
+    resumoPorUsuario.set(idUsuario, resumoAtual);
+  });
+
+  const lista = [...resumoPorUsuario.values()]
+    .map((item) => ({
+      ...item,
+      quantidadeClientes: item.clientesSet.size,
+      clientesSet: undefined
+    }))
+    .sort((itemA, itemB) => itemB.quantidadeAtendimentos - itemA.quantidadeAtendimentos);
+  const totalAtendimentos = lista.reduce((total, item) => total + Number(item.quantidadeAtendimentos || 0), 0);
+  const totalClientes = lista.reduce((total, item) => total + Number(item.quantidadeClientes || 0), 0);
+
+  return lista.map((item) => ({
+    ...item,
+    percentualAtendimentos: calcularPercentualParteDoTotal(item.quantidadeAtendimentos, totalAtendimentos),
+    percentualClientes: calcularPercentualParteDoTotal(item.quantidadeClientes, totalClientes),
+    ajuda: {
+      composicao: `${item.quantidadeAtendimentos} atendimentos e ${item.quantidadeClientes} clientes para ${item.descricao}.`,
+      periodo: 'Mes corrente pela data do atendimento.'
     }
   }));
 }
@@ -1252,7 +1535,7 @@ function montarRanking(pedidos, obterChave, obterNome) {
     mapa.set(chave, atual);
   });
 
-  const lista = [...mapa.values()].sort((a, b) => b.total - a.total).slice(0, 5);
+  const lista = [...mapa.values()].sort((a, b) => b.total - a.total);
   const maior = Math.max(...lista.map((item) => item.total), 0);
 
   return lista.map((item) => ({
@@ -1289,6 +1572,16 @@ function contarClientesSemAtendimento(clientes, atendimentos, diasLimite) {
 
 function somarTotais(registros) {
   return (registros || []).reduce((total, item) => total + totalRegistro(item), 0);
+}
+
+function somarQuantidadeItensBruta(registros) {
+  return (registros || []).reduce((total, registro) => {
+    const quantidadeRegistro = Array.isArray(registro?.itens)
+      ? registro.itens.reduce((acumulado, item) => acumulado + Math.abs(Number(item?.quantidade) || 0), 0)
+      : 0;
+
+    return total + quantidadeRegistro;
+  }, 0);
 }
 
 function somarComissoes(registros) {

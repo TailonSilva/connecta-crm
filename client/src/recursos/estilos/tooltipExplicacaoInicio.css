@@ -33,6 +33,20 @@
 
 .paginaInicioGraficoBarraItem:hover .paginaInicioTooltipExplicacao,
 .paginaInicioGraficoBarraItem:focus-visible .paginaInicioTooltipExplicacao,
+.paginaInicioHeroiMetricas article:hover .paginaInicioTooltipExplicacao,
+.paginaInicioHeroiMetricas article:focus-visible .paginaInicioTooltipExplicacao,
+.paginaInicioHeroiFaixa:hover .paginaInicioTooltipExplicacao,
+.paginaInicioHeroiFaixa:focus-visible .paginaInicioTooltipExplicacao,
+.paginaInicioGraficoDia:hover .paginaInicioTooltipExplicacao,
+.paginaInicioGraficoDia:focus-visible .paginaInicioTooltipExplicacao,
+.paginaInicioSaudeItem:hover .paginaInicioTooltipExplicacao,
+.paginaInicioSaudeItem:focus-visible .paginaInicioTooltipExplicacao,
+.paginaInicioAgendaItem:hover .paginaInicioTooltipExplicacao,
+.paginaInicioAgendaItem:focus-visible .paginaInicioTooltipExplicacao,
+.paginaInicioRankingItem:hover .paginaInicioTooltipExplicacao,
+.paginaInicioRankingItem:focus-visible .paginaInicioTooltipExplicacao,
+.paginaInicioGraficoFunilItem:hover .paginaInicioTooltipExplicacao,
+.paginaInicioGraficoFunilItem:focus-visible .paginaInicioTooltipExplicacao,
 .paginaInicioAjudaSessao:hover .paginaInicioTooltipExplicacao,
 .paginaInicioAjudaSessao:focus-visible .paginaInicioTooltipExplicacao {
   opacity: 1;

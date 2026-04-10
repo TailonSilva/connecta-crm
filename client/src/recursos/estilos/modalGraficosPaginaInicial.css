@@ -2,6 +2,76 @@
   max-width: 1120px;
 }
 
+.botaoInfoConfiguracaoPaginaInicial {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(23, 145, 226, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--corPrimariaForte);
+  cursor: help;
+  flex-shrink: 0;
+}
+
+.iconeInfoConfiguracaoPaginaInicial {
+  width: 14px;
+  height: 14px;
+  stroke-width: 1.9;
+}
+
+.tooltipInfoConfiguracaoPaginaInicial {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 8px);
+  z-index: 40;
+  width: min(320px, calc(100vw - 56px));
+  padding: 10px 12px;
+  border: 1px solid rgba(23, 145, 226, 0.12);
+  border-radius: 12px;
+  background: rgba(12, 20, 31, 0.98);
+  color: rgba(255, 255, 255, 0.98);
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  box-shadow: 0 12px 28px rgba(4, 12, 22, 0.34);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(6px);
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.itemCheckboxGridAtendimentos .tooltipInfoConfiguracaoPaginaInicial {
+  color: rgba(255, 255, 255, 0.98) !important;
+}
+
+.botaoInfoConfiguracaoPaginaInicial:hover .tooltipInfoConfiguracaoPaginaInicial,
+.botaoInfoConfiguracaoPaginaInicial:focus-visible .tooltipInfoConfiguracaoPaginaInicial {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.botaoInfoConfiguracaoPaginaInicial:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.botaoInfoConfiguracaoPaginaInicial:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(23, 145, 226, 0.18);
+}
+
+.rotuloItemCheckboxGridAtendimentos {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
 .painelEmpresaPaginaInicialAcoes {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

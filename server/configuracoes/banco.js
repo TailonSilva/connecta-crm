@@ -769,6 +769,7 @@ banco.serialize(() => {
       colunasGridAtendimentos TEXT,
       graficosPaginaInicialOrcamentos TEXT,
       graficosPaginaInicialVendas TEXT,
+      graficosPaginaInicialAtendimentos TEXT,
       cardsPaginaInicial TEXT,
       corPrimariaOrcamento VARCHAR(7) NOT NULL DEFAULT '#111827',
       corSecundariaOrcamento VARCHAR(7) NOT NULL DEFAULT '#ef4444',
@@ -951,6 +952,14 @@ banco.serialize(() => {
   `, (erro) => {
     if (erro && !String(erro.message || '').includes('duplicate column name')) {
       console.error('Nao foi possivel garantir a coluna graficosPaginaInicialVendas da empresa.', erro);
+    }
+  });
+
+  banco.run(`
+    ALTER TABLE empresa ADD COLUMN graficosPaginaInicialAtendimentos TEXT
+  `, (erro) => {
+    if (erro && !String(erro.message || '').includes('duplicate column name')) {
+      console.error('Nao foi possivel garantir a coluna graficosPaginaInicialAtendimentos da empresa.', erro);
     }
   });
 

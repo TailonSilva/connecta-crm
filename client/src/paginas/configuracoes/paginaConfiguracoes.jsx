@@ -87,9 +87,12 @@ import { atualizarUsuario, incluirUsuario, listarUsuarios } from '../../servicos
 import { normalizarConfiguracoesColunasGridAtendimentos } from '../../utilitarios/colunasGridAtendimentos';
 import {
   normalizarConfiguracoesGraficosPaginaInicialOrcamentos,
+  normalizarConfiguracoesGraficosPaginaInicialAtendimentos,
   normalizarConfiguracoesGraficosPaginaInicialVendas,
+  reordenarConfiguracoesGraficosPaginaInicialAtendimentos,
   reordenarConfiguracoesGraficosPaginaInicialOrcamentos,
   reordenarConfiguracoesGraficosPaginaInicialVendas,
+  reposicionarConfiguracaoGraficosPaginaInicialAtendimentos,
   reposicionarConfiguracaoGraficosPaginaInicialOrcamentos,
   reposicionarConfiguracaoGraficosPaginaInicialVendas,
   TOTAL_COLUNAS_GRAFICOS_PAGINA_INICIAL
@@ -623,6 +626,22 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
     const payload = normalizarPayloadEmpresa({
       ...empresa,
       graficosPaginaInicialVendas: graficos
+    });
+
+    await atualizarEmpresa(empresa.idEmpresa, payload);
+    await carregarEmpresa();
+    window.dispatchEvent(new CustomEvent('empresa-atualizada'));
+    definirModalGraficosPaginaInicialAberto(null);
+  }
+
+  async function salvarGraficosPaginaInicialAtendimentos(graficos) {
+    if (!empresa?.idEmpresa) {
+      throw new Error('Cadastre a empresa antes de configurar os graficos da pagina inicial.');
+    }
+
+    const payload = normalizarPayloadEmpresa({
+      ...empresa,
+      graficosPaginaInicialAtendimentos: graficos
     });
 
     await atualizarEmpresa(empresa.idEmpresa, payload);
@@ -1498,6 +1517,79 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
                       </button>
                     ))}
                   </div>
+                ) : secao.id === 'paginaInicial' ? (
+                  <>
+                    <div className="gradeConfiguracoes">
+                      <button
+                        type="button"
+                        className="cartaoConfiguracao"
+                        disabled={usuarioSomenteConsulta || !empresa?.idEmpresa}
+                        onClick={() => definirModalGraficosPaginaInicialAberto('cards')}
+                      >
+                        <span className="iconeCartaoConfiguracao" aria-hidden="true">
+                          <span className="circuloIconeConfiguracao">
+                            <Icone nome="inicio" />
+                          </span>
+                        </span>
+                        <span className="conteudoCartaoConfiguracao">
+                          <strong>Cards resumo</strong>
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className="cartaoConfiguracao"
+                        disabled={usuarioSomenteConsulta || !empresa?.idEmpresa}
+                        onClick={() => definirModalGraficosPaginaInicialAberto('orcamentos')}
+                      >
+                        <span className="iconeCartaoConfiguracao" aria-hidden="true">
+                          <span className="circuloIconeConfiguracao">
+                            <Icone nome="orcamento" />
+                          </span>
+                        </span>
+                        <span className="conteudoCartaoConfiguracao">
+                          <strong>Graficos Orcamentos</strong>
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className="cartaoConfiguracao"
+                        disabled={usuarioSomenteConsulta || !empresa?.idEmpresa}
+                        onClick={() => definirModalGraficosPaginaInicialAberto('vendas')}
+                      >
+                        <span className="iconeCartaoConfiguracao" aria-hidden="true">
+                          <span className="circuloIconeConfiguracao">
+                            <Icone nome="pedido" />
+                          </span>
+                        </span>
+                        <span className="conteudoCartaoConfiguracao">
+                          <strong>Graficos Vendas</strong>
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className="cartaoConfiguracao"
+                        disabled={usuarioSomenteConsulta || !empresa?.idEmpresa}
+                        onClick={() => definirModalGraficosPaginaInicialAberto('atendimentos')}
+                      >
+                        <span className="iconeCartaoConfiguracao" aria-hidden="true">
+                          <span className="circuloIconeConfiguracao">
+                            <Icone nome="atendimentos" />
+                          </span>
+                        </span>
+                        <span className="conteudoCartaoConfiguracao">
+                          <strong>Graficos Atendimentos</strong>
+                        </span>
+                      </button>
+                    </div>
+                    {!empresa?.idEmpresa ? (
+                      <p className="descricaoOpcaoEmpresaPaginaInicial">
+                        Salve a empresa primeiro para liberar a configuracao da pagina inicial.
+                      </p>
+                    ) : null}
+                  </>
                 ) : (
                   <div className="secaoConfiguracaoVazia">
                     Nenhum item configurado nesta secao por enquanto.
@@ -1514,10 +1606,6 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
         empresa={empresa}
         etapasOrcamento={etapasOrcamento}
         modo={modoModalEmpresa}
-        podeConfigurarPaginaInicial={Boolean(empresa?.idEmpresa)}
-        aoAbrirCardsPaginaInicial={() => definirModalGraficosPaginaInicialAberto('cards')}
-        aoAbrirGraficosPaginaInicialOrcamentos={() => definirModalGraficosPaginaInicialAberto('orcamentos')}
-        aoAbrirGraficosPaginaInicialVendas={() => definirModalGraficosPaginaInicialAberto('vendas')}
         aoFechar={fecharModalEmpresa}
         aoSalvar={salvarEmpresa}
       />
@@ -1565,6 +1653,20 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
         camadaSecundaria={modalEmpresaAberto}
         aoFechar={() => definirModalGraficosPaginaInicialAberto(null)}
         aoSalvar={salvarGraficosPaginaInicialVendas}
+      />
+      <ModalGraficosPaginaInicial
+        aberto={modalGraficosPaginaInicialAberto === 'atendimentos'}
+        titulo="Graficos Atendimentos"
+        empresa={empresa}
+        configuracoesAtuais={empresa?.graficosPaginaInicialAtendimentos}
+        normalizarConfiguracoes={normalizarConfiguracoesGraficosPaginaInicialAtendimentos}
+        reordenarConfiguracoes={reordenarConfiguracoesGraficosPaginaInicialAtendimentos}
+        reposicionarConfiguracao={reposicionarConfiguracaoGraficosPaginaInicialAtendimentos}
+        totalColunas={TOTAL_COLUNAS_GRAFICOS_PAGINA_INICIAL}
+        somenteConsulta={usuarioSomenteConsulta}
+        camadaSecundaria={modalEmpresaAberto}
+        aoFechar={() => definirModalGraficosPaginaInicialAberto(null)}
+        aoSalvar={salvarGraficosPaginaInicialAtendimentos}
       />
       <ModalLayoutOrcamento
         aberto={modalLayoutOrcamentoAberto}
@@ -2180,6 +2282,16 @@ function normalizarPayloadEmpresa(dadosEmpresa) {
     ),
     graficosPaginaInicialVendas: JSON.stringify(
       normalizarConfiguracoesGraficosPaginaInicialVendas(dadosEmpresa.graficosPaginaInicialVendas).map((grafico) => ({
+        id: grafico.id,
+        base: grafico.base,
+        rotulo: grafico.rotulo,
+        visivel: Boolean(grafico.visivel),
+        ordem: grafico.ordem,
+        span: grafico.span
+      }))
+    ),
+    graficosPaginaInicialAtendimentos: JSON.stringify(
+      normalizarConfiguracoesGraficosPaginaInicialAtendimentos(dadosEmpresa.graficosPaginaInicialAtendimentos).map((grafico) => ({
         id: grafico.id,
         base: grafico.base,
         rotulo: grafico.rotulo,

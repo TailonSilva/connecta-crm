@@ -8,7 +8,8 @@ import { normalizarConfiguracoesColunasGridPedidos } from '../utilitarios/coluna
 import { normalizarConfiguracoesColunasGridAtendimentos } from '../utilitarios/colunasGridAtendimentos';
 import {
   normalizarConfiguracoesGraficosPaginaInicialOrcamentos,
-  normalizarConfiguracoesGraficosPaginaInicialVendas
+  normalizarConfiguracoesGraficosPaginaInicialVendas,
+  normalizarConfiguracoesGraficosPaginaInicialAtendimentos
 } from '../utilitarios/graficosPaginaInicial';
 import { normalizarConfiguracoesCardsPaginaInicial } from '../utilitarios/cardsPaginaInicial';
 
@@ -49,6 +50,7 @@ export function criarPayloadAtualizacaoColunasGrid(chave, colunas) {
     colunasGridAtendimentos: normalizarConfiguracoesColunasGridAtendimentos,
     graficosPaginaInicialOrcamentos: normalizarConfiguracoesGraficosPaginaInicialOrcamentos,
     graficosPaginaInicialVendas: normalizarConfiguracoesGraficosPaginaInicialVendas,
+    graficosPaginaInicialAtendimentos: normalizarConfiguracoesGraficosPaginaInicialAtendimentos,
     cardsPaginaInicial: normalizarConfiguracoesCardsPaginaInicial
   };
 
@@ -88,6 +90,7 @@ function normalizarEmpresa(empresa) {
     colunasGridAtendimentos: normalizarConfiguracoesColunasGridAtendimentos(empresa.colunasGridAtendimentos),
     graficosPaginaInicialOrcamentos: normalizarConfiguracoesGraficosPaginaInicialOrcamentos(empresa.graficosPaginaInicialOrcamentos),
     graficosPaginaInicialVendas: normalizarConfiguracoesGraficosPaginaInicialVendas(empresa.graficosPaginaInicialVendas),
+    graficosPaginaInicialAtendimentos: normalizarConfiguracoesGraficosPaginaInicialAtendimentos(empresa.graficosPaginaInicialAtendimentos),
     cardsPaginaInicial: normalizarConfiguracoesCardsPaginaInicial(empresa.cardsPaginaInicial),
     imagem: adicionarCacheBusterImagem(empresa.imagem)
   };

@@ -402,8 +402,8 @@ Filtros da agenda:
 - A aba `Outros` do pedido tambem concentra `% de comissao` e `Valor da comissao`, mantendo o percentual editavel no proprio pedido e o valor calculado sobre o total liquido dos itens
 - O backend persiste `pedido.valorComissao` automaticamente em inclusao e edicao, calculando `total liquido dos itens x comissao (%)`; pedidos de devolucao debitam esse total por manterem valores negativos
 - A pagina inicial agora exibe a secao `Devolucoes do mes`, agrupando pedidos do tipo `Devolucao` por `Motivo da devolucao`, com quantidade por motivo e valor total convertido para positivo apenas para leitura do grafico
-- A pagina inicial agora exibe tambem `Vendas do mes por grupo de produtos`, com quantidade total dos itens vendidos, quantidade de pedidos e valor total por grupo nos pedidos com entrega no mes atual
-- A pagina inicial agora exibe tambem `Vendas do mes por marca`, com quantidade total dos itens vendidos, quantidade de pedidos e valor total por marca nos pedidos com entrega no mes atual
+- A pagina inicial agora exibe tambem `Vendas do mes por grupo de produtos`, com quantidade total dos itens vendidos, quantidade de pedidos e valor total por grupo nos pedidos com data de entrada no mes corrente
+- A pagina inicial agora exibe tambem `Vendas do mes por marca`, com quantidade total dos itens vendidos, quantidade de pedidos e valor total por marca nos pedidos com data de entrada no mes corrente
 - O cabecalho da pagina inicial agora possui as abas `Orcamentos` e `Vendas`, separando os graficos comerciais por contexto sem misturar funil com analise de vendas
 - O modal de filtros da pagina de pedidos permite selecionar multiplas etapas ao mesmo tempo e salva esse recorte por usuario
 - A etapa do pedido pode ser alterada direto no grid, no mesmo padrao visual adotado em Orcamentos
@@ -873,7 +873,6 @@ Paginas hoje presentes no painel:
 - `Clientes`
 - `Produtos`
 - `Orcamentos`
-- `Pedidos`
 - `Pedidos`
 - `Configuracoes`
 
