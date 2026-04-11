@@ -433,7 +433,7 @@ export function PaginaAtendimentos({ usuarioLogado }) {
     return null;
   }
 
-  async function atualizarStatusOrcamentoPeloAtendimento({ idOrcamento, idEtapaOrcamento }) {
+  async function atualizarStatusOrcamentoPeloAtendimento({ idOrcamento, idEtapaOrcamento, idMotivoPerda }) {
     const orcamentoAtual = orcamentos.find((item) => item.idOrcamento === idOrcamento);
 
     if (!orcamentoAtual || !idEtapaOrcamento || String(orcamentoAtual.idEtapaOrcamento) === String(idEtapaOrcamento)) {
@@ -445,7 +445,8 @@ export function PaginaAtendimentos({ usuarioLogado }) {
       normalizarPayloadOrcamento(
         {
           ...orcamentoAtual,
-          idEtapaOrcamento
+          idEtapaOrcamento,
+          idMotivoPerda: idMotivoPerda === undefined ? orcamentoAtual.idMotivoPerda : idMotivoPerda
         },
         usuarioLogado
       )
@@ -806,6 +807,7 @@ export function PaginaAtendimentos({ usuarioLogado }) {
         contatos={contatos}
         usuarios={usuarios}
         vendedores={vendedores}
+        ramosAtividade={ramosAtividade}
         metodosPagamento={metodosPagamento}
         prazosPagamento={prazosPagamento}
         tiposPedido={tiposPedido}
@@ -816,8 +818,10 @@ export function PaginaAtendimentos({ usuarioLogado }) {
         empresa={empresa}
         usuarioLogado={usuarioLogado}
         modo="novo"
+        idVendedorBloqueado={usuarioSomenteVendedor ? usuarioLogado.idVendedor : null}
         camadaSecundaria={modalAberto}
         somenteConsultaPrazos={usuarioSomenteConsultaConfiguracao}
+        aoIncluirCliente={incluirClientePeloAtendimento}
         aoFechar={fecharModalPedido}
         aoSalvar={salvarPedidoPeloAtendimento}
         aoSalvarPrazoPagamento={salvarPrazoPagamentoPeloAtendimento}

@@ -106,6 +106,7 @@ export function ModalManualClientes({
             'Quando o usuario abrir a busca de contatos a partir de Atendimento, Orcamento ou Pedido com um cliente ja definido, esse mesmo formulario de contato pode ser aberto de dentro da busca e o novo contato volta selecionado automaticamente no registro comercial.',
             'Ramos de atividade e grupos de empresa podem ser mantidos sem sair do modal, sem perder o preenchimento ja feito no cliente.',
             'Ao concluir um novo ramo ou grupo pelo atalho do campo, o registro criado volta selecionado automaticamente no formulario do cliente.',
+            'Nas abas do modal do cliente, `Alt + Seta para a esquerda` volta para a aba anterior e `Alt + Seta para a direita` avanca para a proxima, reposicionando o foco no primeiro campo da nova aba.',
             'O modelo de importacao traz uma aba de instrucoes com campos obrigatorios, tipo esperado e limite de caracteres para facilitar o preenchimento.',
             'Na importacao, o sistema aponta com mais precisao quando CNPJ/CPF, codigo, UF, CEP, email, status ou referencias de apoio estiverem invalidos, inativos ou nao encontrados.',
             'Quando vendedor, ramo de atividade ou grupo de empresa nao forem resolvidos na importacao, o proprio modal apresenta um grid para vincular um registro existente e reenviar apenas essas linhas.',
@@ -154,6 +155,12 @@ export function ModalManualClientes({
           descricao: 'O grupo de empresa pode ser cadastrado diretamente do modal do cliente e selecionado sem sair do preenchimento.',
           detalhe: 'Esse atalho permanece disponivel mesmo para perfis operacionais.',
           icone: 'empresa'
+        },
+        {
+          titulo: 'Abas com teclado',
+          descricao: 'Nos modais com abas, `Alt + Seta para a esquerda` e `Alt + Seta para a direita` trocam a secao ativa.',
+          detalhe: 'Ao mudar de aba, o foco vai para o primeiro campo editavel da nova secao.',
+          icone: 'manual'
         }
       ]}
     />

@@ -131,6 +131,12 @@ export function ModalManualAgenda({
         : 'Perfis com permissao podem incluir, editar e excluir agendamentos.',
       detalhe: 'Agendas encerradas podem abrir um atendimento com os dados ja preenchidos.',
       icone: 'usuarios'
+    },
+    {
+      titulo: 'Foco e atalho',
+      descricao: 'Ao abrir um modal da agenda, o foco vai para o primeiro campo editavel; em confirmacoes, a acao principal fica pronta para teclado.',
+      detalhe: '`PageDown` salva o formulario do modal ativo.',
+      icone: 'manual'
     }
   ];
 
@@ -157,6 +163,8 @@ export function ModalManualAgenda({
           itens: [
             'Assunto, dia, horario de inicio, horario de fim, tipo e status sao obrigatorios em qualquer agendamento.',
             'Contato do cliente depende do cliente escolhido e fica bloqueado ate haver cliente selecionado.',
+            'Cliente e contato usam os mesmos modais reutilizaveis de busca do fluxo comercial.',
+            'Ao confirmar a busca de cliente ou contato, o foco retorna para o campo preenchido no agendamento.',
             'Local, cliente e recurso podem se tornar obrigatorios conforme a configuracao do tipo de agenda.',
             'Usuarios e recursos aceitam selecao multipla dentro de submodais do proprio formulario.',
             'Somente registros ativos aparecem nas listas de tipos, status, locais, clientes, contatos, usuarios e recursos.'

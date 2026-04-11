@@ -20,10 +20,6 @@ export function ModalBuscaClientes({
       titulo="Buscar cliente"
       placeholder={placeholder}
       ariaLabelPesquisa={ariaLabelPesquisa}
-      rotuloAcaoPrimaria={rotuloAcaoPrimaria}
-      tituloAcaoPrimaria={tituloAcaoPrimaria}
-      iconeAcaoPrimaria={iconeAcaoPrimaria}
-      aoAcionarPrimaria={aoAcionarPrimaria}
       colunas={[
         {
           key: 'codigo',
@@ -47,6 +43,10 @@ export function ModalBuscaClientes({
         cliente.cnpj
       ].join(' ')}
       obterChaveRegistro={(cliente) => cliente.idCliente}
+      rotuloAcaoPrimaria={rotuloAcaoPrimaria}
+      tituloAcaoPrimaria={tituloAcaoPrimaria}
+      iconeAcaoPrimaria={iconeAcaoPrimaria}
+      aoAcionarPrimaria={aoAcionarPrimaria}
       aoSelecionar={aoSelecionar}
       aoFechar={aoFechar}
     />

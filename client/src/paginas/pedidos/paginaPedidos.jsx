@@ -8,7 +8,14 @@ import { GradePadrao } from '../../componentes/comuns/gradePadrao';
 import { ModalFiltros } from '../../componentes/comuns/modalFiltros';
 import { TextoGradeClamp } from '../../componentes/comuns/textoGradeClamp';
 import { CorpoPagina } from '../../componentes/layout/corpoPagina';
-import { listarClientes, listarContatos, listarVendedores } from '../../servicos/clientes';
+import {
+  incluirCliente,
+  incluirContato,
+  listarClientes,
+  listarContatos,
+  listarRamosAtividade,
+  listarVendedores
+} from '../../servicos/clientes';
 import {
   atualizarPrazoPagamento,
   incluirPrazoPagamento,
@@ -107,6 +114,7 @@ export function PaginaPedidos({ usuarioLogado }) {
   const [clientes, definirClientes] = useState([]);
   const [contatos, definirContatos] = useState([]);
   const [usuarios, definirUsuarios] = useState([]);
+  const [ramosAtividade, definirRamosAtividade] = useState([]);
   const [vendedores, definirVendedores] = useState([]);
   const [metodosPagamento, definirMetodosPagamento] = useState([]);
   const [prazosPagamento, definirPrazosPagamento] = useState([]);
@@ -128,6 +136,7 @@ export function PaginaPedidos({ usuarioLogado }) {
   const [pedidoExclusaoPendente, definirPedidoExclusaoPendente] = useState(null);
   const [alteracaoEtapaPendente, definirAlteracaoEtapaPendente] = useState(null);
   const [motivoDevolucaoEtapaRapida, definirMotivoDevolucaoEtapaRapida] = useState('');
+  const usuarioSomenteVendedor = usuarioLogado?.tipo === 'Usuario padrao' && usuarioLogado?.idVendedor;
   const usuarioSomenteConsultaConfiguracao = usuarioLogado?.tipo === 'Usuario padrao';
   const permitirExcluir = usuarioLogado?.tipo !== 'Usuario padrao';
 
@@ -199,6 +208,7 @@ export function PaginaPedidos({ usuarioLogado }) {
         listarClientes(),
         listarContatos(),
         listarUsuarios(),
+        listarRamosAtividade(),
         listarVendedores(),
         listarMetodosPagamentoConfiguracao(),
         listarPrazosPagamentoConfiguracao(),
@@ -214,6 +224,7 @@ export function PaginaPedidos({ usuarioLogado }) {
         clientesResultado,
         contatosResultado,
         usuariosResultado,
+        ramosResultado,
         vendedoresResultado,
         metodosResultado,
         prazosResultado,
@@ -228,6 +239,7 @@ export function PaginaPedidos({ usuarioLogado }) {
       const clientesCarregados = clientesResultado.status === 'fulfilled' ? clientesResultado.value : [];
       const contatosCarregados = contatosResultado.status === 'fulfilled' ? contatosResultado.value : [];
       const usuariosCarregados = usuariosResultado.status === 'fulfilled' ? usuariosResultado.value : [];
+      const ramosCarregados = ramosResultado.status === 'fulfilled' ? ramosResultado.value : [];
       const vendedoresCarregados = vendedoresResultado.status === 'fulfilled' ? vendedoresResultado.value : [];
       const metodosCarregados = metodosResultado.status === 'fulfilled' ? metodosResultado.value : [];
       const prazosCarregados = prazosResultado.status === 'fulfilled' ? prazosResultado.value : [];
@@ -243,6 +255,7 @@ export function PaginaPedidos({ usuarioLogado }) {
       definirClientes(clientesCarregados);
       definirContatos(contatosCarregados);
       definirUsuarios(usuariosCarregados);
+      definirRamosAtividade(ramosCarregados);
       definirVendedores(vendedoresCarregados);
       definirMetodosPagamento(metodosCarregados);
       definirPrazosPagamento(enriquecerPrazosPagamento(prazosCarregados, metodosCarregados));
@@ -257,6 +270,7 @@ export function PaginaPedidos({ usuarioLogado }) {
         clientes: clientesCarregados,
         contatos: contatosCarregados,
         usuarios: usuariosCarregados,
+        ramosAtividade: ramosCarregados,
         vendedores: vendedoresCarregados,
         metodosPagamento: metodosCarregados,
         prazosPagamento: prazosCarregados,
@@ -360,6 +374,22 @@ export function PaginaPedidos({ usuarioLogado }) {
 
     await recarregarPagina();
     fecharModal();
+  }
+
+  async function incluirClientePeloPedido(dadosCliente) {
+    const payload = normalizarPayloadClienteCadastro({
+      ...dadosCliente,
+      idVendedor: usuarioSomenteVendedor ? String(usuarioLogado.idVendedor) : dadosCliente.idVendedor
+    });
+
+    const clienteSalvo = await incluirCliente(payload);
+    await salvarContatosClienteCadastro(clienteSalvo.idCliente, dadosCliente.contatos || []);
+    await recarregarPagina();
+
+    const clientesAtualizados = await listarClientes();
+    const clienteCompleto = clientesAtualizados.find((cliente) => cliente.idCliente === clienteSalvo.idCliente);
+
+    return clienteCompleto || clienteSalvo;
   }
 
   async function salvarPrazoPagamento(dadosPrazo) {
@@ -616,6 +646,7 @@ export function PaginaPedidos({ usuarioLogado }) {
         contatos={contatos}
         usuarios={usuarios}
         vendedores={vendedores}
+        ramosAtividade={ramosAtividade}
         metodosPagamento={metodosPagamento}
         prazosPagamento={prazosPagamento}
         tiposPedido={tiposPedido}
@@ -626,7 +657,9 @@ export function PaginaPedidos({ usuarioLogado }) {
         empresa={empresa}
         usuarioLogado={usuarioLogado}
         modo={modoModal}
+        idVendedorBloqueado={usuarioSomenteVendedor ? usuarioLogado.idVendedor : null}
         somenteConsultaPrazos={usuarioSomenteConsultaConfiguracao}
+        aoIncluirCliente={incluirClientePeloPedido}
         aoFechar={fecharModal}
         aoSalvar={salvarPedido}
         aoSalvarPrazoPagamento={salvarPrazoPagamento}
@@ -1248,6 +1281,55 @@ function enriquecerPrazoPagamento(prazo, metodosPagamento = []) {
   }
 
   return enriquecerPrazosPagamento([prazo], metodosPagamento)[0] || null;
+}
+
+async function salvarContatosClienteCadastro(idCliente, contatos) {
+  const contatosNormalizados = normalizarContatosClienteCadastro(contatos, idCliente);
+
+  for (const contato of contatosNormalizados) {
+    await incluirContato(contato);
+  }
+}
+
+function normalizarPayloadClienteCadastro(dadosCliente) {
+  return {
+    idVendedor: Number(dadosCliente.idVendedor),
+    idRamo: Number(dadosCliente.idRamo),
+    razaoSocial: String(dadosCliente.razaoSocial || '').trim(),
+    nomeFantasia: String(dadosCliente.nomeFantasia || '').trim(),
+    tipo: String(dadosCliente.tipo || '').trim(),
+    cnpj: String(dadosCliente.cnpj || '').trim(),
+    inscricaoEstadual: limparTextoOpcional(dadosCliente.inscricaoEstadual),
+    status: dadosCliente.status ? 1 : 0,
+    email: limparTextoOpcional(dadosCliente.email),
+    telefone: limparTextoOpcional(dadosCliente.telefone),
+    logradouro: limparTextoOpcional(dadosCliente.logradouro),
+    numero: limparTextoOpcional(dadosCliente.numero),
+    complemento: limparTextoOpcional(dadosCliente.complemento),
+    bairro: limparTextoOpcional(dadosCliente.bairro),
+    cidade: limparTextoOpcional(dadosCliente.cidade),
+    estado: limparTextoOpcional(dadosCliente.estado)?.toUpperCase(),
+    cep: limparTextoOpcional(dadosCliente.cep),
+    observacao: limparTextoOpcional(dadosCliente.observacao),
+    imagem: limparTextoOpcional(dadosCliente.imagem)
+  };
+}
+
+function normalizarContatosClienteCadastro(contatos, idCliente) {
+  if (!Array.isArray(contatos)) {
+    return [];
+  }
+
+  return contatos.map((contato) => ({
+    idCliente,
+    nome: String(contato.nome || '').trim(),
+    cargo: limparTextoOpcional(contato.cargo),
+    email: limparTextoOpcional(contato.email),
+    telefone: limparTextoOpcional(contato.telefone),
+    whatsapp: limparTextoOpcional(contato.whatsapp),
+    status: contato.status ? 1 : 0,
+    principal: contato.principal ? 1 : 0
+  }));
 }
 
 function limparTextoOpcional(valor) {

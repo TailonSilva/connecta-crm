@@ -193,14 +193,25 @@ export function ModalEmpresa({
     const { name, value, type, checked } = evento.target;
     const valorNormalizado = normalizarValorEntradaFormulario(evento);
 
-    definirFormulario((estadoAtual) => ({
-      ...estadoAtual,
-      [name]: type === 'checkbox'
-        ? checked
-        : name === 'telefone'
-          ? normalizarTelefone(valorNormalizado)
-          : valorNormalizado
-    }));
+    definirFormulario((estadoAtual) => {
+      const tipoDocumentoAtualizado = name === 'tipo' ? valorNormalizado : estadoAtual.tipo;
+      const proximoEstado = {
+        ...estadoAtual,
+        [name]: type === 'checkbox'
+          ? checked
+          : name === 'telefone'
+            ? normalizarTelefone(valorNormalizado)
+            : name === 'cnpj'
+              ? formatarDocumentoFiscal(valorNormalizado, tipoDocumentoAtualizado)
+              : valorNormalizado
+      };
+
+      if (name === 'tipo') {
+        proximoEstado.cnpj = formatarDocumentoFiscal(estadoAtual.cnpj, tipoDocumentoAtualizado);
+      }
+
+      return proximoEstado;
+    });
   }
 
   async function buscarDadosCep() {
@@ -466,7 +477,7 @@ function criarFormularioEmpresa(empresa) {
     nomeFantasia: empresa.nomeFantasia || '',
     slogan: empresa.slogan || '',
     tipo: empresa.tipo || 'Pessoa juridica',
-    cnpj: empresa.cnpj || '',
+    cnpj: formatarDocumentoFiscal(empresa.cnpj || '', empresa.tipo || 'Pessoa juridica'),
     inscricaoEstadual: empresa.inscricaoEstadual || '',
     email: empresa.email || '',
     telefone: empresa.telefone || '',
@@ -536,4 +547,25 @@ function obterIniciaisEmpresa(empresa) {
     .slice(0, 2)
     .map((parte) => parte[0]?.toUpperCase())
     .join('');
+}
+
+function formatarDocumentoFiscal(valor, tipo) {
+  const digitos = String(valor || '').replace(/\D/g, '');
+
+  if (tipo === 'Pessoa fisica') {
+    const cpf = digitos.slice(0, 11);
+
+    return cpf
+      .replace(/^(\d{3})(\d)/, '$1.$2')
+      .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+      .replace(/\.(\d{3})(\d)/, '.$1-$2');
+  }
+
+  const cnpj = digitos.slice(0, 14);
+
+  return cnpj
+    .replace(/^(\d{2})(\d)/, '$1.$2')
+    .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+    .replace(/\.(\d{3})(\d)/, '.$1/$2')
+    .replace(/(\d{4})(\d)/, '$1-$2');
 }

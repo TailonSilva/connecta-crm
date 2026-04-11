@@ -169,6 +169,103 @@ export default function App() {
     };
   }, [avisosPopup]);
 
+  useEffect(() => {
+    let frameAtual = null;
+    let timeoutAtual = null;
+
+    function agendarAplicacaoFoco() {
+      if (frameAtual !== null) {
+        window.cancelAnimationFrame(frameAtual);
+      }
+
+      if (timeoutAtual !== null) {
+        window.clearTimeout(timeoutAtual);
+      }
+
+      frameAtual = window.requestAnimationFrame(() => {
+        timeoutAtual = window.setTimeout(() => {
+          aplicarFocoNoModalAtivo();
+        }, 0);
+      });
+    }
+
+    const observador = new MutationObserver(() => {
+      agendarAplicacaoFoco();
+    });
+
+    observador.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'style', 'open', 'aria-hidden', 'disabled']
+    });
+
+    agendarAplicacaoFoco();
+
+    return () => {
+      observador.disconnect();
+
+      if (frameAtual !== null) {
+        window.cancelAnimationFrame(frameAtual);
+      }
+
+      if (timeoutAtual !== null) {
+        window.clearTimeout(timeoutAtual);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    function tratarAtalhoSalvarModal(evento) {
+      if (evento.key !== 'PageDown') {
+        return;
+      }
+
+      const botaoSalvar = encontrarBotaoSalvarModalAtivo();
+
+      if (!botaoSalvar) {
+        return;
+      }
+
+      evento.preventDefault();
+      botaoSalvar.click();
+    }
+
+    window.addEventListener('keydown', tratarAtalhoSalvarModal);
+
+    return () => {
+      window.removeEventListener('keydown', tratarAtalhoSalvarModal);
+    };
+  }, []);
+
+  useEffect(() => {
+    function tratarNavegacaoAbasModal(evento) {
+      if (!evento.altKey || (evento.key !== 'ArrowLeft' && evento.key !== 'ArrowRight')) {
+        return;
+      }
+
+      const modalAtivo = encontrarModalAtivo({ incluirAlertDialog: false });
+
+      if (!modalAtivo) {
+        return;
+      }
+
+      evento.preventDefault();
+
+      const houveTroca = navegarEntreAbasModal(modalAtivo, evento.key === 'ArrowRight' ? 1 : -1);
+
+      if (!houveTroca) {
+        return;
+      }
+    }
+
+    window.addEventListener('keydown', tratarNavegacaoAbasModal, true);
+
+    return () => {
+      window.removeEventListener('keydown', tratarNavegacaoAbasModal, true);
+    };
+  }, []);
+
   function entrar(usuario) {
     salvarSessaoUsuario(usuario);
     definirUsuarioLogado(usuario);
@@ -253,4 +350,166 @@ function criarDetalhePopupAgendamento(agendamento) {
   }
 
   return partes.join(' | ');
+}
+
+function aplicarFocoNoModalAtivo() {
+  const modalAtivo = encontrarModalAtivo();
+
+  if (!modalAtivo) {
+    return;
+  }
+
+  if (
+    document.activeElement
+    && document.activeElement !== document.body
+    && modalAtivo.contains(document.activeElement)
+  ) {
+    return;
+  }
+
+  const alvoFoco = modalAtivo.getAttribute('role') === 'alertdialog'
+    ? encontrarAcaoPrincipalConfirmacao(modalAtivo) || encontrarPrimeiroCampoModal(modalAtivo)
+    : encontrarPrimeiroCampoModal(modalAtivo) || encontrarPrimeiroBotaoModal(modalAtivo);
+
+  if (!alvoFoco) {
+    return;
+  }
+
+  alvoFoco.focus({ preventScroll: true });
+}
+
+function encontrarAcaoPrincipalConfirmacao(modal) {
+  const botoesConfirmacao = Array.from(
+    modal.querySelectorAll('.acoesConfirmacaoModal button:not([disabled])')
+  ).filter(elementoEstaVisivel);
+
+  if (botoesConfirmacao.length > 0) {
+    return botoesConfirmacao[botoesConfirmacao.length - 1];
+  }
+
+  return null;
+}
+
+function encontrarPrimeiroCampoModal(modal) {
+  const seletorCampos = [
+    'input:not([type="hidden"]):not([disabled])',
+    'textarea:not([disabled])',
+    'select:not([disabled])',
+    '[contenteditable="true"]'
+  ].join(', ');
+
+  return Array.from(modal.querySelectorAll(seletorCampos)).find(elementoEstaVisivel) || null;
+}
+
+function encontrarPrimeiroBotaoModal(modal) {
+  return Array.from(modal.querySelectorAll('button:not([disabled])')).find(elementoEstaVisivel) || null;
+}
+
+function navegarEntreAbasModal(modal, direcao) {
+  const listaAbas = Array.from(modal.querySelectorAll('[role="tablist"]')).find((elemento) => {
+    const abas = obterBotoesAbas(elemento);
+    return abas.length > 1;
+  });
+
+  if (!listaAbas) {
+    return false;
+  }
+
+  const abas = obterBotoesAbas(listaAbas);
+
+  if (abas.length <= 1) {
+    return false;
+  }
+
+  const indiceAtual = abas.findIndex((aba) => aba.getAttribute('aria-selected') === 'true');
+  const indiceBase = indiceAtual >= 0 ? indiceAtual : 0;
+  const proximoIndice = (indiceBase + direcao + abas.length) % abas.length;
+  const proximaAba = abas[proximoIndice];
+
+  if (!proximaAba || proximaAba === abas[indiceBase]) {
+    return false;
+  }
+
+  proximaAba.click();
+
+  window.requestAnimationFrame(() => {
+    window.setTimeout(() => {
+      focarPrimeiroCampoAbaAtiva(modal);
+    }, 0);
+  });
+
+  return true;
+}
+
+function obterBotoesAbas(listaAbas) {
+  return Array.from(listaAbas.querySelectorAll('button[aria-selected]:not([disabled])')).filter(elementoEstaVisivel);
+}
+
+function focarPrimeiroCampoAbaAtiva(modal) {
+  const alvoFoco = encontrarPrimeiroCampoModal(modal) || encontrarPrimeiroBotaoModal(modal);
+
+  if (!alvoFoco) {
+    return;
+  }
+
+  alvoFoco.focus({ preventScroll: true });
+}
+
+function encontrarBotaoSalvarModalAtivo() {
+  const modalAtivo = encontrarModalAtivo({ incluirAlertDialog: false });
+
+  if (!modalAtivo) {
+    return null;
+  }
+
+  const botoesPrioritarios = Array.from(
+    modalAtivo.querySelectorAll('button[type="submit"]:not([disabled])')
+  ).filter(elementoEstaVisivel);
+
+  if (botoesPrioritarios.length > 0) {
+    return botoesPrioritarios[botoesPrioritarios.length - 1];
+  }
+
+  const botoes = Array.from(modalAtivo.querySelectorAll('button:not([disabled])')).filter(elementoEstaVisivel);
+
+  return botoes.find((botao) => {
+    const aria = String(botao.getAttribute('aria-label') || '').trim().toLowerCase();
+    const titulo = String(botao.getAttribute('title') || '').trim().toLowerCase();
+    const texto = String(botao.textContent || '').trim().toLowerCase();
+
+    return aria === 'salvar'
+      || titulo === 'salvar'
+      || texto === 'salvar'
+      || aria === 'salvando'
+      || titulo === 'salvando'
+      || texto === 'salvando';
+  }) || null;
+}
+
+function encontrarModalAtivo({ incluirAlertDialog = true } = {}) {
+  const seletor = incluirAlertDialog ? '[role="alertdialog"], [role="dialog"]' : '[role="dialog"]';
+  const modaisAbertos = Array.from(document.querySelectorAll(seletor)).filter(elementoEstaVisivel);
+
+  if (modaisAbertos.length === 0) {
+    return null;
+  }
+
+  return modaisAbertos[modaisAbertos.length - 1];
+}
+
+function elementoEstaVisivel(elemento) {
+  if (!(elemento instanceof HTMLElement)) {
+    return false;
+  }
+
+  if (elemento.hidden || elemento.getAttribute('aria-hidden') === 'true') {
+    return false;
+  }
+
+  const estilo = window.getComputedStyle(elemento);
+  if (estilo.display === 'none' || estilo.visibility === 'hidden') {
+    return false;
+  }
+
+  return elemento.getClientRects().length > 0;
 }

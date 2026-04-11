@@ -118,6 +118,12 @@ Padroes aplicados recentemente:
 
 - Busca de clientes foi unificada para atendimento e orcamento
 - Busca de contatos foi unificada para atendimento, orcamento e pedido
+- A agenda tambem passou a usar os mesmos modais reutilizaveis de busca de `Cliente` e `Contato`
+- Todo modal aberto tenta focar automaticamente o primeiro campo editavel
+- Modais de confirmacao focam por padrao a acao principal de confirmacao, mantendo `Sim` ou `Confirmar` prontos para teclado
+- Quando um modal de busca de `Cliente` ou `Contato` devolve um registro ao formulario principal, o foco retorna para o campo que acabou de ser preenchido
+- O atalho global `PageDown` aciona o botao `Salvar` do modal de edicao que estiver no topo da pilha
+- Em modais com abas, `Alt + Seta para a esquerda` navega para a aba anterior e `Alt + Seta para a direita` navega para a proxima aba visivel; ao trocar de aba, o foco vai para o primeiro campo da nova secao
 - Quando a busca de contatos for aberta com um cliente ja definido, o proprio modal permite incluir um novo contato e devolve esse contato ja selecionado no formulario atual
 - O cadastro de cliente reaproveita o mesmo fluxo de `Ramo de Atividade` usado em configuracoes
 - No modal de cliente, as abas `Atendimento` e `Vendas` possuem grade propria com botao de filtro; os filtros de data abrem por padrao no mes corrente e o ultimo filtro aplicado fica salvo entre aberturas do modal, independentemente do cliente aberto
@@ -320,6 +326,9 @@ Campos atuais do agendamento:
 - `Usuarios` com selecao multipla
 - `Status da visita`
 - Ao incluir um agendamento, o campo `Status da visita` passa a vir preenchido automaticamente com o status ativo de menor ordem
+- Os campos `Cliente` e `Contato do cliente` usam os mesmos modais reutilizaveis de busca do fluxo comercial
+- Ao voltar da busca de cliente ou contato para o agendamento, o foco retorna para o campo preenchido
+- Em modais da agenda, `PageDown` salva o formulario ativo
 
 Filtros da agenda:
 
@@ -344,6 +353,9 @@ Filtros da agenda:
 - Busca de cliente por modal reutilizavel
 - Busca de contato por modal reutilizavel com inclusao rapida de novo contato quando o cliente ja estiver definido; o contato criado volta selecionado automaticamente no atendimento
 - Inclusao de cliente dentro da busca de clientes
+- Ao confirmar a busca de cliente ou contato, o foco retorna para o campo preenchido no modal principal
+- O modal de atendimento abre com foco no primeiro campo editavel e `PageDown` salva o formulario ativo
+- Quando o modal tiver abas, `Alt + Seta para a esquerda` e `Alt + Seta para a direita` alternam a secao ativa e reposicionam o foco no primeiro campo da nova aba
 - Campo de status do orcamento no proprio atendimento
 - Integracao com abertura de orcamento e pedido a partir do atendimento
 - Usuario administrador visualiza todos os clientes; `Usuario padrao` fica restrito a sua carteira
@@ -359,6 +371,8 @@ Filtros da agenda:
 - A imagem principal do produto continua sendo a origem padrao; quando o item do orcamento recebe uma imagem propria, ela fica exclusiva daquele item e e recortada em 1024 x 1024 px
 - Busca reutilizavel de cliente e contato
 - A busca de contato dentro do orcamento tambem permite incluir um novo contato do cliente ja selecionado e assumir esse contato automaticamente no formulario
+- Ao confirmar a busca de cliente ou contato, o foco retorna para o campo preenchido no modal principal
+- Quando o modal tiver abas, `Alt + Seta para a esquerda` e `Alt + Seta para a direita` alternam a secao ativa e reposicionam o foco no primeiro campo da nova aba
 - Itens com selecao direta de produto no proprio modal, com atalho de busca para abrir o grid de produtos sem sair do item
 - Controle de etapa do orcamento
 - Ao entrar nas etapas `Fechado`, `Fechado sem pedido`, `Pedido Excluido` ou `Recusado`, o orcamento passa a registrar `Data de fechamento` em campo proprio
@@ -374,6 +388,8 @@ Filtros da agenda:
 - Orcamentos com `pedido vinculado` tambem ficam somente para consulta por qualquer usuario
 - A edicao do orcamento volta a ser permitida apenas quando o pedido vinculado e excluido, levando o registro para a etapa tecnica `Pedido Excluido`
 - Modais de confirmacao do fluxo comercial abrem como sobreposicao fixa acima da pagina, inclusive no lancamento de pedido a partir do grid
+- Os modais de orcamento abrem com foco no primeiro campo editavel; modais de confirmacao priorizam `Sim` ou `Confirmar`
+- O atalho `PageDown` salva o modal de orcamento que estiver no topo
 - Campos configuraveis extras para o orcamento
 - Os campos `Prazo de pagamento` nos modais de orcamento e pedido reutilizam o mesmo grid de `Prazos de pagamento` da area de Configuracoes, permitindo cadastrar, editar, inativar e selecionar o prazo sem sair do fluxo
 - Os atalhos que abrem tabelas configuraveis dentro dos modais tambem respeitam as permissoes do perfil; para `Usuario padrao`, os atalhos de configuracao sensiveis abrem em modo de consulta
@@ -392,6 +408,8 @@ Filtros da agenda:
 - Integracao com pedido originado de orcamento
 - No modal de inclusao do pedido, os campos `Cliente` e `Contato` tambem possuem atalho de pesquisa para abrir os grids reutilizaveis sem sair do formulario
 - A busca de contato dentro do pedido tambem permite incluir um novo contato do cliente atual e assumir esse contato automaticamente no formulario
+- Ao confirmar a busca de cliente ou contato, o foco retorna para o campo preenchido no modal principal
+- Quando o modal tiver abas, `Alt + Seta para a esquerda` e `Alt + Seta para a direita` alternam a secao ativa e reposicionam o foco no primeiro campo da nova aba
 - O modal do pedido agora possui o campo `Tipo de pedido`, alimentado por uma tabela auxiliar propria em `Configuracoes`
 - A tabela `Tipos de pedido` nasce com `Venda` e `Devolucao` como registros obrigatorios do sistema, protegidos contra inativacao e exclusao
 - Quando o `Tipo de pedido` for `Devolucao`, o sistema ajusta automaticamente o valor unitario dos itens para negativo e recalcula o total do pedido com valor negativo
@@ -408,6 +426,8 @@ Filtros da agenda:
 - O modal de filtros da pagina de pedidos permite selecionar multiplas etapas ao mesmo tempo e salva esse recorte por usuario
 - A etapa do pedido pode ser alterada direto no grid, no mesmo padrao visual adotado em Orcamentos
 - O filtro da pagina de pedidos tem um botao unico de `Datas` que abre um modal com os intervalos de `Data de inclusao` e `Data de entrega`
+- Os modais de pedido abrem com foco no primeiro campo editavel; modais de confirmacao priorizam `Sim` ou `Confirmar`
+- O atalho `PageDown` salva o modal de pedido que estiver no topo
 - Ao mover um pedido para a etapa `Entregue`, a `Data de entrega` passa automaticamente para a data atual; dentro do modal, essa data ainda pode ser ajustada antes de salvar
 - Quando um pedido chega em `Entregue`, o perfil `Usuario padrao` passa a consultar o registro sem edicao nem nova troca de etapa
 - O modal de pedido aberto a partir do fechamento de um orcamento permite fechar direto pelo botao, clique fora ou `Escape`, devolvendo o fluxo ao orcamento

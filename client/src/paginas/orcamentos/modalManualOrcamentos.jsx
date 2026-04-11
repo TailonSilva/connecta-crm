@@ -95,11 +95,15 @@ export function ModalManualOrcamentos({
           titulo: 'Campos e vinculos do modal',
           itens: [
             'Cliente e contato entram no mesmo fluxo do orcamento e abastecem a proposta comercial.',
+            'A busca de clientes tambem permite incluir um novo cliente sem sair do fluxo.',
             'Ao abrir a busca de contatos com um cliente ja definido, o proprio modal permite cadastrar um novo contato e devolver esse contato ja selecionado no orcamento.',
+            'Ao confirmar a busca de cliente ou contato, o foco retorna para o campo preenchido no orcamento.',
             'Itens e valores seguem o mesmo padrao visual do pedido, com descricao e imagem preservadas no proprio item.',
             'A imagem do item pode herdar a foto principal do produto, mas quando o usuario trocar essa imagem no orcamento ela passa a ser exclusiva daquele item e e recortada em 1024 x 1024 px.',
             'Prazos de pagamento podem ser mantidos dentro do modal, respeitando o perfil do usuario.',
-            'O modo do modal controla corretamente inclusao, edicao e consulta, inclusive em saida sem salvar.'
+            'O modo do modal controla corretamente inclusao, edicao e consulta, inclusive em saida sem salvar.',
+            'Nas abas do modal do orcamento, `Alt + Seta para a esquerda` volta para a aba anterior e `Alt + Seta para a direita` avanca para a proxima, reposicionando o foco no primeiro campo da nova aba.',
+            'O modal abre no primeiro campo editavel, confirmacoes focam a acao principal e `PageDown` salva o formulario ativo.'
           ]
         },
         {

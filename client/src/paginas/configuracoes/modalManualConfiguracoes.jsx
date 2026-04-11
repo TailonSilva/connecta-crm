@@ -104,7 +104,8 @@ export function ModalManualConfiguracoes({
             'As etapas obrigatorias Fechado sem pedido e Pedido Excluido continuam cadastradas em Configuracoes, mas sao de uso automatico e nao aparecem nos selects manuais do fluxo comercial.',
             'As grades de configuracao, historico e relatorio priorizam leitura sem rolagem horizontal, com colunas curtas mais contidas e colunas textuais mais flexiveis.',
             'Metodos, prazos, etapas e campos personalizados abastecem Orcamentos e Pedidos.',
-            'Parametros da empresa influenciam layout de PDF, expediente, regras operacionais do cadastro e agora tambem a composicao da pagina inicial nas abas Orcamentos e Vendas.'
+            'Parametros da empresa influenciam layout de PDF, expediente, regras operacionais do cadastro e agora tambem a composicao da pagina inicial nas abas Orcamentos e Vendas.',
+            'Nos modais com abas, `Alt + Seta para a esquerda` volta para a aba anterior e `Alt + Seta para a direita` avanca para a proxima, reposicionando o foco no primeiro campo da nova aba.'
           ]
         }
       ]}

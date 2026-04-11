@@ -97,6 +97,7 @@ export function ModalManualProdutos({
             'Preco e convertido para numero antes do salvamento para manter consistencia no backend.',
             'Imagem e um campo opcional, com recorte proprio para thumbnail final em 320 x 320 px, e valores vazios sao normalizados para null.',
             'Grupo, marca e unidade podem ser cadastrados no fluxo sem sair do modal, se houver permissao.',
+            'Nas abas do modal do produto, `Alt + Seta para a esquerda` volta para a aba anterior e `Alt + Seta para a direita` avanca para a proxima, reposicionando o foco no primeiro campo da nova aba.',
             'A aba Vendas do modal do produto abre um historico amplo filtrado pelo produto atual e mostra apenas os itens dos pedidos, com colunas separadas para data de inclusao e data de entrega.',
             'A importacao por planilha usa um modelo com aba de instrucoes, incluindo obrigatoriedades, tipo de dado e limite de caracteres por coluna.',
             'Quando uma linha falha na importacao, o retorno agora diferencia melhor preco invalido ou negativo, status incorreto e referencias auxiliares inativas ou inexistentes.',
@@ -135,6 +136,12 @@ export function ModalManualProdutos({
           descricao: 'Filtros da tela ficam salvos por usuario e reaplicam o contexto anterior automaticamente.',
           detalhe: 'A rotina reduz retrabalho em catalogos grandes.',
           icone: 'filtro'
+        },
+        {
+          titulo: 'Abas com teclado',
+          descricao: 'Nos modais com abas, `Alt + Seta para a esquerda` e `Alt + Seta para a direita` trocam a secao ativa.',
+          detalhe: 'Ao mudar de aba, o foco vai para o primeiro campo editavel da nova secao.',
+          icone: 'manual'
         }
       ]}
     />

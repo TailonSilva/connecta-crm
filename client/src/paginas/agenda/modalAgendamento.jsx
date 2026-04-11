@@ -1,7 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Botao } from '../../componentes/comuns/botao';
 import { MensagemErroPopup } from '../../componentes/comuns/mensagemErroPopup';
 import { CampoSelecaoMultiplaModal } from '../../componentes/comuns/campoSelecaoMultiplaModal';
+import { ModalBuscaClientes } from '../../componentes/comuns/modalBuscaClientes';
+import { ModalBuscaContatos } from '../../componentes/comuns/modalBuscaContatos';
+import { ModalCliente } from '../clientes/modalCliente';
 import { formatarNomeContato } from '../../utilitarios/formatarNomeContato';
 import { normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTextoFormulario';
 import { registroEstaAtivo } from '../../utilitarios/statusRegistro';
@@ -30,10 +33,15 @@ export function ModalAgendamento({
   clientes,
   contatos,
   usuarios,
+  vendedores = [],
+  ramosAtividade = [],
   tiposAgenda,
   statusVisita,
+  empresa = null,
   usuarioLogado,
+  idVendedorBloqueado = null,
   permitirExcluir = true,
+  aoIncluirCliente,
   aoFechar,
   aoSalvar,
   aoExcluir
@@ -42,6 +50,12 @@ export function ModalAgendamento({
   const [salvando, definirSalvando] = useState(false);
   const [mensagemErro, definirMensagemErro] = useState('');
   const [confirmandoExclusao, definirConfirmandoExclusao] = useState(false);
+  const [confirmandoSaida, definirConfirmandoSaida] = useState(false);
+  const [modalClienteAberto, definirModalClienteAberto] = useState(false);
+  const [modalBuscaClienteAberto, definirModalBuscaClienteAberto] = useState(false);
+  const [modalBuscaContatoAberto, definirModalBuscaContatoAberto] = useState(false);
+  const referenciaCampoCliente = useRef(null);
+  const referenciaCampoContato = useRef(null);
   const locaisAtivos = locais.filter((local) => registroEstaAtivo(local.status));
   const recursosAtivos = recursos.filter((recurso) => registroEstaAtivo(recurso.status));
   const clientesAtivos = clientes.filter((cliente) => registroEstaAtivo(cliente.status));
@@ -62,6 +76,10 @@ export function ModalAgendamento({
     definirSalvando(false);
     definirMensagemErro('');
     definirConfirmandoExclusao(false);
+    definirConfirmandoSaida(false);
+    definirModalClienteAberto(false);
+    definirModalBuscaClienteAberto(false);
+    definirModalBuscaContatoAberto(false);
   }, [aberto, dadosIniciais, statusAtivos, usuarioLogado]);
 
   useEffect(() => {
@@ -71,12 +89,32 @@ export function ModalAgendamento({
 
     function tratarTecla(evento) {
       if (evento.key === 'Escape' && !salvando) {
+        if (modalClienteAberto) {
+          definirModalClienteAberto(false);
+          return;
+        }
+
+        if (modalBuscaClienteAberto) {
+          definirModalBuscaClienteAberto(false);
+          return;
+        }
+
+        if (modalBuscaContatoAberto) {
+          definirModalBuscaContatoAberto(false);
+          return;
+        }
+
         if (confirmandoExclusao) {
           definirConfirmandoExclusao(false);
           return;
         }
 
-        aoFechar();
+        if (confirmandoSaida) {
+          definirConfirmandoSaida(false);
+          return;
+        }
+
+        tentarFecharModal();
       }
     }
 
@@ -85,7 +123,7 @@ export function ModalAgendamento({
     return () => {
       window.removeEventListener('keydown', tratarTecla);
     };
-  }, [aberto, aoFechar, confirmandoExclusao, salvando]);
+  }, [aberto, aoFechar, confirmandoExclusao, confirmandoSaida, modalBuscaClienteAberto, modalBuscaContatoAberto, modalClienteAberto, salvando]);
 
   if (!aberto) {
     return null;
@@ -95,6 +133,7 @@ export function ModalAgendamento({
   const contatosDoCliente = contatosAtivos.filter(
     (contato) => String(contato.idCliente) === String(formulario.idCliente)
   );
+  const proximoCodigoCliente = obterProximoCodigoCliente(clientes);
   const recursosSelecionados = recursosAtivos.filter((recurso) => (
     formulario.idsRecursos.includes(String(recurso.idRecurso))
   ));
@@ -180,7 +219,7 @@ export function ModalAgendamento({
 
   function fecharAoClicarNoFundo(evento) {
     if (evento.target === evento.currentTarget && !salvando) {
-      aoFechar();
+      tentarFecharModal();
     }
   }
 
@@ -214,6 +253,98 @@ export function ModalAgendamento({
     }
 
     definirConfirmandoExclusao(false);
+  }
+
+  function tentarFecharModal() {
+    if (!modoEdicao) {
+      definirConfirmandoSaida(true);
+      return;
+    }
+
+    aoFechar();
+  }
+
+  function fecharConfirmacaoSaida() {
+    if (salvando) {
+      return;
+    }
+
+    definirConfirmandoSaida(false);
+  }
+
+  function confirmarSaida() {
+    definirConfirmandoSaida(false);
+    aoFechar();
+  }
+
+  function abrirModalNovoCliente() {
+    if (salvando || !aoIncluirCliente) {
+      return;
+    }
+
+    definirModalClienteAberto(true);
+  }
+
+  function fecharModalNovoCliente() {
+    definirModalClienteAberto(false);
+  }
+
+  function abrirModalBuscaCliente() {
+    if (salvando) {
+      return;
+    }
+
+    definirModalBuscaClienteAberto(true);
+  }
+
+  function fecharModalBuscaCliente() {
+    definirModalBuscaClienteAberto(false);
+  }
+
+  function abrirModalBuscaContato() {
+    if (salvando || !formulario.idCliente) {
+      return;
+    }
+
+    definirModalBuscaContatoAberto(true);
+  }
+
+  function fecharModalBuscaContato() {
+    definirModalBuscaContatoAberto(false);
+  }
+
+  function selecionarCliente(cliente) {
+    if (!cliente) {
+      return;
+    }
+
+    definirFormulario((estadoAtual) => ({
+      ...estadoAtual,
+      idCliente: String(cliente.idCliente),
+      idContato: ''
+    }));
+    fecharModalBuscaCliente();
+    agendarFocoCampo(referenciaCampoCliente);
+  }
+
+  function selecionarContato(contato) {
+    if (!contato) {
+      return;
+    }
+
+    definirFormulario((estadoAtual) => ({
+      ...estadoAtual,
+      idContato: String(contato.idContato)
+    }));
+    fecharModalBuscaContato();
+    agendarFocoCampo(referenciaCampoContato);
+  }
+
+  async function salvarNovoCliente(dadosCliente) {
+    const clienteCriado = await aoIncluirCliente(dadosCliente);
+
+    selecionarCliente(clienteCriado);
+    definirModalClienteAberto(false);
   }
 
   return (
@@ -251,7 +382,7 @@ export function ModalAgendamento({
               somenteIcone
               title="Fechar"
               aria-label="Fechar"
-              onClick={aoFechar}
+              onClick={tentarFecharModal}
               disabled={salvando}
             >
               Fechar
@@ -302,6 +433,7 @@ export function ModalAgendamento({
               className="campoAgendamentoMetade"
               label="Cliente"
               name="idCliente"
+              referenciaCampo={referenciaCampoCliente}
               value={formulario.idCliente}
               onChange={alterarCampo}
               options={clientesAtivos.map((cliente) => ({
@@ -309,11 +441,27 @@ export function ModalAgendamento({
                 label: cliente.nomeFantasia || cliente.razaoSocial
               }))}
               required={clienteObrigatorio}
+              acaoExtra={(
+                <Botao
+                  variante="secundario"
+                  type="button"
+                  icone="pesquisa"
+                  className="botaoCampoAcao"
+                  somenteIcone
+                  title="Buscar cliente"
+                  aria-label="Buscar cliente"
+                  onClick={abrirModalBuscaCliente}
+                  disabled={salvando}
+                >
+                  Buscar cliente
+                </Botao>
+              )}
             />
             <CampoSelect
               className="campoAgendamentoMetade"
               label="Contato do cliente"
               name="idContato"
+              referenciaCampo={referenciaCampoContato}
               value={formulario.idContato}
               onChange={alterarCampo}
               options={contatosDoCliente.map((contato) => ({
@@ -322,6 +470,21 @@ export function ModalAgendamento({
               }))}
               disabled={!formulario.idCliente}
               required={clienteObrigatorio}
+              acaoExtra={formulario.idCliente ? (
+                <Botao
+                  variante="secundario"
+                  type="button"
+                  icone="pesquisa"
+                  className="botaoCampoAcao"
+                  somenteIcone
+                  title="Buscar contato"
+                  aria-label="Buscar contato"
+                  onClick={abrirModalBuscaContato}
+                  disabled={salvando}
+                >
+                  Buscar contato
+                </Botao>
+              ) : null}
             />
             <CampoSelecaoMultiplaModal
               className="campoAgendamentoTerco"
@@ -408,6 +571,89 @@ export function ModalAgendamento({
             </div>
           </div>
         ) : null}
+
+        {confirmandoSaida ? (
+          <div className="camadaConfirmacaoModal" role="presentation" onMouseDown={fecharConfirmacaoSaida}>
+            <div
+              className="modalConfirmacaoAgenda"
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="tituloConfirmacaoSaidaAgendamento"
+              onMouseDown={(evento) => evento.stopPropagation()}
+            >
+              <div className="cabecalhoConfirmacaoModal">
+                <h4 id="tituloConfirmacaoSaidaAgendamento">Cancelar cadastro</h4>
+              </div>
+
+              <div className="corpoConfirmacaoModal">
+                <p>Se fechar agora, todas as informacoes preenchidas serao perdidas.</p>
+              </div>
+
+              <div className="acoesConfirmacaoModal">
+                <Botao
+                  variante="secundario"
+                  type="button"
+                  onClick={fecharConfirmacaoSaida}
+                  disabled={salvando}
+                >
+                  Nao
+                </Botao>
+                <Botao
+                  variante="perigo"
+                  type="button"
+                  onClick={confirmarSaida}
+                  disabled={salvando}
+                >
+                  Sim
+                </Botao>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        <ModalCliente
+          aberto={modalClienteAberto}
+          cliente={null}
+          empresa={empresa}
+          codigoSugerido={proximoCodigoCliente}
+          contatos={[]}
+          vendedores={vendedores}
+          ramosAtividade={ramosAtividade}
+          modo="novo"
+          classNameCamada="camadaModal camadaModalSecundaria"
+          idVendedorBloqueado={idVendedorBloqueado}
+          aoFechar={fecharModalNovoCliente}
+          aoSalvar={salvarNovoCliente}
+        />
+
+        <ModalBuscaClientes
+          aberto={modalBuscaClienteAberto}
+          empresa={empresa}
+          clientes={clientesAtivos}
+          placeholder="Pesquisar clientes"
+          ariaLabelPesquisa="Pesquisar clientes"
+          rotuloAcaoPrimaria={aoIncluirCliente ? 'Incluir cliente' : ''}
+          tituloAcaoPrimaria={aoIncluirCliente ? 'Incluir cliente' : ''}
+          iconeAcaoPrimaria="adicionar"
+          aoAcionarPrimaria={aoIncluirCliente
+            ? () => {
+              fecharModalBuscaCliente();
+              abrirModalNovoCliente();
+            }
+            : null}
+          aoSelecionar={selecionarCliente}
+          aoFechar={fecharModalBuscaCliente}
+        />
+
+        <ModalBuscaContatos
+          aberto={modalBuscaContatoAberto}
+          idCliente={formulario.idCliente}
+          contatos={contatosDoCliente}
+          placeholder="Pesquisar contatos do cliente"
+          ariaLabelPesquisa="Pesquisar contatos do cliente"
+          aoSelecionar={selecionarContato}
+          aoFechar={fecharModalBuscaContato}
+        />
       </form>
     </div>
   );
@@ -422,20 +668,29 @@ function CampoFormulario({ label, name, type = 'text', className = '', ...props 
   );
 }
 
-function CampoSelect({ label, name, options, className = '', ...props }) {
+function CampoSelect({ label, name, options, className = '', acaoExtra = null, referenciaCampo = null, ...props }) {
   return (
     <div className={`campoFormulario ${className}`.trim()}>
       <label htmlFor={name}>{label}</label>
-      <select id={name} name={name} className="entradaFormulario" {...props}>
-        <option value="">Selecione</option>
-        {options.map((option) => (
-          <option key={option.valor} value={option.valor}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+      <div className={`campoSelectComAcao ${acaoExtra ? 'temAcao' : ''}`.trim()}>
+        <select id={name} name={name} className="entradaFormulario" ref={referenciaCampo} {...props}>
+          <option value="">Selecione</option>
+          {options.map((option) => (
+            <option key={option.valor} value={option.valor}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        {acaoExtra}
+      </div>
     </div>
   );
+}
+
+function agendarFocoCampo(referenciaCampo) {
+  window.setTimeout(() => {
+    referenciaCampo?.current?.focus?.({ preventScroll: true });
+  }, 0);
 }
 
 function criarFormularioInicial(dadosIniciais, usuarioLogado, statusAtivos) {
@@ -502,4 +757,17 @@ function normalizarValorFormularioAgendamento(valor) {
   }
 
   return String(valor);
+}
+
+function obterProximoCodigoCliente(clientes) {
+  if (!Array.isArray(clientes) || clientes.length === 0) {
+    return 1;
+  }
+
+  const maiorCodigo = clientes.reduce((maior, cliente) => {
+    const codigoAtual = Number(cliente?.idCliente);
+    return Number.isFinite(codigoAtual) && codigoAtual > maior ? codigoAtual : maior;
+  }, 0);
+
+  return maiorCodigo + 1;
 }

@@ -23,7 +23,14 @@ import {
   listarPrazosPagamentoConfiguracao,
   listarTiposPedidoConfiguracao
 } from '../../servicos/configuracoes';
-import { listarClientes, listarContatos, listarRamosAtividade, listarVendedores } from '../../servicos/clientes';
+import {
+  incluirCliente,
+  incluirContato,
+  listarClientes,
+  listarContatos,
+  listarRamosAtividade,
+  listarVendedores
+} from '../../servicos/clientes';
 import { listarEmpresas } from '../../servicos/empresa';
 import {
   atualizarOrcamento,
@@ -807,6 +814,19 @@ export function PaginaAgenda({ usuarioLogado }) {
     fecharModalAtendimentoAgenda();
   }
 
+  async function incluirClientePelaAgenda(dadosCliente) {
+    const payload = normalizarPayloadClienteAgenda(dadosCliente);
+
+    const clienteSalvo = await incluirCliente(payload);
+    await salvarContatosClienteAgenda(clienteSalvo.idCliente, dadosCliente.contatos || []);
+    await carregarDados();
+
+    const clientesAtualizados = await listarClientes();
+    const clienteCompleto = clientesAtualizados.find((cliente) => cliente.idCliente === clienteSalvo.idCliente);
+
+    return clienteCompleto || clienteSalvo;
+  }
+
   async function incluirOrcamentoPelaAgenda(dadosOrcamento) {
     const orcamentoSalvo = await incluirOrcamento(normalizarPayloadOrcamento(dadosOrcamento, usuarioLogado));
     await carregarDados();
@@ -1103,10 +1123,15 @@ export function PaginaAgenda({ usuarioLogado }) {
         clientes={clientes}
         contatos={contatos}
         usuarios={usuarios}
+        vendedores={vendedores}
+        ramosAtividade={ramosAtividade}
         tiposAgenda={tiposAgenda}
         statusVisita={statusVisita}
+        empresa={empresa}
         usuarioLogado={usuarioLogado}
+        idVendedorBloqueado={usuarioLogado?.tipo === 'Usuario padrao' ? usuarioLogado.idVendedor : null}
         permitirExcluir={usuarioLogado?.tipo !== 'Usuario padrao'}
+        aoIncluirCliente={incluirClientePelaAgenda}
         aoFechar={fecharModalAgendamento}
         aoSalvar={salvarAgendamento}
         aoExcluir={excluirRegistroAgendamento}
@@ -1136,7 +1161,7 @@ export function PaginaAgenda({ usuarioLogado }) {
         origensAtendimento={origensAtendimento}
         modo="novo"
         permitirExcluir={false}
-        aoIncluirCliente={undefined}
+        aoIncluirCliente={incluirClientePelaAgenda}
         aoIncluirOrcamento={incluirOrcamentoPelaAgenda}
         aoAtualizarOrcamento={atualizarOrcamentoPelaAgenda}
         dadosOrcamento={montarDadosIniciaisOrcamentoPeloAtendimento(dadosIniciaisAtendimento, clientes, vendedores, usuarioLogado)}
@@ -1393,6 +1418,55 @@ function normalizarCampoSelectAgendamento(valor) {
   }
 
   return String(valor);
+}
+
+async function salvarContatosClienteAgenda(idCliente, contatos) {
+  const contatosNormalizados = normalizarContatosClienteAgenda(contatos, idCliente);
+
+  for (const contato of contatosNormalizados) {
+    await incluirContato(contato);
+  }
+}
+
+function normalizarPayloadClienteAgenda(dadosCliente) {
+  return {
+    idVendedor: Number(dadosCliente.idVendedor),
+    idRamo: Number(dadosCliente.idRamo),
+    razaoSocial: String(dadosCliente.razaoSocial || '').trim(),
+    nomeFantasia: String(dadosCliente.nomeFantasia || '').trim(),
+    tipo: String(dadosCliente.tipo || '').trim(),
+    cnpj: String(dadosCliente.cnpj || '').trim(),
+    inscricaoEstadual: limparTextoOpcional(dadosCliente.inscricaoEstadual),
+    status: dadosCliente.status ? 1 : 0,
+    email: limparTextoOpcional(dadosCliente.email),
+    telefone: limparTextoOpcional(dadosCliente.telefone),
+    logradouro: limparTextoOpcional(dadosCliente.logradouro),
+    numero: limparTextoOpcional(dadosCliente.numero),
+    complemento: limparTextoOpcional(dadosCliente.complemento),
+    bairro: limparTextoOpcional(dadosCliente.bairro),
+    cidade: limparTextoOpcional(dadosCliente.cidade),
+    estado: limparTextoOpcional(dadosCliente.estado)?.toUpperCase(),
+    cep: limparTextoOpcional(dadosCliente.cep),
+    observacao: limparTextoOpcional(dadosCliente.observacao),
+    imagem: limparTextoOpcional(dadosCliente.imagem)
+  };
+}
+
+function normalizarContatosClienteAgenda(contatos, idCliente) {
+  if (!Array.isArray(contatos)) {
+    return [];
+  }
+
+  return contatos.map((contato) => ({
+    idCliente,
+    nome: String(contato.nome || '').trim(),
+    cargo: limparTextoOpcional(contato.cargo),
+    email: limparTextoOpcional(contato.email),
+    telefone: limparTextoOpcional(contato.telefone),
+    whatsapp: limparTextoOpcional(contato.whatsapp),
+    status: contato.status ? 1 : 0,
+    principal: contato.principal ? 1 : 0
+  }));
 }
 
 function ordenarRegistrosPorOrdem(registros, chavePrimaria) {

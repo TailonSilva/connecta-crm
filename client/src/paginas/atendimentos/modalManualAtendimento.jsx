@@ -92,6 +92,12 @@ export function ModalManualAtendimento({
       descricao: 'Atalhos que abrem tabelas configuraveis, como prazos de pagamento, respeitam o perfil do usuario dentro do modal.',
       detalhe: 'Para Usuario padrao, configuracoes sensiveis abrem em consulta.',
       icone: 'configuracoes'
+    },
+    {
+      titulo: 'Foco e atalho',
+      descricao: 'O modal abre no primeiro campo editavel; confirmacoes deixam `Sim` ou `Confirmar` prontos para teclado.',
+      detalhe: '`PageDown` salva o formulario do atendimento que estiver aberto.',
+      icone: 'manual'
     }
   ];
 
@@ -118,7 +124,9 @@ export function ModalManualAtendimento({
           itens: [
             'Cliente, assunto, data e horario de inicio sao obrigatorios para salvar o atendimento.',
             'Contato depende do cliente escolhido e so lista contatos ativos daquele cliente.',
+            'A busca de clientes tambem permite incluir um novo cliente sem sair do fluxo.',
             'Ao abrir a busca de contatos com um cliente ja definido, o proprio modal permite cadastrar um novo contato e devolver esse contato ja selecionado no atendimento.',
+            'Ao confirmar a busca de cliente ou contato, o foco retorna para o campo preenchido no atendimento.',
             'Orcamento so pode ser vinculado ou criado quando ja existe cliente definido no formulario.',
             'Canal e origem sao classificacoes auxiliares: ajudam na leitura comercial, mas nao bloqueiam o salvamento.',
             'O usuario do registro e preenchido automaticamente conforme a sessao atual.'

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Botao } from '../../componentes/comuns/botao';
 import { CodigoRegistro } from '../../componentes/comuns/codigoRegistro';
 import { GradePadrao } from '../../componentes/comuns/gradePadrao';
@@ -8,6 +8,7 @@ import { MensagemErroPopup } from '../../componentes/comuns/mensagemErroPopup';
 import { ModalItemProduto } from '../../componentes/comuns/modalItemProduto';
 import { ModalCadastroConfiguracao } from '../configuracoes/modalCadastroConfiguracao';
 import { ModalPrazosPagamento } from '../configuracoes/modalPrazosPagamento';
+import { ModalCliente } from '../clientes/modalCliente';
 import {
   atualizarMotivoDevolucao,
   incluirMotivoDevolucao,
@@ -118,6 +119,7 @@ export function ModalPedido({
   contatos,
   usuarios,
   vendedores,
+  ramosAtividade = [],
   metodosPagamento = [],
   prazosPagamento,
   tiposPedido = [],
@@ -128,8 +130,10 @@ export function ModalPedido({
   empresa,
   usuarioLogado,
   modo = 'consulta',
+  idVendedorBloqueado = null,
   somenteConsultaPrazos = false,
   camadaSecundaria = false,
+  aoIncluirCliente,
   aoFechar,
   aoSalvar,
   aoSalvarPrazoPagamento,
@@ -141,7 +145,10 @@ export function ModalPedido({
   const [mensagemErro, definirMensagemErro] = useState('');
   const [confirmandoSaida, definirConfirmandoSaida] = useState(false);
   const [modalBuscaClienteAberto, definirModalBuscaClienteAberto] = useState(false);
+  const [modalClienteAberto, definirModalClienteAberto] = useState(false);
   const [modalBuscaContatoAberto, definirModalBuscaContatoAberto] = useState(false);
+  const referenciaCampoCliente = useRef(null);
+  const referenciaCampoContato = useRef(null);
   const [contatosCriadosLocalmente, definirContatosCriadosLocalmente] = useState([]);
   const [modalPrazosPagamentoAberto, definirModalPrazosPagamentoAberto] = useState(false);
   const [modalMotivoDevolucaoAberto, definirModalMotivoDevolucaoAberto] = useState(false);
@@ -178,6 +185,10 @@ export function ModalPedido({
   const contatosDoCliente = useMemo(
     () => combinarContatosDoCliente(contatosAtivos, contatosCriadosLocalmente, formulario.idCliente),
     [contatosAtivos, contatosCriadosLocalmente, formulario.idCliente]
+  );
+  const proximoCodigoCliente = useMemo(
+    () => obterProximoCodigoCliente(clientes),
+    [clientes]
   );
   const {
     modalItemAberto,
@@ -264,6 +275,11 @@ export function ModalPedido({
         return;
       }
 
+      if (modalClienteAberto) {
+        fecharModalNovoCliente();
+        return;
+      }
+
       if (modalBuscaContatoAberto) {
         fecharModalBuscaContato();
         return;
@@ -292,7 +308,7 @@ export function ModalPedido({
     return () => {
       window.removeEventListener('keydown', tratarTecla);
     };
-  }, [aberto, confirmandoSaida, modalBuscaClienteAberto, modalBuscaContatoAberto, modalBuscaProdutoAberto, modalItemAberto, modalMotivoDevolucaoAberto, modalPrazosPagamentoAberto, salvando]);
+  }, [aberto, confirmandoSaida, modalBuscaClienteAberto, modalBuscaContatoAberto, modalBuscaProdutoAberto, modalClienteAberto, modalItemAberto, modalMotivoDevolucaoAberto, modalPrazosPagamentoAberto, salvando]);
 
   if (!aberto) {
     return null;
@@ -484,6 +500,18 @@ export function ModalPedido({
     definirModalBuscaClienteAberto(true);
   }
 
+  function abrirModalNovoCliente() {
+    if (somenteLeitura || salvando || !modoInclusao || !aoIncluirCliente) {
+      return;
+    }
+
+    definirModalClienteAberto(true);
+  }
+
+  function fecharModalNovoCliente() {
+    definirModalClienteAberto(false);
+  }
+
   function fecharModalBuscaCliente() {
     definirModalBuscaClienteAberto(false);
   }
@@ -521,6 +549,7 @@ export function ModalPedido({
     });
 
     fecharModalBuscaCliente();
+    agendarFocoCampo(referenciaCampoCliente);
   }
 
   function selecionarContato(contato) {
@@ -535,6 +564,7 @@ export function ModalPedido({
     }));
 
     fecharModalBuscaContato();
+    agendarFocoCampo(referenciaCampoContato);
   }
 
   function registrarContatoCriado(contato) {
@@ -555,6 +585,13 @@ export function ModalPedido({
 
   function fecharModalPrazosPagamento() {
     definirModalPrazosPagamentoAberto(false);
+  }
+
+  async function salvarNovoCliente(dadosCliente) {
+    const clienteCriado = await aoIncluirCliente(dadosCliente);
+
+    selecionarCliente(clienteCriado);
+    definirModalClienteAberto(false);
   }
 
   function abrirModalMotivoDevolucao() {
@@ -689,6 +726,7 @@ export function ModalPedido({
                     <CampoSelect
                       label="Cliente"
                       name="idCliente"
+                      referenciaCampo={referenciaCampoCliente}
                       value={formulario.idCliente}
                       onChange={alterarCampo}
                       options={clientesAtivos.map((cliente) => ({
@@ -714,6 +752,7 @@ export function ModalPedido({
                     <CampoSelect
                       label="Contato"
                       name="idContato"
+                      referenciaCampo={referenciaCampoContato}
                       value={formulario.idContato}
                       onChange={alterarCampo}
                       options={contatosDoCliente.map((contato) => ({
@@ -1028,10 +1067,34 @@ export function ModalPedido({
           obterIniciais={obterIniciaisItemPedido}
         />
 
+        <ModalCliente
+          aberto={modalClienteAberto}
+          cliente={null}
+          empresa={empresa}
+          codigoSugerido={proximoCodigoCliente}
+          contatos={[]}
+          vendedores={vendedores}
+          ramosAtividade={ramosAtividade}
+          modo="novo"
+          classNameCamada="camadaModal camadaModalSecundaria"
+          idVendedorBloqueado={idVendedorBloqueado}
+          aoFechar={fecharModalNovoCliente}
+          aoSalvar={salvarNovoCliente}
+        />
+
         <ModalBuscaClientes
           aberto={modalBuscaClienteAberto}
           empresa={empresa}
           clientes={clientesAtivos}
+          rotuloAcaoPrimaria={aoIncluirCliente ? 'Incluir cliente' : ''}
+          tituloAcaoPrimaria={aoIncluirCliente ? 'Incluir cliente' : ''}
+          iconeAcaoPrimaria="adicionar"
+          aoAcionarPrimaria={aoIncluirCliente
+            ? () => {
+              fecharModalBuscaCliente();
+              abrirModalNovoCliente();
+            }
+            : null}
           aoSelecionar={selecionarCliente}
           aoFechar={fecharModalBuscaCliente}
         />
@@ -1159,12 +1222,12 @@ function CampoFormularioComAcao({ label, name, acaoExtra = null, ...props }) {
   );
 }
 
-function CampoSelect({ label, name, options, acaoExtra = null, ...props }) {
+function CampoSelect({ label, name, options, acaoExtra = null, referenciaCampo = null, ...props }) {
   return (
     <div className="campoFormulario">
       <label htmlFor={name}>{label}</label>
       <div className={`campoSelectComAcao ${acaoExtra ? 'temAcao' : ''}`.trim()}>
-        <select id={name} name={name} className="entradaFormulario" {...props}>
+        <select id={name} name={name} className="entradaFormulario" ref={referenciaCampo} {...props}>
           <option value="">Selecione</option>
           {options.map((option, indice) => (
             <option key={`${option.valor ?? option.label ?? 'opcao'}-${indice}`} value={option.valor ?? ''}>
@@ -1356,6 +1419,12 @@ function tipoPedidoEhDevolucao(idTipoPedido) {
   return Number(idTipoPedido) === ID_TIPO_PEDIDO_DEVOLUCAO;
 }
 
+function agendarFocoCampo(referenciaCampo) {
+  window.setTimeout(() => {
+    referenciaCampo?.current?.focus?.({ preventScroll: true });
+  }, 0);
+}
+
 function obterRotuloMotivoDevolucao(motivosDevolucao, idMotivoDevolucao) {
   const motivoSelecionado = motivosDevolucao.find(
     (motivo) => String(motivo.idMotivoDevolucao) === String(idMotivoDevolucao || '')
@@ -1438,6 +1507,19 @@ function combinarContatosDoCliente(contatosBase, contatosLocais, idCliente) {
       (contato) => String(contato.idCliente) === String(idCliente)
     )
   );
+}
+
+function obterProximoCodigoCliente(clientes) {
+  if (!Array.isArray(clientes) || clientes.length === 0) {
+    return 1;
+  }
+
+  const maiorCodigo = clientes.reduce((maior, cliente) => {
+    const codigoAtual = Number(cliente?.idCliente);
+    return Number.isFinite(codigoAtual) && codigoAtual > maior ? codigoAtual : maior;
+  }, 0);
+
+  return maiorCodigo + 1;
 }
 
 function combinarContatosUnicos(contatosBase, contatosExtras) {
