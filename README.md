@@ -51,6 +51,19 @@ Observacao importante:
 - O projeto usa portugues em textos, nomes internos e documentacao sempre que nao houver conflito com APIs externas
 - Todo identificador definido pelo projeto deve usar `camelCase`
 - Componentes, utilitarios, servicos e estilos devem ser reaproveitados ao maximo
+- O projeto deve priorizar arquitetura modular: novas telas, fluxos e comportamentos devem nascer em partes pequenas, separadas e reutilizaveis sempre que possivel
+- Antes de adicionar logica nova dentro de pagina, modal grande ou componente-raiz, deve-se avaliar se essa responsabilidade pertence melhor a um `componente`, `hook`, `utilitario` ou arquivo de `dados`
+- Paginas devem orquestrar o modulo e compor blocos reutilizaveis, evitando concentrar renderizacao, regras de negocio, atalhos, efeitos e formatacoes no mesmo arquivo
+- Componentes devem focar em interface e composicao visual, evitando acumular regra transversal quando ela puder ser reutilizada em outra camada
+- Hooks devem concentrar comportamentos com ciclo de vida React, estado, efeitos colaterais, listeners e sincronizacao com DOM ou eventos globais
+- Utilitarios devem concentrar funcoes puras, normalizacao, formatacao, calculos e regras sem dependencia direta de renderizacao React
+- Arquivos de `dados` devem concentrar catalogos e definicoes estaticas do frontend, separados das funcoes que processam esses dados
+- Sempre que uma regra ou estrutura puder ser reaproveitada em mais de um ponto do sistema, a implementacao compartilhada deve ser preferida em vez de duplicacao local
+- Toda nova funcao, hook, componente, utilitario ou estrutura relevante criada no projeto deve ser documentada no proprio codigo de forma detalhada
+- A documentacao inline no codigo deve explicar com clareza o que aquele trecho faz, por que ele existe e por que foi implementado daquela forma
+- Sempre que fizer sentido, os comentarios tambem devem deixar explicito de onde vem a dependencia consumida, qual parte do fluxo usa aquele trecho e qual o impacto dele no comportamento da aplicacao
+- Comentarios internos devem ser escritos de forma estavel para manutencao, sem depender de numero de linha ou referencias frageis que possam quebrar quando o arquivo crescer
+- O padrao preferencial de comentario inline do projeto e usar comentarios curtos, objetivos e com uma ideia por linha, posicionados imediatamente acima do trecho que esta sendo explicado
 - Todo botao deve sair do componente reutilizavel padrao do projeto
 - Os estilos padrao de botao sao `primario`, `secundario`, `complementar` e `perigo`
 - Grades principais usam estrutura semantica real de tabela
@@ -60,6 +73,7 @@ Observacao importante:
 - Arquivos orientados a dados fixos do frontend, como listas base de paginas, cards, graficos e definicoes estruturais de grade, devem ficar em `client/src/dados`
 - Regras globais de UX, atalhos, foco e helpers transversais da aplicacao devem ser extraidos de componentes-raiz quando fizer sentido e concentrados em `client/src/utilitarios`
 - Quando um comportamento global depender de ciclo de vida React, listeners ou efeitos colaterais, a logica deve preferencialmente viver em `client/src/hooks/` e nao permanecer inchando componentes-raiz como `App.jsx`
+- O `App.jsx` deve permanecer enxuto e focado em composicao da casca da aplicacao; sessoes, atalhos globais, foco automatico, polling de avisos e outras responsabilidades transversais devem ser extraidos para `hooks`, `utilitarios` ou componentes-container
 - Servicos auxiliares de listagem usados por campos de busca e selecao retornam apenas registros ativos por padrao; listas principais de entidades continuam completas e modais de busca reutilizaveis filtram inativos automaticamente
 - Campos de formulario com botoes laterais de busca, consulta ou cadastro devem usar os contêineres compartilhados de acao do formulario para manter o botao ao lado do input/select sem quebrar a grade
 - Selects de contato devem exibir o rotulo no formato `Nome - Cargo` sempre que o cargo estiver preenchido
@@ -125,6 +139,9 @@ Padroes aplicados recentemente:
 - Busca de clientes foi unificada para atendimento e orcamento
 - Busca de contatos foi unificada para atendimento, orcamento e pedido
 - A agenda tambem passou a usar os mesmos modais reutilizaveis de busca de `Cliente` e `Contato`
+- O `App.jsx` foi reestruturado para atuar principalmente como casca de composicao, delegando sessao para `hooks`, avisos globais para um componente-container e atalhos/foco para hooks dedicados
+- Hooks de comportamento global passaram a ficar em `client/src/hooks/`, incluindo sincronizacao de sessao, avisos de agendamento, foco automatico de modais e atalhos globais
+- Catalogos estaticos do frontend como paginas do painel, cards da home, graficos da home e definicoes-base de colunas de grade passaram a ficar em `client/src/dados/`
 - Todo modal aberto tenta focar automaticamente o primeiro campo editavel
 - Modais de confirmacao focam por padrao a acao principal de confirmacao, mantendo `Sim` ou `Confirmar` prontos para teclado
 - Quando um modal de busca de `Cliente` ou `Contato` devolve um registro ao formulario principal, o foco retorna para o campo que acabou de ser preenchido
