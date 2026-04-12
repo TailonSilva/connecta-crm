@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Botao } from '../../componentes/comuns/botao';
-import { MensagemErroPopup } from '../../componentes/comuns/mensagemErroPopup';
 import { CampoSelecaoMultiplaModal } from '../../componentes/comuns/campoSelecaoMultiplaModal';
 import { CampoImagemPadrao } from '../../componentes/comuns/campoImagemPadrao';
 import { buscarCep } from '../../servicos/empresa';
@@ -9,6 +8,7 @@ import { normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTe
 
 const abasModalEmpresa = [
   { id: 'dadosGerais', label: 'Dados gerais' },
+  { id: 'paginaInicial', label: 'Pagina inicial' },
   { id: 'endereco', label: 'Endereco' },
   { id: 'agenda', label: 'Agenda' },
   { id: 'orcamentosPedidos', label: 'Orcamentos/Pedidos' }
@@ -193,25 +193,14 @@ export function ModalEmpresa({
     const { name, value, type, checked } = evento.target;
     const valorNormalizado = normalizarValorEntradaFormulario(evento);
 
-    definirFormulario((estadoAtual) => {
-      const tipoDocumentoAtualizado = name === 'tipo' ? valorNormalizado : estadoAtual.tipo;
-      const proximoEstado = {
-        ...estadoAtual,
-        [name]: type === 'checkbox'
-          ? checked
-          : name === 'telefone'
-            ? normalizarTelefone(valorNormalizado)
-            : name === 'cnpj'
-              ? formatarDocumentoFiscal(valorNormalizado, tipoDocumentoAtualizado)
-              : valorNormalizado
-      };
-
-      if (name === 'tipo') {
-        proximoEstado.cnpj = formatarDocumentoFiscal(estadoAtual.cnpj, tipoDocumentoAtualizado);
-      }
-
-      return proximoEstado;
-    });
+    definirFormulario((estadoAtual) => ({
+      ...estadoAtual,
+      [name]: type === 'checkbox'
+        ? checked
+        : name === 'telefone'
+          ? normalizarTelefone(valorNormalizado)
+          : valorNormalizado
+    }));
   }
 
   async function buscarDadosCep() {
@@ -334,6 +323,28 @@ export function ModalEmpresa({
             </section>
           ) : null}
 
+          {abaAtiva === 'paginaInicial' ? (
+            <section className="gradeCamposModalCliente">
+              <div className="campoFormularioIntegral painelOpcaoEmpresaPaginaInicial">
+                <label className="campoCheckboxFormulario" htmlFor="exibirFunilPaginaInicialEmpresa">
+                  <input
+                    id="exibirFunilPaginaInicialEmpresa"
+                    type="checkbox"
+                    name="exibirFunilPaginaInicial"
+                    checked={formulario.exibirFunilPaginaInicial}
+                    onChange={alterarCampo}
+                    disabled={somenteLeitura}
+                  />
+                  <span>Exibir funil de vendas na pagina inicial</span>
+                </label>
+                <p className="descricaoOpcaoEmpresaPaginaInicial">
+                  Quando habilitado, a pagina inicial mostra as etapas de orcamento marcadas para funil,
+                  com quantidade de orcamentos e valor total em cada etapa.
+                </p>
+              </div>
+            </section>
+          ) : null}
+
           {abaAtiva === 'endereco' ? (
             <section className="gradeCamposModalCliente">
               <CampoFormularioComAcao label="CEP" name="cep" value={formulario.cep} onChange={alterarCampo} aoAcionar={buscarDadosCep} carregando={buscandoCep} rotuloAcao="Buscar CEP" disabled={somenteLeitura} />
@@ -414,7 +425,7 @@ export function ModalEmpresa({
           ) : null}
         </div>
 
-        <MensagemErroPopup mensagem={mensagemErro} titulo="Nao foi possivel salvar a empresa." />
+        {mensagemErro ? <p className="mensagemErroFormulario">{mensagemErro}</p> : null}
       </form>
     </div>
   );
@@ -488,7 +499,7 @@ function criarFormularioEmpresa(empresa) {
     nomeFantasia: empresa.nomeFantasia || '',
     slogan: empresa.slogan || '',
     tipo: empresa.tipo || 'Pessoa juridica',
-    cnpj: formatarDocumentoFiscal(empresa.cnpj || '', empresa.tipo || 'Pessoa juridica'),
+    cnpj: empresa.cnpj || '',
     inscricaoEstadual: empresa.inscricaoEstadual || '',
     email: empresa.email || '',
     telefone: empresa.telefone || '',
@@ -558,25 +569,4 @@ function obterIniciaisEmpresa(empresa) {
     .slice(0, 2)
     .map((parte) => parte[0]?.toUpperCase())
     .join('');
-}
-
-function formatarDocumentoFiscal(valor, tipo) {
-  const digitos = String(valor || '').replace(/\D/g, '');
-
-  if (tipo === 'Pessoa fisica') {
-    const cpf = digitos.slice(0, 11);
-
-    return cpf
-      .replace(/^(\d{3})(\d)/, '$1.$2')
-      .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
-      .replace(/\.(\d{3})(\d)/, '.$1-$2');
-  }
-
-  const cnpj = digitos.slice(0, 14);
-
-  return cnpj
-    .replace(/^(\d{2})(\d)/, '$1.$2')
-    .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
-    .replace(/\.(\d{3})(\d)/, '.$1/$2')
-    .replace(/(\d{4})(\d)/, '$1-$2');
 }
