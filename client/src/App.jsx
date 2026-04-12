@@ -11,7 +11,7 @@ import { BarraLateral } from './componentes/layout/barraLateral';
 // Importa o componente que decide qual pagina do sistema deve ser renderizada na area central com base em `paginaSelecionada`.
 import { ConteudoPainel } from './componentes/layout/conteudoPainel';
 // Importa a tela de login, usada como retorno imediato enquanto nao existe sessao carregada no frontend.
-import { PaginaLogin } from './paginas/login/paginaLogin';
+import { PaginaLogin } from './paginas/paginaLogin';
 // Importa o hook que registra o atalho global `PageDown`, usado para acionar salvar ou incluir no contexto atual.
 import { useAtalhoAcaoPrimaria } from './hooks/useAtalhoAcaoPrimaria';
 // Importa o hook que registra a navegacao de abas por `Alt + Seta`, padrao global dos modais com abas.
@@ -61,31 +61,20 @@ export default function App() {
 
   // A estrutura principal combina menu lateral, area de conteudo e avisos globais.
   return (
-    // `main` marca semanticamente o conteudo principal do app e recebe a classe raiz usada pelo CSS estrutural.
     <main className="app">
-      // Este container organiza horizontalmente barra lateral, area central e a camada de avisos globais.
       <div className="appEstruturaPainel">
-        // `BarraLateral` recebe a lista oficial de paginas, o `id` da pagina ativa e o usuario para controlar navegacao e perfil exibido.
         <BarraLateral
-          // `itens` vem de `paginasPainel`, que e o catalogo estatico compartilhado pelo painel.
           itens={paginasPainel}
-          // `paginaAtiva` informa para a barra qual item deve aparecer destacado.
           paginaAtiva={paginaAtiva}
-          // `usuarioLogado` permite a barra mostrar nome, foto e permissoes do usuario atual.
           usuarioLogado={usuarioLogado}
-          // `aoSelecionarPagina` recebe `definirPaginaAtiva`; quando o usuario clica em outro item, esse setter muda o estado e o React re-renderiza a pagina central.
           aoSelecionarPagina={definirPaginaAtiva}
-          // `aoSair` vem do hook de sessao e derruba o contexto autenticado quando o usuario escolhe encerrar a sessao.
           aoSair={sair}
         />
 
-        // `section` isola semanticamente a area central que troca de conteudo conforme a navegacao.
         <section className="appAreaConteudo">
-          // `ConteudoPainel` recebe a pagina resolvida e o usuario atual para renderizar o modulo correto sem deixar o `App` cheio de `if`.
           <ConteudoPainel paginaSelecionada={paginaSelecionada} usuarioLogado={usuarioLogado} />
         </section>
 
-        // `CentralAvisosGlobais` cuida do polling e da exibicao dos avisos de agenda de forma desacoplada do `App`.
         <CentralAvisosGlobais usuarioLogado={usuarioLogado} />
       </div>
     </main>

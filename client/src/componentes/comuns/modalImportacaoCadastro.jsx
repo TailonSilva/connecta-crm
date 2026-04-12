@@ -3,9 +3,9 @@ import { Botao } from './botao';
 import { MensagemErroPopup } from './mensagemErroPopup';
 import { GradePadrao } from './gradePadrao';
 import { baixarModeloImportacao, lerArquivoImportacao, obterConfiguracaoImportacaoCadastro } from '../../utilitarios/importacaoCadastros';
-import { ModalGruposProduto } from '../../paginas/configuracoes/modalGruposProduto';
-import { ModalMarcas } from '../../paginas/configuracoes/modalMarcas';
-import { ModalUnidadesMedida } from '../../paginas/configuracoes/modalUnidadesMedida';
+import { ModalGruposProduto } from '../modulos/configuracoes-modalGruposProduto';
+import { ModalMarcas } from '../modulos/configuracoes-modalMarcas';
+import { ModalUnidadesMedida } from '../modulos/configuracoes-modalUnidadesMedida';
 import '../../recursos/estilos/modalImportacaoCadastro.css';
 
 export function ModalImportacaoCadastro({

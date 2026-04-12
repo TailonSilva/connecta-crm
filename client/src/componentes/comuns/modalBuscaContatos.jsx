@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { incluirContato } from '../../servicos/clientes';
-import { ModalContatoCliente } from '../../paginas/clientes/modalContatoCliente';
+import { ModalContatoCliente } from '../modulos/clientes-modalContatoCliente';
 import { ModalBuscaTabela } from './modalBuscaTabela';
 
 const estadoInicialContato = {

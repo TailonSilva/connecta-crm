@@ -1,12 +1,12 @@
-import { PaginaAgenda } from '../../paginas/agenda/paginaAgenda';
-import { PaginaAtendimentos } from '../../paginas/atendimentos/paginaAtendimentos';
-import { PaginaClientes } from '../../paginas/clientes/paginaClientes';
-import { PaginaConfiguracoes } from '../../paginas/configuracoes/paginaConfiguracoes';
-import { PaginaInicio } from '../../paginas/inicio/paginaInicio';
-import { PaginaOrcamentos } from '../../paginas/orcamentos/paginaOrcamentos';
-import { PaginaPadrao } from '../../paginas/padrao/paginaPadrao';
-import { PaginaPedidos } from '../../paginas/pedidos/paginaPedidos';
-import { PaginaProdutos } from '../../paginas/produtos/paginaProdutos';
+import { PaginaAgenda } from '../../paginas/paginaAgenda';
+import { PaginaAtendimentos } from '../../paginas/paginaAtendimentos';
+import { PaginaClientes } from '../../paginas/paginaClientes';
+import { PaginaConfiguracoes } from '../../paginas/paginaConfiguracoes';
+import { PaginaInicio } from '../../paginas/paginaInicio';
+import { PaginaOrcamentos } from '../../paginas/paginaOrcamentos';
+import { PaginaPadrao } from '../../paginas/paginaPadrao';
+import { PaginaPedidos } from '../../paginas/paginaPedidos';
+import { PaginaProdutos } from '../../paginas/paginaProdutos';
 
 // Renderiza o conteudo central do painel com base no `id` da pagina atualmente selecionada.
 export function ConteudoPainel({ paginaSelecionada, usuarioLogado }) {
@@ -44,3 +44,4 @@ export function ConteudoPainel({ paginaSelecionada, usuarioLogado }) {
 
   return <PaginaPadrao pagina={paginaSelecionada} />;
 }
+

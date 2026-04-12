@@ -31,9 +31,10 @@ Observacao importante:
 
 - `client/`: aplicacao React
 - `client/src/componentes/`: componentes reutilizaveis da interface
+- `client/src/componentes/modulos/`: componentes ligados a dominios especificos do sistema, nomeados com prefixo explicito do modulo
 - `client/src/dados/`: catalogos e definicoes estaticas do frontend mantidos em `.js`, sem misturar com regras utilitarias
 - `client/src/idex.html`: pagina estatica de vendas em arquivo unico para apresentacao comercial da ferramenta
-- `client/src/paginas/`: paginas do sistema
+- `client/src/paginas/`: apenas os componentes-raiz que renderizam cada pagina do sistema
 - `client/src/servicos/`: comunicacao com a API
 - `client/src/hooks/`: hooks reutilizaveis para regras globais e comportamentos compartilhados do frontend
 - `client/src/utilitarios/`: funcoes auxiliares e regras compartilhadas do frontend
@@ -54,6 +55,13 @@ Observacao importante:
 - O projeto deve priorizar arquitetura modular: novas telas, fluxos e comportamentos devem nascer em partes pequenas, separadas e reutilizaveis sempre que possivel
 - Antes de adicionar logica nova dentro de pagina, modal grande ou componente-raiz, deve-se avaliar se essa responsabilidade pertence melhor a um `componente`, `hook`, `utilitario` ou arquivo de `dados`
 - Paginas devem orquestrar o modulo e compor blocos reutilizaveis, evitando concentrar renderizacao, regras de negocio, atalhos, efeitos e formatacoes no mesmo arquivo
+- Pastas dentro de `client/src/paginas/` nao devem mais criar subestruturas locais chamadas `componentes`, `utilitarios`, `hooks` ou `dados`
+- A partir de agora, tudo que for `componente` deve viver em `client/src/componentes/`, tudo que for `hook` em `client/src/hooks/`, tudo que for `utilitario` em `client/src/utilitarios/` e tudo que for `dado` em `client/src/dados/`
+- A pasta `client/src/paginas/` deve conter apenas os componentes-raiz `paginaX.jsx`; modais, listas, cabecalhos, secoes, cards e demais blocos de tela deixam de morar em subpastas de pagina
+- Componentes ligados a um dominio especifico, mas que nao sao pagina-raiz nem componente comum, devem ficar em `client/src/componentes/modulos/`
+- Componentes de `modulos` devem usar prefixo explicito do dominio no nome do arquivo, como `clientes-modalCliente.jsx`, `pedidos-modalPedido.jsx` e `inicio-secaoRankingInicio.jsx`
+- Quando um arquivo nascer por causa de uma pagina especifica, ele ainda deve ficar na pasta global da sua categoria, preferencialmente seguindo o prefixo do dominio para manter rastreabilidade sem voltar a criar ilhas locais dentro de `paginas`
+- Estruturas antigas desse tipo dentro de paginas passam a ser consideradas legado e devem ser migradas aos poucos sempre que o modulo receber manutencao relevante
 - Componentes devem focar em interface e composicao visual, evitando acumular regra transversal quando ela puder ser reutilizada em outra camada
 - Hooks devem concentrar comportamentos com ciclo de vida React, estado, efeitos colaterais, listeners e sincronizacao com DOM ou eventos globais
 - Utilitarios devem concentrar funcoes puras, normalizacao, formatacao, calculos e regras sem dependencia direta de renderizacao React
