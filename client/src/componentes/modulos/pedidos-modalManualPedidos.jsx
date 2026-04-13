@@ -97,6 +97,7 @@ export function ModalManualPedidos({
             'Selecionar ou trocar o cliente nao puxa mais o vendedor do cadastro do cliente; o vendedor inicial do pedido sempre segue o usuario do registro e so muda quando o proprio campo Vendedor for alterado no modal.',
             'A busca de clientes tambem permite incluir um novo cliente sem sair do fluxo.',
             'Ao abrir a busca de contatos com um cliente ja definido, o proprio modal permite cadastrar um novo contato e devolver esse contato ja selecionado no pedido.',
+            'Quando o foco estiver em Cliente ou Contato, `F8` abre a busca correspondente sem depender do clique no botao lateral.',
             'Ao confirmar a busca de cliente ou contato, o foco retorna para o campo preenchido no pedido.',
             'O campo Tipo de pedido usa uma tabela auxiliar propria para classificar o registro sem depender da etapa comercial.',
             'Quando o tipo escolhido for Devolucao, o sistema transforma automaticamente a quantidade, os valores dos itens e o total do pedido para negativo.',
@@ -104,11 +105,12 @@ export function ModalManualPedidos({
             'A aba Outros concentra o Orcamento vinculado, a Comissao (%) e o Valor da comissao, alem do campo visual do Motivo do cancelamento.',
             'Quando o pedido estiver como Devolucao e na etapa Entregue, o sistema abre um modal externo para selecionar o Motivo da devolucao cadastrado em Configuracoes.',
             'Itens, valores e pagamento sao herdados do fluxo comercial e podem ser ajustados no modal.',
+            'Dentro do item, `F8` tambem abre a busca de Produto quando o foco estiver no campo correspondente.',
             'A imagem do item pode herdar o que veio do orcamento; quando o usuario trocar essa imagem no pedido, ela passa a ser exclusiva daquele item e e recortada em 1024 x 1024 px.',
             'Prazos de pagamento podem ser cadastrados no proprio fluxo, respeitando o perfil.',
             'Campos personalizados do pedido aparecem conforme a configuracao carregada no sistema.',
             'Nas abas do modal do pedido, `Alt + Seta para a esquerda` volta para a aba anterior e `Alt + Seta para a direita` avanca para a proxima, reposicionando o foco no primeiro campo da nova aba.',
-            'O modal abre no primeiro campo editavel, confirmacoes focam a acao principal e `PageDown` prioriza Salvar; quando nao houver salvamento disponivel, ele aciona Adicionar, Incluir ou Novo no contexto atual.'
+            'O modal abre no primeiro campo editavel, confirmacoes focam a acao principal, `PageDown` prioriza Salvar e `F8` abre a busca contextual de Cliente, Contato ou Produto quando o foco estiver nesses campos.'
           ]
         },
         {

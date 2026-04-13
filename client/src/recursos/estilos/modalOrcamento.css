@@ -7,7 +7,7 @@
 }
 
 .modalItemProduto {
-  width: min(860px, 100%);
+  width: min(1120px, 100%);
 }
 
 .modalOrcamento .corpoModalCliente,
@@ -247,21 +247,27 @@
 }
 
 .modalItemOrcamento {
-  width: min(780px, 100%);
+  width: min(1120px, 100%);
 }
 
 .layoutModalItemOrcamento {
   display: grid;
-  grid-template-columns: 136px minmax(0, 1fr);
-  gap: 18px;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 24px;
   align-items: start;
+}
+
+.linhaValoresModalItemProduto {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(140px, 0.8fr) minmax(220px, 1fr) minmax(220px, 1fr);
 }
 
 .modalItemProduto .thumbnailCliente {
   position: relative;
-  width: 100%;
+  width: 320px;
   min-height: 320px;
-  justify-self: stretch;
+  justify-self: start;
 }
 
 .modalItemProduto .previewThumbnailCliente,
@@ -302,7 +308,8 @@
   .linhaOrcamentoDatas,
   .linhaOrcamentoComercial,
   .linhaOrcamentoFechamento,
-  .layoutModalItemOrcamento {
+  .layoutModalItemOrcamento,
+  .linhaValoresModalItemProduto {
     grid-template-columns: 1fr;
   }
 }

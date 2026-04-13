@@ -97,7 +97,7 @@ export function ModalManualAtendimento({
     {
       titulo: 'Foco e atalho',
       descricao: 'O modal abre no primeiro campo editavel; confirmacoes deixam `Sim` ou `Confirmar` prontos para teclado.',
-      detalhe: '`PageDown` prioriza Salvar e, quando nao houver salvamento disponivel, aciona Adicionar, Incluir ou Novo no contexto atual.',
+      detalhe: '`PageDown` prioriza Salvar e, quando nao houver salvamento disponivel, aciona Adicionar, Incluir ou Novo no contexto atual; `F8` abre a busca de Cliente ou Contato quando o foco estiver nesses campos.',
       icone: 'manual'
     }
   ];
@@ -126,6 +126,7 @@ export function ModalManualAtendimento({
             'Cliente, tipo de atendimento, assunto, data e horario de inicio sao obrigatorios para salvar o atendimento.',
             'Contato depende do cliente escolhido e so lista contatos ativos daquele cliente.',
             'A busca de clientes tambem permite incluir um novo cliente sem sair do fluxo.',
+            'Quando o foco estiver em Cliente ou Contato, `F8` abre a busca correspondente sem depender do mouse.',
             'Ao abrir a busca de contatos com um cliente ja definido, o proprio modal permite cadastrar um novo contato e devolver esse contato ja selecionado no atendimento.',
             'Ao confirmar a busca de cliente ou contato, o foco retorna para o campo preenchido no atendimento.',
             'Orcamento so pode ser vinculado ou criado quando ja existe cliente definido no formulario.',

@@ -817,6 +817,7 @@ export function ModalAtendimento({
                 <CampoSelect
                   label="Cliente"
                   name="idCliente"
+                  data-atalho-busca-id="cliente"
                   referenciaCampo={referenciaCampoCliente}
                   value={formulario.idCliente}
                   onChange={alterarCampo}
@@ -835,6 +836,7 @@ export function ModalAtendimento({
                       somenteIcone
                       title="Buscar cliente"
                       aria-label="Buscar cliente"
+                      data-atalho-busca-id="cliente"
                       onClick={abrirModalBuscaCliente}
                     >
                       Buscar cliente
@@ -844,6 +846,7 @@ export function ModalAtendimento({
                 <CampoSelect
                   label="Contato"
                   name="idContato"
+                  data-atalho-busca-id="contato"
                   referenciaCampo={referenciaCampoContato}
                   value={formulario.idContato}
                   onChange={alterarCampo}
@@ -861,6 +864,7 @@ export function ModalAtendimento({
                       somenteIcone
                       title="Buscar contato"
                       aria-label="Buscar contato"
+                      data-atalho-busca-id="contato"
                       onClick={abrirModalBuscaContato}
                     >
                       Buscar contato

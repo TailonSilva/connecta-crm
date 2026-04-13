@@ -5,6 +5,7 @@ import { CampoSelecaoMultiplaModal } from '../comuns/campoSelecaoMultiplaModal';
 import { ModalBuscaClientes } from '../comuns/modalBuscaClientes';
 import { ModalBuscaContatos } from '../comuns/modalBuscaContatos';
 import { ModalCliente } from './clientes-modalCliente';
+import { formatarCodigoCliente } from '../../utilitarios/codigoCliente';
 import { formatarNomeContato } from '../../utilitarios/formatarNomeContato';
 import { normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTextoFormulario';
 import { registroEstaAtivo } from '../../utilitarios/statusRegistro';
@@ -433,15 +434,16 @@ export function ModalAgendamento({
               className="campoAgendamentoMetade"
               label="Cliente"
               name="idCliente"
+              data-atalho-busca-id="cliente"
               referenciaCampo={referenciaCampoCliente}
-              value={formulario.idCliente}
-              onChange={alterarCampo}
-              options={clientesAtivos.map((cliente) => ({
-                valor: String(cliente.idCliente),
-                label: cliente.nomeFantasia || cliente.razaoSocial
-              }))}
-              required={clienteObrigatorio}
-              acaoExtra={(
+                value={formulario.idCliente}
+                onChange={alterarCampo}
+                options={clientesAtivos.map((cliente) => ({
+                  valor: String(cliente.idCliente),
+                  label: montarRotuloCliente(cliente, empresa)
+                }))}
+                required={clienteObrigatorio}
+                acaoExtra={(
                 <Botao
                   variante="secundario"
                   type="button"
@@ -450,6 +452,7 @@ export function ModalAgendamento({
                   somenteIcone
                   title="Buscar cliente"
                   aria-label="Buscar cliente"
+                  data-atalho-busca-id="cliente"
                   onClick={abrirModalBuscaCliente}
                   disabled={salvando}
                 >
@@ -461,6 +464,7 @@ export function ModalAgendamento({
               className="campoAgendamentoMetade"
               label="Contato do cliente"
               name="idContato"
+              data-atalho-busca-id="contato"
               referenciaCampo={referenciaCampoContato}
               value={formulario.idContato}
               onChange={alterarCampo}
@@ -479,6 +483,7 @@ export function ModalAgendamento({
                   somenteIcone
                   title="Buscar contato"
                   aria-label="Buscar contato"
+                  data-atalho-busca-id="contato"
                   onClick={abrirModalBuscaContato}
                   disabled={salvando}
                 >
@@ -770,5 +775,13 @@ function obterProximoCodigoCliente(clientes) {
   }, 0);
 
   return maiorCodigo + 1;
+}
+
+function montarRotuloCliente(cliente, empresa) {
+  const codigo = formatarCodigoCliente(cliente, empresa);
+  const nome = cliente?.nomeFantasia || cliente?.razaoSocial || 'Cliente sem nome';
+  const localizacao = [cliente?.cidade, cliente?.estado].filter(Boolean).join('/');
+
+  return localizacao ? `${codigo} - ${nome} - ${localizacao}` : `${codigo} - ${nome}`;
 }
 

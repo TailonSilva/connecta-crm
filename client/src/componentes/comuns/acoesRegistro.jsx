@@ -17,7 +17,7 @@ export function AcoesRegistro({
     <div className="acoesRegistro">
       {exibirConsulta ? (
         <BotaoAcaoGrade icone="consultar" titulo={rotuloConsulta} onClick={aoConsultar} />
-      ) : null}
+        ) : null}
       {exibirEdicao ? (
         <BotaoAcaoGrade icone="editar" titulo={rotuloEdicao} onClick={aoEditar} disabled={desabilitarEdicao} />
       ) : null}

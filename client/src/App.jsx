@@ -14,6 +14,8 @@ import { ConteudoPainel } from './componentes/layout/conteudoPainel';
 import { PaginaLogin } from './paginas/paginaLogin';
 // Importa o hook que registra o atalho global `PageDown`, usado para acionar salvar ou incluir no contexto atual.
 import { useAtalhoAcaoPrimaria } from './hooks/useAtalhoAcaoPrimaria';
+// Importa o hook que registra o atalho global `F8`, usado para abrir a busca contextual de cliente, contato ou produto no campo focado.
+import { useAtalhoBuscaContextual } from './hooks/useAtalhoBuscaContextual';
 // Importa o hook que registra a navegacao de abas por `Alt + Seta`, padrao global dos modais com abas.
 import { useAtalhoNavegacaoAbasModal } from './hooks/useAtalhoNavegacaoAbasModal';
 // Importa o hook que observa o DOM e reaplica foco automaticamente quando um modal abre ou muda de camada.
@@ -47,6 +49,10 @@ export default function App() {
   // Ativa o atalho global `PageDown` para salvar ou incluir no contexto atual.
   // Aqui tambem nao existe retorno para consumir; o valor do hook esta no efeito colateral de registrar e limpar o listener global.
   useAtalhoAcaoPrimaria();
+
+  // Ativa o atalho global `F8` para abrir a busca contextual do campo focado em modais operacionais.
+  // Essa regra vale para campos de cliente, contato de cliente e produto marcados semanticamente na interface.
+  useAtalhoBuscaContextual();
 
   // Ativa a navegacao entre abas de modal com `Alt + Seta`.
   // Essa chamada fica no topo do componente para que o comportamento valha para qualquer tela carregada dentro da casca principal da aplicacao.

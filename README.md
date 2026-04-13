@@ -156,6 +156,7 @@ Padroes aplicados recentemente:
 - Modais de confirmacao focam por padrao a acao principal de confirmacao, mantendo `Sim` ou `Confirmar` prontos para teclado
 - Quando um modal de busca de `Cliente` ou `Contato` devolve um registro ao formulario principal, o foco retorna para o campo que acabou de ser preenchido
 - O atalho global `PageDown` aciona a acao principal de edicao do contexto atual: prioriza `Salvar` no modal ativo; quando nao houver salvamento disponivel, dispara `Adicionar`, `Incluir` ou `Novo` no modal ou na pagina operacional
+- O atalho global `F8` abre a busca contextual do campo focado em modais operacionais; hoje ele funciona nos campos de `Cliente`, `Contato` e `Produto`, reaproveitando o mesmo botao lateral de pesquisa do formulario
 - Em modais com abas, `Alt + Seta para a esquerda` navega para a aba anterior e `Alt + Seta para a direita` navega para a proxima aba visivel; ao trocar de aba, o foco vai para o primeiro campo da nova secao
 - Quando a busca de contatos for aberta com um cliente ja definido, o proprio modal permite incluir um novo contato e devolve esse contato ja selecionado no formulario atual
 - O cadastro de cliente reaproveita o mesmo fluxo de `Ramo de Atividade` usado em configuracoes

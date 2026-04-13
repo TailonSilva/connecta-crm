@@ -737,6 +737,7 @@ export function ModalOrcamento({
                 <CampoSelect
                   label="Cliente"
                   name="idCliente"
+                  data-atalho-busca-id="cliente"
                   referenciaCampo={referenciaCampoCliente}
                   value={formulario.idCliente}
                   onChange={alterarCampo}
@@ -755,6 +756,7 @@ export function ModalOrcamento({
                       somenteIcone
                       title="Buscar cliente"
                       aria-label="Buscar cliente"
+                      data-atalho-busca-id="cliente"
                       onClick={abrirModalBuscaCliente}
                     />
                   ) : null}
@@ -762,6 +764,7 @@ export function ModalOrcamento({
                 <CampoSelect
                   label="Contato"
                   name="idContato"
+                  data-atalho-busca-id="contato"
                   referenciaCampo={referenciaCampoContato}
                   value={formulario.idContato}
                   onChange={alterarCampo}
@@ -779,6 +782,7 @@ export function ModalOrcamento({
                       somenteIcone
                       title="Buscar contato"
                       aria-label="Buscar contato"
+                      data-atalho-busca-id="contato"
                       onClick={abrirModalBuscaContato}
                     />
                   ) : null}

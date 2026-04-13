@@ -84,6 +84,32 @@ export function encontrarBotaoAcaoPrimariaPageDown() {
   return encontrarBotaoAdicionar(paginaAtiva);
 }
 
+// Encontra o botao de busca contextual do campo focado para o atalho `F8` abrir a pesquisa correta no modal ativo.
+export function encontrarBotaoBuscaContextualF8() {
+  const modalAtivo = encontrarModalAtivo({ incluirAlertDialog: false });
+
+  if (!modalAtivo) {
+    return null;
+  }
+
+  const elementoFocado = document.activeElement;
+
+  if (!(elementoFocado instanceof HTMLElement) || !modalAtivo.contains(elementoFocado)) {
+    return null;
+  }
+
+  const identificadorBusca = obterIdentificadorBuscaContextual(elementoFocado);
+
+  if (!identificadorBusca) {
+    return null;
+  }
+
+  const seletorBotao = `button[data-atalho-busca-id="${identificadorBusca}"]:not([disabled])`;
+  const botoesBusca = Array.from(modalAtivo.querySelectorAll(seletorBotao)).filter(elementoEstaVisivel);
+
+  return botoesBusca[botoesBusca.length - 1] || null;
+}
+
 // Retorna o ultimo modal visivel do DOM, que corresponde ao modal do topo da pilha visual.
 export function encontrarModalAtivo({ incluirAlertDialog = true } = {}) {
   const seletor = incluirAlertDialog ? '[role="alertdialog"], [role="dialog"]' : '[role="dialog"]';
@@ -126,6 +152,17 @@ function encontrarPrimeiroBotaoModal(modal) {
   return Array.from(modal.querySelectorAll('button:not([disabled])')).find(elementoEstaVisivel) || null;
 }
 
+// Resolve o identificador semantico de busca a partir do campo focado ou de um container marcado para esse atalho.
+function obterIdentificadorBuscaContextual(elemento) {
+  const campoMarcado = elemento.closest('[data-atalho-busca-id]');
+
+  if (!(campoMarcado instanceof HTMLElement)) {
+    return '';
+  }
+
+  return String(campoMarcado.dataset.atalhoBuscaId || '').trim();
+}
+
 // Retorna os botoes de aba visiveis e habilitados de um `tablist`.
 function obterBotoesAbas(listaAbas) {
   return Array.from(listaAbas.querySelectorAll('button[aria-selected]:not([disabled])')).filter(elementoEstaVisivel);
@@ -133,13 +170,31 @@ function obterBotoesAbas(listaAbas) {
 
 // Reposiciona o foco na nova aba ativa depois da navegacao por teclado.
 function focarPrimeiroCampoAbaAtiva(modal) {
-  const alvoFoco = encontrarPrimeiroCampoModal(modal) || encontrarPrimeiroBotaoModal(modal);
+  const containerAbaAtiva = encontrarContainerAbaAtiva(modal);
+  const alvoFoco = encontrarPrimeiroCampoModal(containerAbaAtiva) || encontrarPrimeiroBotaoModal(containerAbaAtiva);
 
   if (!alvoFoco) {
     return;
   }
 
   alvoFoco.focus({ preventScroll: true });
+}
+
+// Localiza o bloco visivel da aba ativa para que os atalhos de navegacao foquem a secao correta, e nao o cabecalho do modal.
+function encontrarContainerAbaAtiva(modal) {
+  const corpoAbas = Array.from(modal.querySelectorAll('.corpoModalCliente, .corpoModalOrcamentoAbas')).find(elementoEstaVisivel);
+
+  if (!(corpoAbas instanceof HTMLElement)) {
+    return modal;
+  }
+
+  const secoesVisiveis = Array.from(corpoAbas.children).filter(elementoEstaVisivel);
+
+  if (secoesVisiveis.length === 0) {
+    return corpoAbas;
+  }
+
+  return secoesVisiveis[0];
 }
 
 // Prioriza o submit semantico do modal ativo e, se ele nao existir, procura um botao identificado como salvar.

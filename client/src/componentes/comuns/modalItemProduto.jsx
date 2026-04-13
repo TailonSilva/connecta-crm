@@ -49,7 +49,7 @@ export function ModalItemProduto({
         </div>
 
         <div className="corpoModalContato">
-          <div className="layoutModalOrcamento">
+          <div className="layoutModalItemOrcamento">
             <CampoImagemPadrao
               valor={itemFormulario.imagem}
               alt={itemFormulario.descricaoProdutoSnapshot || 'Item do produto'}
@@ -65,18 +65,19 @@ export function ModalItemProduto({
                 <CampoFormulario
                   label="Produto"
                   name="descricaoProdutoSnapshot"
-                  value={itemFormulario.descricaoProdutoSnapshot}
+                  value={montarRotuloProdutoFormulario(itemFormulario)}
                   disabled
                 />
               ) : (
                 <CampoSelect
                   label="Produto"
                   name="idProduto"
+                  data-atalho-busca-id="produto"
                   value={itemFormulario.idProduto}
                   onChange={onAlterarCampo}
                   options={produtos.map((produto) => ({
                     valor: String(produto.idProduto),
-                    label: produto.descricao || produto.referencia || `Produto ${produto.idProduto}`
+                    label: montarRotuloProduto(produto)
                   }))}
                   disabled={somenteLeitura}
                   acaoExtra={!somenteLeitura ? (
@@ -88,6 +89,7 @@ export function ModalItemProduto({
                       somenteIcone
                       title="Buscar produto"
                       aria-label="Buscar produto"
+                      data-atalho-busca-id="produto"
                       onClick={onAbrirBuscaProduto}
                     >
                       Buscar produto
@@ -96,7 +98,7 @@ export function ModalItemProduto({
                 />
               )}
 
-              <div className="linhaUsuarioCanalOrigemAtendimento">
+              <div className="linhaValoresModalItemProduto">
                 <CampoFormulario label="Quantidade" name="quantidade" value={itemFormulario.quantidade} onChange={onAlterarCampo} disabled={somenteLeitura} />
                 <CampoFormulario label="Valor unitario" name="valorUnitario" value={itemFormulario.valorUnitario} onChange={onAlterarCampo} disabled={somenteLeitura} />
                 <CampoFormulario label="Valor total" name="valorTotal" value={itemFormulario.valorTotal} onChange={onAlterarCampo} disabled />
@@ -158,4 +160,27 @@ function CampoSelect({ label, name, options, acaoExtra = null, ...props }) {
       </div>
     </div>
   );
+}
+
+// O rotulo consolidado do produto evita que cada fluxo monte um texto diferente para o mesmo campo.
+function montarRotuloProduto(produto) {
+  const codigo = formatarCodigoProduto(produto?.idProduto);
+  const referencia = String(produto?.referencia || '').trim() || 'Sem referencia';
+  const descricao = String(produto?.descricao || '').trim() || 'Sem descricao';
+
+  return `${codigo} - ${referencia} - ${descricao}`;
+}
+
+// O modo consulta usa os snapshots do proprio item para manter o mesmo padrao mesmo sem reler o cadastro do produto.
+function montarRotuloProdutoFormulario(itemFormulario) {
+  const codigo = formatarCodigoProduto(itemFormulario?.idProduto);
+  const referencia = String(itemFormulario?.referenciaProdutoSnapshot || '').trim() || 'Sem referencia';
+  const descricao = String(itemFormulario?.descricaoProdutoSnapshot || '').trim() || 'Sem descricao';
+
+  return `${codigo} - ${referencia} - ${descricao}`;
+}
+
+// O codigo do produto precisa seguir o mesmo padrao visual dos demais codigos do sistema.
+function formatarCodigoProduto(valor) {
+  return `#${String(valor || 0).padStart(4, '0')}`;
 }

@@ -15,6 +15,7 @@ import {
   listarMotivosDevolucaoConfiguracao
 } from '../../servicos/configuracoes';
 import { formatarNomeContato } from '../../utilitarios/formatarNomeContato';
+import { formatarCodigoCliente } from '../../utilitarios/codigoCliente';
 import { useFormularioItemProduto } from '../../hooks/useFormularioItemProduto';
 import {
   converterPrecoParaNumero,
@@ -747,15 +748,16 @@ export function ModalPedido({
                     <CampoSelect
                       label="Cliente"
                       name="idCliente"
+                      data-atalho-busca-id="cliente"
                       referenciaCampo={referenciaCampoCliente}
                       value={formulario.idCliente}
                       onChange={alterarCampo}
-                      options={clientesAtivos.map((cliente) => ({
-                        valor: String(cliente.idCliente),
-                        label: cliente.nomeFantasia || cliente.razaoSocial
-                      }))}
-                      disabled={somenteLeitura}
-                      acaoExtra={!somenteLeitura ? (
+                        options={clientesAtivos.map((cliente) => ({
+                          valor: String(cliente.idCliente),
+                          label: montarRotuloCliente(cliente, empresa)
+                        }))}
+                        disabled={somenteLeitura}
+                        acaoExtra={!somenteLeitura ? (
                         <Botao
                           variante="secundario"
                           type="button"
@@ -764,6 +766,7 @@ export function ModalPedido({
                           somenteIcone
                           title="Buscar cliente"
                           aria-label="Buscar cliente"
+                          data-atalho-busca-id="cliente"
                           onClick={abrirModalBuscaCliente}
                         >
                           Buscar cliente
@@ -773,6 +776,7 @@ export function ModalPedido({
                     <CampoSelect
                       label="Contato"
                       name="idContato"
+                      data-atalho-busca-id="contato"
                       referenciaCampo={referenciaCampoContato}
                       value={formulario.idContato}
                       onChange={alterarCampo}
@@ -790,6 +794,7 @@ export function ModalPedido({
                           somenteIcone
                           title="Buscar contato"
                           aria-label="Buscar contato"
+                          data-atalho-busca-id="contato"
                           onClick={abrirModalBuscaContato}
                         >
                           Buscar contato
@@ -1624,6 +1629,14 @@ function obterProximoCodigoCliente(clientes) {
   }, 0);
 
   return maiorCodigo + 1;
+}
+
+function montarRotuloCliente(cliente, empresa) {
+  const codigo = formatarCodigoCliente(cliente, empresa);
+  const nome = cliente?.nomeFantasia || cliente?.razaoSocial || 'Cliente sem nome';
+  const localizacao = [cliente?.cidade, cliente?.estado].filter(Boolean).join('/');
+
+  return localizacao ? `${codigo} - ${nome} - ${localizacao}` : `${codigo} - ${nome}`;
 }
 
 function combinarContatosUnicos(contatosBase, contatosExtras) {
