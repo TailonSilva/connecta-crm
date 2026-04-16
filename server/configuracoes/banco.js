@@ -783,6 +783,9 @@ banco.serialize(() => {
       corSecundariaOrcamento VARCHAR(7) NOT NULL DEFAULT '#ef4444',
       corDestaqueOrcamento VARCHAR(7) NOT NULL DEFAULT '#f59e0b',
       destaqueItemOrcamentoPdf VARCHAR(20) NOT NULL DEFAULT 'descricao',
+      assuntoEmailOrcamento TEXT,
+      corpoEmailOrcamento TEXT,
+      assinaturaEmailOrcamento TEXT,
       logradouro VARCHAR(255),
       numero VARCHAR(10),
       complemento VARCHAR(100),
@@ -1008,6 +1011,30 @@ banco.serialize(() => {
   `, (erro) => {
     if (erro && !String(erro.message || '').includes('duplicate column name')) {
       console.error('Nao foi possivel garantir a coluna destaqueItemOrcamentoPdf da empresa.', erro);
+    }
+  });
+
+  banco.run(`
+    ALTER TABLE empresa ADD COLUMN assuntoEmailOrcamento TEXT
+  `, (erro) => {
+    if (erro && !String(erro.message || '').includes('duplicate column name')) {
+      console.error('Nao foi possivel garantir a coluna assuntoEmailOrcamento da empresa.', erro);
+    }
+  });
+
+  banco.run(`
+    ALTER TABLE empresa ADD COLUMN corpoEmailOrcamento TEXT
+  `, (erro) => {
+    if (erro && !String(erro.message || '').includes('duplicate column name')) {
+      console.error('Nao foi possivel garantir a coluna corpoEmailOrcamento da empresa.', erro);
+    }
+  });
+
+  banco.run(`
+    ALTER TABLE empresa ADD COLUMN assinaturaEmailOrcamento TEXT
+  `, (erro) => {
+    if (erro && !String(erro.message || '').includes('duplicate column name')) {
+      console.error('Nao foi possivel garantir a coluna assinaturaEmailOrcamento da empresa.', erro);
     }
   });
 

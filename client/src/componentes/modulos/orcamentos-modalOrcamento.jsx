@@ -20,6 +20,7 @@ import {
 import { normalizarValorEntradaFormulario } from '../../utilitarios/normalizarTextoFormulario';
 import { desktopTemExportacaoPdf } from '../../servicos/desktop';
 import { exportarOrcamentoPdf } from '../../utilitarios/orcamentos/exportarOrcamentoPdf';
+import { abrirEmailOrcamento } from '../../utilitarios/orcamentos/abrirEmailOrcamento';
 import { formatarCodigoCliente } from '../../utilitarios/codigoCliente';
 import { obterEtapasOrcamentoParaInputManual } from '../../utilitarios/etapasOrcamento';
 
@@ -95,6 +96,7 @@ export function ModalOrcamento({
   const [abaAtiva, definirAbaAtiva] = useState(abasModalOrcamento[0].id);
   const [salvando, definirSalvando] = useState(false);
   const [gerandoPdf, definirGerandoPdf] = useState(false);
+  const [gerandoEmail, definirGerandoEmail] = useState(false);
   const [mensagemErro, definirMensagemErro] = useState('');
   const [avisosPopup, definirAvisosPopup] = useState([]);
   const [confirmandoSaida, definirConfirmandoSaida] = useState(false);
@@ -205,6 +207,7 @@ export function ModalOrcamento({
     definirAbaAtiva(abasModalOrcamento[0].id);
     definirSalvando(false);
     definirGerandoPdf(false);
+    definirGerandoEmail(false);
     definirMensagemErro('');
     definirAvisosPopup([]);
     definirConfirmandoSaida(false);
@@ -436,13 +439,13 @@ export function ModalOrcamento({
     }
 
     if (!String(formulario.idCliente || '').trim()) {
-      adicionarAvisoPdf('erro', 'Nao foi possivel gerar o PDF.', 'Selecione o cliente antes de exportar o PDF do orcamento.');
+      adicionarAvisoOrcamento('erro', 'Nao foi possivel gerar o PDF.', 'Selecione o cliente antes de exportar o PDF do orcamento.');
       definirAbaAtiva('dadosGerais');
       return;
     }
 
     if (!Array.isArray(formulario.itens) || formulario.itens.length === 0) {
-      adicionarAvisoPdf('erro', 'Nao foi possivel gerar o PDF.', 'Inclua ao menos um item antes de exportar o PDF do orcamento.');
+      adicionarAvisoOrcamento('erro', 'Nao foi possivel gerar o PDF.', 'Inclua ao menos um item antes de exportar o PDF do orcamento.');
       definirAbaAtiva('itens');
       return;
     }
@@ -469,20 +472,63 @@ export function ModalOrcamento({
       }
 
       if (!resultado.sucesso) {
-        adicionarAvisoPdf('erro', 'Nao foi possivel gerar o PDF.', resultado.mensagem || 'Nao foi possivel exportar o PDF do orcamento.');
+        adicionarAvisoOrcamento('erro', 'Nao foi possivel gerar o PDF.', resultado.mensagem || 'Nao foi possivel exportar o PDF do orcamento.');
         return;
       }
 
-      adicionarAvisoPdf('sucesso', 'PDF gerado com sucesso.', '');
+      adicionarAvisoOrcamento('sucesso', 'PDF gerado com sucesso.', '');
     } catch (erro) {
-      adicionarAvisoPdf('erro', 'Nao foi possivel gerar o PDF.', erro.message || 'Nao foi possivel exportar o PDF do orcamento.');
+      adicionarAvisoOrcamento('erro', 'Nao foi possivel gerar o PDF.', erro.message || 'Nao foi possivel exportar o PDF do orcamento.');
     } finally {
       definirGerandoPdf(false);
     }
   }
 
-  function adicionarAvisoPdf(tipo, titulo, mensagem) {
-    const id = `pdf-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  async function gerarEmailFormularioAtual() {
+    if (gerandoEmail) {
+      return;
+    }
+
+    if (!String(formulario.idCliente || '').trim()) {
+      adicionarAvisoOrcamento('erro', 'Nao foi possivel gerar o e-mail.', 'Selecione o cliente antes de abrir o e-mail do orcamento.');
+      definirAbaAtiva('dadosGerais');
+      return;
+    }
+
+    if (!Array.isArray(formulario.itens) || formulario.itens.length === 0) {
+      adicionarAvisoOrcamento('erro', 'Nao foi possivel gerar o e-mail.', 'Inclua ao menos um item antes de abrir o e-mail do orcamento.');
+      definirAbaAtiva('itens');
+      return;
+    }
+
+    definirGerandoEmail(true);
+
+    try {
+      const resultado = await abrirEmailOrcamento({
+        formulario,
+        orcamento,
+        clientes,
+        contatos,
+        usuarios,
+        vendedores,
+        empresa
+      });
+
+      if (!resultado.sucesso) {
+        adicionarAvisoOrcamento('erro', 'Nao foi possivel gerar o e-mail.', resultado.mensagem || 'Nao foi possivel abrir o Outlook Web com o orcamento.');
+        return;
+      }
+
+      adicionarAvisoOrcamento('sucesso', 'E-mail aberto com sucesso.', 'O Outlook Web foi aberto com o orçamento preenchido.');
+    } catch (erro) {
+      adicionarAvisoOrcamento('erro', 'Nao foi possivel gerar o e-mail.', erro.message || 'Nao foi possivel abrir o Outlook Web com o orcamento.');
+    } finally {
+      definirGerandoEmail(false);
+    }
+  }
+
+  function adicionarAvisoOrcamento(tipo, titulo, mensagem) {
+    const id = `orcamento-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
     definirAvisosPopup((estadoAtual) => ([
       {
@@ -676,6 +722,15 @@ export function ModalOrcamento({
               title={exportacaoPdfDisponivel ? 'Gerar PDF do orcamento' : 'Abrir impressao para salvar como PDF no navegador'}
             >
               {gerandoPdf ? 'Gerando PDF...' : 'Gerar PDF'}
+            </Botao>
+            <Botao
+              variante="secundario"
+              type="button"
+              onClick={gerarEmailFormularioAtual}
+              disabled={salvando || gerandoEmail}
+              title="Gerar e-mail do orcamento"
+            >
+              {gerandoEmail ? 'Gerando e-mail...' : 'Gerar e-mail'}
             </Botao>
             <Botao variante="secundario" type="button" onClick={tentarFecharModal} disabled={salvando}>
               {somenteLeitura ? 'Fechar' : 'Cancelar'}

@@ -2367,6 +2367,9 @@ function normalizarPayloadEmpresa(dadosEmpresa) {
     destaqueItemOrcamentoPdf: String(dadosEmpresa.destaqueItemOrcamentoPdf || '').trim() === 'referencia'
       ? 'referencia'
       : 'descricao',
+    assuntoEmailOrcamento: limparTextoOpcional(dadosEmpresa.assuntoEmailOrcamento),
+    corpoEmailOrcamento: limparTextoOpcional(dadosEmpresa.corpoEmailOrcamento),
+    assinaturaEmailOrcamento: limparTextoOpcional(dadosEmpresa.assinaturaEmailOrcamento),
     logradouro: limparTextoOpcional(dadosEmpresa.logradouro),
     numero: limparTextoOpcional(dadosEmpresa.numero),
     complemento: limparTextoOpcional(dadosEmpresa.complemento),

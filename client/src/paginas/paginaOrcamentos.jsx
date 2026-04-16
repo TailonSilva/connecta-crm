@@ -59,11 +59,13 @@ import { ModalPedido } from '../componentes/modulos/pedidos-modalPedido';
 import { ModalColunasGridOrcamentos } from '../componentes/modulos/configuracoes-modalColunasGridOrcamentos';
 
 function criarFiltrosIniciaisOrcamentos(usuarioLogado, empresa = null) {
+  const vendedorTravado = usuarioLogado?.tipo === 'Usuario padrao' && usuarioLogado?.idVendedor;
+
   return {
     idCliente: '',
     idUsuario: [],
     idVendedorCliente: [],
-    idVendedor: usuarioLogado?.idVendedor ? [String(usuarioLogado.idVendedor)] : [],
+    idVendedor: vendedorTravado ? [String(usuarioLogado.idVendedor)] : [],
     idsEtapaOrcamento: obterEtapasFiltroPadraoOrcamento(empresa),
     dataInclusaoInicio: '',
     dataInclusaoFim: '',
@@ -79,11 +81,13 @@ function criarFiltrosIniciaisOrcamentos(usuarioLogado, empresa = null) {
   const ID_TIPO_PEDIDO_VENDA = 1;
 
 function criarFiltrosLimposOrcamentos(usuarioLogado, empresa = null) {
+  const vendedorTravado = usuarioLogado?.tipo === 'Usuario padrao' && usuarioLogado?.idVendedor;
+
   return {
     idCliente: '',
     idUsuario: [],
     idVendedorCliente: [],
-    idVendedor: usuarioLogado?.idVendedor ? [String(usuarioLogado.idVendedor)] : [],
+    idVendedor: vendedorTravado ? [String(usuarioLogado.idVendedor)] : [],
     idsEtapaOrcamento: obterEtapasFiltroPadraoOrcamento(empresa),
     dataInclusaoInicio: '',
     dataInclusaoFim: '',
@@ -154,6 +158,21 @@ export function PaginaOrcamentos({ usuarioLogado }) {
 
     carregarGradeOrcamentos();
   }, [carregandoContexto, usuarioSomenteVendedor, usuarioLogado?.idVendedor, usuarioLogado?.idUsuario, pesquisa, JSON.stringify(filtros)]);
+
+  useEffect(() => {
+    if (usuarioLogado?.tipo === 'Usuario padrao') {
+      return;
+    }
+
+    if (!Array.isArray(filtros.idVendedor) || filtros.idVendedor.length === 0) {
+      return;
+    }
+
+    definirFiltros((estadoAtual) => ({
+      ...estadoAtual,
+      idVendedor: []
+    }));
+  }, [usuarioLogado?.tipo]);
 
   useEffect(() => {
     function tratarGrupoEmpresaAtualizado() {
@@ -928,7 +947,11 @@ export function PaginaOrcamentos({ usuarioLogado }) {
           definirFiltros(proximosFiltros);
           fecharModalFiltrosOrcamentos();
         }}
-        aoLimpar={() => definirFiltrosEmEdicao(criarFiltrosLimposOrcamentos(usuarioLogado, empresa))}
+        aoLimpar={() => {
+          const filtrosLimpos = criarFiltrosLimposOrcamentos(usuarioLogado, empresa);
+          definirFiltrosEmEdicao(filtrosLimpos);
+          return filtrosLimpos;
+        }}
       />
       <ModalBuscaClientes
         aberto={modalBuscaClienteFiltrosAberto}
@@ -1520,12 +1543,13 @@ function formatarDataGridOrcamento(valor) {
 
 function normalizarFiltrosOrcamentos(filtros, filtrosPadrao) {
   const filtrosNormalizados = normalizarFiltrosPorPadrao(filtros, filtrosPadrao);
+  const vendedorTravado = Array.isArray(filtrosPadrao.idVendedor) && filtrosPadrao.idVendedor.length > 0;
 
   return {
     ...filtrosNormalizados,
     idUsuario: normalizarListaFiltroPersistido(filtrosNormalizados.idUsuario),
     idVendedorCliente: normalizarListaFiltroPersistido(filtrosNormalizados.idVendedorCliente),
-    idVendedor: filtrosPadrao.idVendedor?.length > 0
+    idVendedor: vendedorTravado
       ? [...filtrosPadrao.idVendedor]
       : normalizarListaFiltroPersistido(filtrosNormalizados.idVendedor),
     idsEtapaOrcamento: normalizarListaFiltroPersistido(filtrosNormalizados.idsEtapaOrcamento),

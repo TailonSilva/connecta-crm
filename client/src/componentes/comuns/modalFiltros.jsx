@@ -77,7 +77,16 @@ export function ModalFiltros({
   }
 
   function limparFiltros() {
-    aoLimpar();
+    const filtrosLimpos = typeof aoLimpar === 'function'
+      ? aoLimpar(formulario)
+      : null;
+
+    if (filtrosLimpos && typeof filtrosLimpos === 'object') {
+      definirFormulario(filtrosLimpos);
+      aoAplicar(filtrosLimpos);
+      return;
+    }
+
     aoFechar();
   }
 

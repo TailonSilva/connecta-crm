@@ -50,10 +50,12 @@ const ID_ETAPA_PEDIDO_ENTREGUE = 5;
 const ID_TIPO_PEDIDO_DEVOLUCAO = 2;
 
 function criarFiltrosIniciaisPedidos(usuarioLogado) {
+  const vendedorTravado = usuarioLogado?.tipo === 'Usuario padrao' && usuarioLogado?.idVendedor;
+
   return {
     idCliente: '',
     idUsuario: '',
-    idVendedor: usuarioLogado?.idVendedor ? [String(usuarioLogado.idVendedor)] : [],
+    idVendedor: vendedorTravado ? [String(usuarioLogado.idVendedor)] : [],
     idEtapaPedido: [],
     dataInclusaoInicio: '',
     dataInclusaoFim: '',

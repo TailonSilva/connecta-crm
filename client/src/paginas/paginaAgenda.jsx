@@ -1371,7 +1371,11 @@ export function PaginaAgenda({ usuarioLogado }) {
           definirFiltros(novosFiltros);
           fecharModalFiltrosAgenda();
         }}
-        aoLimpar={() => definirFiltrosEmEdicao(criarFiltrosIniciaisAgenda(usuarioLogado))}
+        aoLimpar={() => {
+          const filtrosLimpos = criarFiltrosIniciaisAgenda(usuarioLogado);
+          definirFiltrosEmEdicao(filtrosLimpos);
+          return filtrosLimpos;
+        }}
       />
       <ModalBuscaClientes
         aberto={modalBuscaClienteFiltrosAberto}

@@ -107,6 +107,7 @@ export function ModalManualOrcamentos({
             'Prazos de pagamento podem ser mantidos dentro do modal, respeitando o perfil do usuario.',
             'A aba Outros concentra o Pedido vinculado, a Comissao (%), o Total comissao calculado sobre o total liquido dos itens e o Motivo da perda usado nas etapas finais do funil.',
             'O Total comissao do orcamento e atualizado em tempo real sempre que itens, valores ou percentual de comissao mudarem no formulario.',
+            'O cabecalho do modal tambem oferece Gerar e-mail, que abre o Outlook Web usando o template configurado na aba E-mail da empresa e preenche destinatario, assunto e corpo do orçamento, incluindo tags opcionais de observacao e campos personalizados.',
             'O modo do modal controla corretamente inclusao, edicao e consulta, inclusive em saida sem salvar.',
             'Nas abas do modal do orcamento, `Alt + Seta para a esquerda` volta para a aba anterior e `Alt + Seta para a direita` avanca para a proxima, reposicionando o foco no primeiro campo da nova aba.',
             'O modal abre no primeiro campo editavel, confirmacoes focam a acao principal, `PageDown` prioriza Salvar e `F8` abre a busca contextual de Cliente, Contato ou Produto quando o foco estiver nesses campos.'

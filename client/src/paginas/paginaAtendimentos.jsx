@@ -741,7 +741,11 @@ export function PaginaAtendimentos({ usuarioLogado }) {
           definirFiltros(proximosFiltros);
           fecharModalFiltrosAtendimentos();
         }}
-        aoLimpar={() => definirFiltrosEmEdicao(criarFiltrosLimposAtendimentos())}
+        aoLimpar={() => {
+          const filtrosLimpos = criarFiltrosLimposAtendimentos();
+          definirFiltrosEmEdicao(filtrosLimpos);
+          return filtrosLimpos;
+        }}
       />
       <ModalBuscaClientes
         aberto={modalBuscaClienteFiltrosAberto}

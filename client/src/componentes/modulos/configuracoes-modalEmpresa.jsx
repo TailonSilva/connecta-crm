@@ -11,7 +11,8 @@ const abasModalEmpresa = [
   { id: 'paginaInicial', label: 'Pagina inicial' },
   { id: 'endereco', label: 'Endereco' },
   { id: 'agenda', label: 'Agenda' },
-  { id: 'orcamentosPedidos', label: 'Orcamentos/Pedidos' }
+  { id: 'orcamentosPedidos', label: 'Orcamentos/Pedidos' },
+  { id: 'email', label: 'E-mail' }
 ];
 
 const estadoInicialFormulario = {
@@ -39,6 +40,9 @@ const estadoInicialFormulario = {
   corSecundariaOrcamento: '#ef4444',
   corDestaqueOrcamento: '#f59e0b',
   destaqueItemOrcamentoPdf: 'descricao',
+  assuntoEmailOrcamento: 'Orcamento {orcamento_codigo} - {cliente_nome}',
+  corpoEmailOrcamento: 'Olá {cliente_nome},\n\nSegue o orçamento {orcamento_codigo} com validade até {orcamento_validade}.\n\n{orcamento_itens}\n\nTotal do orçamento: {orcamento_total}\n\nFico à disposição para qualquer ajuste.\n\nAtenciosamente,',
+  assinaturaEmailOrcamento: '{vendedor_nome}\n{empresa_nome}',
   logradouro: '',
   numero: '',
   complemento: '',
@@ -423,6 +427,50 @@ export function ModalEmpresa({
               />
             </section>
           ) : null}
+
+          {abaAtiva === 'email' ? (
+            <section className="gradeCamposModalCliente">
+              <CampoFormulario
+                className="campoFormularioIntegral"
+                label="Assunto do e-mail do orcamento"
+                name="assuntoEmailOrcamento"
+                value={formulario.assuntoEmailOrcamento}
+                onChange={alterarCampo}
+                disabled={somenteLeitura}
+              />
+              <CampoTextoLongo
+                className="campoFormularioIntegral"
+                label="Corpo do e-mail do orcamento"
+                name="corpoEmailOrcamento"
+                value={formulario.corpoEmailOrcamento}
+                onChange={alterarCampo}
+                disabled={somenteLeitura}
+                rows={8}
+              />
+              <CampoTextoLongo
+                className="campoFormularioIntegral"
+                label="Assinatura do e-mail do orcamento"
+                name="assinaturaEmailOrcamento"
+                value={formulario.assinaturaEmailOrcamento}
+                onChange={alterarCampo}
+                disabled={somenteLeitura}
+                rows={4}
+              />
+
+              <div className="campoFormularioIntegral painelOpcaoEmpresaPaginaInicial">
+                <strong>Tags disponiveis</strong>
+                <p className="descricaoOpcaoEmpresaPaginaInicial">
+                  Use estas tags para montar o texto dinamicamente: <code>{'{empresa_nome}'}</code>, <code>{'{cliente_codigo}'}</code>, <code>{'{cliente_codigo_principal}'}</code>, <code>{'{cliente_codigo_alternativo}'}</code>, <code>{'{cliente_nome}'}</code>, <code>{'{cliente_fantasia}'}</code>, <code>{'{cliente_cidade}'}</code>, <code>{'{cliente_uf}'}</code>, <code>{'{orcamento_codigo}'}</code>, <code>{'{orcamento_data}'}</code>, <code>{'{orcamento_validade}'}</code>, <code>{'{orcamento_total}'}</code>, <code>{'{orcamento_observacao}'}</code>, <code>{'{orcamento_campos_extras}'}</code>, <code>{'{orcamento_itens}'}</code>, <code>{'{vendedor_nome}'}</code> e <code>{'{contato_nome}'}</code>.
+                </p>
+                <p className="descricaoOpcaoEmpresaPaginaInicial">
+                  A tag <code>{'{orcamento_itens}'}</code> ja traz cada item com referencia, descricao, quantidade, valor unitario e valor total em linhas separadas.
+                </p>
+                <p className="descricaoOpcaoEmpresaPaginaInicial">
+                  A tag <code>{'{orcamento_observacao}'}</code> traz a observacao principal do orcamento, e <code>{'{orcamento_campos_extras}'}</code> monta um bloco com todos os campos personalizados preenchidos.
+                </p>
+              </div>
+            </section>
+          ) : null}
         </div>
 
         {mensagemErro ? <p className="mensagemErroFormulario">{mensagemErro}</p> : null}
@@ -431,11 +479,20 @@ export function ModalEmpresa({
   );
 }
 
-function CampoFormulario({ label, name, type = 'text', ...props }) {
+function CampoFormulario({ label, name, type = 'text', className = '', ...props }) {
   return (
-    <div className="campoFormulario">
+    <div className={`campoFormulario ${className}`.trim()}>
       <label htmlFor={name}>{label}</label>
       <input id={name} name={name} type={type} className="entradaFormulario" {...props} />
+    </div>
+  );
+}
+
+function CampoTextoLongo({ label, name, className = '', rows = 4, ...props }) {
+  return (
+    <div className={`campoFormulario ${className}`.trim()}>
+      <label htmlFor={name}>{label}</label>
+      <textarea id={name} name={name} className="entradaFormulario entradaFormularioTextoCurto" rows={rows} {...props} />
     </div>
   );
 }
@@ -521,6 +578,9 @@ function criarFormularioEmpresa(empresa) {
     corSecundariaOrcamento: empresa.corSecundariaOrcamento || '#ef4444',
     corDestaqueOrcamento: empresa.corDestaqueOrcamento || '#f59e0b',
     destaqueItemOrcamentoPdf: normalizarDestaqueItemOrcamentoPdf(empresa.destaqueItemOrcamentoPdf),
+    assuntoEmailOrcamento: empresa.assuntoEmailOrcamento || estadoInicialFormulario.assuntoEmailOrcamento,
+    corpoEmailOrcamento: empresa.corpoEmailOrcamento || estadoInicialFormulario.corpoEmailOrcamento,
+    assinaturaEmailOrcamento: empresa.assinaturaEmailOrcamento || estadoInicialFormulario.assinaturaEmailOrcamento,
     logradouro: empresa.logradouro || '',
     numero: empresa.numero || '',
     complemento: empresa.complemento || '',
