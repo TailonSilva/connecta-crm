@@ -3,6 +3,7 @@ import { listarAtendimentos, listarCanaisAtendimento, listarOrigensAtendimento, 
 import { Botao } from '../comuns/botao';
 import { ModalFiltros } from '../comuns/modalFiltros';
 import { ModalBuscaClientes } from '../comuns/modalBuscaClientes';
+import { GradePadrao } from '../comuns/gradePadrao';
 import { ModalRelatorioGrade } from '../comuns/modalRelatorioGrade';
 import { PopupAvisos } from '../comuns/popupAvisos';
 import { TabelaHistoricoAtendimentos } from '../comuns/tabelaHistoricoAtendimentos';
@@ -19,6 +20,7 @@ import { normalizarPreco } from '../../utilitarios/normalizarPreco';
 import { exportarRelatorioAtendimentosPdf } from '../../utilitarios/configuracoes/exportarRelatorioAtendimentosPdf';
 import { exportarRelatorioConversaoPdf } from '../../utilitarios/configuracoes/exportarRelatorioConversaoPdf';
 import { exportarRelatorioPedidosFechadosPdf } from '../../utilitarios/configuracoes/exportarRelatorioPedidosFechadosPdf';
+import { exportarRelatorioItensPedidosFechadosPdf } from '../../utilitarios/configuracoes/exportarRelatorioItensPedidosFechadosPdf';
 
 const relatoriosConfiguracao = {
   relatorioPedidosFechados: {
@@ -26,6 +28,12 @@ const relatoriosConfiguracao = {
     subtitulo: 'Leitura baseada nas datas de inclusao e entrega dos pedidos.',
     tituloFiltro: 'Filtrar vendas',
     ariaFiltro: 'Filtrar vendas'
+  },
+  relatorioItensPedidosFechados: {
+    titulo: 'Itens de vendas',
+    subtitulo: 'Leitura baseada no mesmo recorte de vendas, com cada item do pedido em uma linha separada.',
+    tituloFiltro: 'Filtrar itens de vendas',
+    ariaFiltro: 'Filtrar itens de vendas'
   },
   relatorioPedidosEntregues: {
     titulo: 'Conversao',
@@ -88,7 +96,7 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
   const [rascunhoFiltrosAtendimentosRelatorio, definirRascunhoFiltrosAtendimentosRelatorio] = useState(() => obterFiltrosPadraoAtendimentos());
 
   useEffect(() => {
-    if (!aberto || relatorio !== 'relatorioPedidosFechados') {
+    if (!aberto || !['relatorioPedidosFechados', 'relatorioItensPedidosFechados'].includes(relatorio)) {
       if (!aberto) {
         definirModalFiltrosAberto(false);
         definirModalBuscaClienteAberto(false);
@@ -475,9 +483,16 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
     [pedidos, filtrosPedidosFechados]
   );
 
+  const itensPedidosFechadosFiltrados = useMemo(
+    () => criarItensPedidosFechadosRelatorio(pedidosFechadosFiltrados, filtrosPedidosFechados),
+    [filtrosPedidosFechados, pedidosFechadosFiltrados]
+  );
+
   const cardsPedidosFechados = useMemo(
-    () => montarCardsPedidosFechados(pedidosFechadosFiltrados),
-    [pedidosFechadosFiltrados]
+    () => relatorio === 'relatorioItensPedidosFechados'
+      ? montarCardsItensPedidosFechados(itensPedidosFechadosFiltrados)
+      : montarCardsPedidosFechados(pedidosFechadosFiltrados),
+    [itensPedidosFechadosFiltrados, pedidosFechadosFiltrados, relatorio]
   );
 
   const filtrosPedidosFechadosAtivos = useMemo(
@@ -581,6 +596,43 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
         cards: cardsPedidosFechados,
         usuarioLogado,
         quantidadeTotal: quantidadeTotalPedidosFechados
+      });
+
+      if (resultado.cancelado) {
+        return;
+      }
+
+      if (!resultado.sucesso) {
+        adicionarAvisoPdf('erro', 'Nao foi possivel gerar o PDF.', resultado.mensagem || 'Nao foi possivel exportar o PDF do relatorio.');
+        return;
+      }
+
+      adicionarAvisoPdf('sucesso', 'PDF gerado com sucesso.', 'O relatorio foi enviado para exportacao.');
+    } catch (erro) {
+      adicionarAvisoPdf('erro', 'Nao foi possivel gerar o PDF.', erro.message || 'Nao foi possivel exportar o PDF do relatorio.');
+    } finally {
+      definirGerandoPdf(false);
+    }
+  }
+
+  async function gerarPdfRelatorioItensPedidosFechados() {
+    if (gerandoPdf) {
+      return;
+    }
+
+    if (itensPedidosFechadosFiltrados.length === 0) {
+      adicionarAvisoPdf('erro', 'Nao foi possivel gerar o PDF.', 'Nao ha itens no recorte atual para exportar o relatorio.');
+      return;
+    }
+
+    definirGerandoPdf(true);
+
+    try {
+      const resultado = await exportarRelatorioItensPedidosFechadosPdf({
+        itens: itensPedidosFechadosFiltrados,
+        chips: chipsPedidosFechados,
+        cards: cardsPedidosFechados,
+        usuarioLogado
       });
 
       if (resultado.cancelado) {
@@ -787,28 +839,6 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
                 label: grupo.descricao || `Grupo #${grupo.idGrupoEmpresa}`
               }))
             },
-            {
-              name: 'idsGruposProduto',
-              label: 'Grupo de produto',
-              multiple: true,
-              tituloSelecao: 'Selecionar grupos de produto',
-              placeholder: 'Todos os grupos',
-              options: gruposProdutoRelatorio.map((grupo) => ({
-                valor: String(grupo.idGrupo),
-                label: grupo.descricao || `Grupo #${grupo.idGrupo}`
-              }))
-            },
-            {
-              name: 'idsMarcas',
-              label: 'Marca',
-              multiple: true,
-              tituloSelecao: 'Selecionar marcas',
-              placeholder: 'Todas as marcas',
-              options: marcasRelatorio.map((marca) => ({
-                valor: String(marca.idMarca),
-                label: marca.descricao || `Marca #${marca.idMarca}`
-              }))
-            },
               {
                 name: 'idsEtapasPedido',
                 label: 'Etapa',
@@ -855,6 +885,138 @@ export function ModalRelatorioConfiguracao({ relatorio, usuarioLogado, aoFechar 
               ]
             }
           ]}
+          aoFechar={() => {
+            definirModalFiltrosAberto(false);
+            definirModalBuscaClienteAberto(false);
+            definirRascunhoFiltrosPedidosFechados(filtrosPedidosFechados);
+          }}
+          aoAplicar={(proximosFiltros) => {
+            const filtrosNormalizados = normalizarFiltrosPedidosFechados(proximosFiltros);
+            definirFiltrosPedidosFechados(filtrosNormalizados);
+            definirRascunhoFiltrosPedidosFechados(filtrosNormalizados);
+            definirModalFiltrosAberto(false);
+            definirModalBuscaClienteAberto(false);
+          }}
+          aoLimpar={() => {
+            definirFiltrosPedidosFechados(filtrosPadraoPedidosFechados);
+            definirRascunhoFiltrosPedidosFechados(filtrosPadraoPedidosFechados);
+          }}
+        />
+
+        <ModalBuscaClientes
+          aberto={modalBuscaClienteAberto}
+          clientes={clientes}
+          aoSelecionar={(cliente) => {
+            definirRascunhoFiltrosPedidosFechados((estadoAtual) => ({
+              ...estadoAtual,
+              idCliente: String(cliente.idCliente || '')
+            }));
+            definirModalBuscaClienteAberto(false);
+          }}
+          aoFechar={() => definirModalBuscaClienteAberto(false)}
+        />
+
+        <PopupAvisos
+          avisos={avisosPopup}
+          aoFechar={(idAviso) => {
+            definirAvisosPopup((estadoAtual) => estadoAtual.filter((aviso) => aviso.id !== idAviso));
+          }}
+        />
+      </>
+    );
+  }
+
+  if (relatorio === 'relatorioItensPedidosFechados') {
+    return (
+      <>
+        <ModalRelatorioGrade
+          aberto={aberto}
+          titulo={configuracao.titulo}
+          subtitulo={configuracao.subtitulo}
+          chips={chipsPedidosFechados}
+          filtrosAtivos={filtrosPedidosFechadosAtivos}
+          tituloFiltro={configuracao.tituloFiltro}
+          ariaFiltro={configuracao.ariaFiltro}
+          onAbrirFiltros={() => {
+            definirRascunhoFiltrosPedidosFechados(filtrosPedidosFechados);
+            definirModalFiltrosAberto(true);
+          }}
+          acaoPdf={{
+            title: gerandoPdf
+              ? 'Gerando PDF do relatorio'
+              : exportacaoPdfDisponivel
+                ? 'Gerar PDF do relatorio'
+                : 'Abrir impressao para salvar como PDF',
+            ariaLabel: gerandoPdf
+              ? 'Gerando PDF do relatorio'
+              : 'Gerar PDF do relatorio',
+            disabled: gerandoPdf || carregandoPedidos,
+            onClick: gerarPdfRelatorioItensPedidosFechados
+          }}
+          onFechar={aoFechar}
+          cards={cardsPedidosFechados}
+        >
+          <section className="modalRelatorioGradePainelTabela painelContatosModalCliente painelPedidosCliente modalHistoricoVendasClientePainel">
+            <GradePadrao
+              className="gradeContatosModal gradePedidosCliente modalHistoricoVendasClienteGrade"
+              classNameTabela="tabelaContatosModal tabelaItensPedidosCliente"
+              classNameMensagem="mensagemTabelaContatosModal"
+              cabecalho={(
+                <tr>
+                  <th className="colunaHistoricoData">Inclusao</th>
+                  <th className="colunaHistoricoData">Entrega</th>
+                  <th className="colunaHistoricoPedido">Pedido</th>
+                  <th className="colunaHistoricoCliente">Cliente</th>
+                  <th className="colunaHistoricoReferencia">Referencia</th>
+                  <th className="colunaHistoricoDescricao">Descricao</th>
+                  <th className="colunaHistoricoEtapa">Tipo</th>
+                  <th className="colunaHistoricoVendedor">Vendedor</th>
+                  <th className="colunaHistoricoValor">VALOR UN</th>
+                  <th className="colunaHistoricoQuantidade">QTD</th>
+                  <th className="colunaHistoricoValorTotal">Valor total</th>
+                </tr>
+              )}
+              carregando={carregandoPedidos}
+              mensagemErro={mensagemErroPedidos}
+              temItens={itensPedidosFechadosFiltrados.length > 0}
+              mensagemCarregando="Carregando itens de vendas..."
+              mensagemVazia="Nenhum item de venda encontrado para o periodo informado."
+            >
+              {itensPedidosFechadosFiltrados.map((item) => (
+                <tr key={item.chave}>
+                  <td className="colunaHistoricoData">{formatarDataTabela(item.dataInclusao)}</td>
+                  <td className="colunaHistoricoData">{formatarDataTabela(item.dataEntrega)}</td>
+                  <td className="colunaHistoricoPedido">
+                    <span className="codigoHistoricoPedido">{`#${String(item.idPedido).padStart(4, '0')}`}</span>
+                  </td>
+                  <td className="colunaHistoricoCliente">{item.nomeCliente || 'Cliente nao informado'}</td>
+                  <td className="colunaHistoricoReferencia">{item.referenciaProduto || '-'}</td>
+                  <td className="colunaHistoricoDescricao">{item.descricaoProduto || 'Produto nao informado'}</td>
+                  <td className="colunaHistoricoEtapa">{item.nomeTipoPedido || 'Nao informado'}</td>
+                  <td className="colunaHistoricoVendedor">{item.nomeVendedor || 'Nao informado'}</td>
+                  <td className="colunaHistoricoValor">{normalizarPreco(item.valorUnitario)}</td>
+                  <td className="colunaHistoricoQuantidade">{formatarQuantidadeResumo(item.quantidade)}</td>
+                  <td className="colunaHistoricoValorTotal">{normalizarPreco(item.valorTotal)}</td>
+                </tr>
+              ))}
+            </GradePadrao>
+          </section>
+        </ModalRelatorioGrade>
+
+        <ModalFiltros
+          aberto={modalFiltrosAberto}
+          titulo="Filtros de itens de vendas"
+          filtros={rascunhoFiltrosPedidosFechados}
+          campos={montarCamposFiltrosPedidosFechados({
+            clientes,
+            vendedores,
+            gruposEmpresa: gruposEmpresaRelatorio,
+            gruposProduto: gruposProdutoRelatorio,
+            marcas: marcasRelatorio,
+            etapasPedido,
+            tiposPedido: tiposPedidoRelatorio,
+            onBuscarCliente: () => definirModalBuscaClienteAberto(true)
+          })}
           aoFechar={() => {
             definirModalFiltrosAberto(false);
             definirModalBuscaClienteAberto(false);
@@ -1325,7 +1487,9 @@ function enriquecerPedidosRelatorio(pedidos, clientes = [], produtos = [], grupo
         idGrupo: produto.idGrupo,
         nomeGrupoProduto: obterNomeGrupoProdutoPorId(gruposProduto, produto.idGrupo),
         idMarca: produto.idMarca,
-        nomeMarca: obterNomeMarcaPorId(marcas, produto.idMarca)
+        nomeMarca: obterNomeMarcaPorId(marcas, produto.idMarca),
+        referencia: produto.referencia || '',
+        descricao: produto.descricao || ''
       }
     ])
   );
@@ -1333,6 +1497,17 @@ function enriquecerPedidosRelatorio(pedidos, clientes = [], produtos = [], grupo
   return [...(pedidos || [])]
     .map((pedido) => ({
       ...pedido,
+      itens: Array.isArray(pedido.itens)
+        ? pedido.itens.map((item) => ({
+          ...item,
+          idGrupoProduto: produtosPorId.get(item.idProduto)?.idGrupo || null,
+          nomeGrupoProduto: produtosPorId.get(item.idProduto)?.nomeGrupoProduto || 'Sem grupo',
+          idMarca: produtosPorId.get(item.idProduto)?.idMarca || null,
+          nomeMarca: produtosPorId.get(item.idProduto)?.nomeMarca || 'Sem marca',
+          referenciaProdutoRelatorio: item.referenciaProdutoSnapshot || produtosPorId.get(item.idProduto)?.referencia || '',
+          descricaoProdutoRelatorio: item.descricaoProdutoSnapshot || produtosPorId.get(item.idProduto)?.descricao || 'Produto nao informado'
+        }))
+        : [],
       idGrupoEmpresa: clientesPorId.get(pedido.idCliente)?.idGrupoEmpresa || null,
       nomeGrupoEmpresa: clientesPorId.get(pedido.idCliente)?.nomeGrupoEmpresa || 'Sem grupo',
       idsGruposProduto: Array.from(new Set(
@@ -1462,6 +1637,59 @@ function montarCardsPedidosFechados(pedidos) {
   ];
 }
 
+function criarItensPedidosFechadosRelatorio(pedidos, filtros = {}) {
+  const idsGruposProduto = new Set((filtros.idsGruposProduto || []).map(String));
+  const idsMarcas = new Set((filtros.idsMarcas || []).map(String));
+
+  return (pedidos || []).flatMap((pedido) => (
+    Array.isArray(pedido.itens)
+      ? pedido.itens
+        .filter((item) => idsGruposProduto.size === 0 || idsGruposProduto.has(String(item.idGrupoProduto || '')))
+        .filter((item) => idsMarcas.size === 0 || idsMarcas.has(String(item.idMarca || '')))
+        .map((item, indice) => ({
+          chave: `${pedido.idPedido || 'pedido'}-${item.idItemPedido || indice}`,
+          idPedido: pedido.idPedido,
+          dataInclusao: pedido.dataInclusao,
+          dataEntrega: pedido.dataEntrega,
+          nomeCliente: pedido.nomeClienteSnapshot || 'Cliente nao informado',
+          nomeTipoPedido: pedido.nomeTipoPedidoSnapshot || '',
+          nomeVendedor: pedido.nomeVendedorSnapshot || '',
+          referenciaProduto: item.referenciaProdutoRelatorio || '',
+          descricaoProduto: item.descricaoProdutoRelatorio || 'Produto nao informado',
+          valorUnitario: Number(item.valorUnitario) || 0,
+          quantidade: Number(item.quantidade) || 0,
+          valorTotal: Number(item.valorTotal) || 0
+        }))
+      : []
+  ));
+}
+
+function montarCardsItensPedidosFechados(itens) {
+  const pedidos = new Set((itens || []).map((item) => String(item.idPedido || '')).filter(Boolean));
+  const produtos = new Set((itens || []).map((item) => String(item.descricaoProduto || '').trim()).filter(Boolean));
+  const valorTotal = (itens || []).reduce((total, item) => total + (Number(item.valorTotal) || 0), 0);
+  const quantidadeTotal = (itens || []).reduce((total, item) => total + (Number(item.quantidade) || 0), 0);
+
+  return [
+    {
+      titulo: 'Itens no recorte',
+      valor: String((itens || []).length)
+    },
+    {
+      titulo: 'Valor total',
+      valor: normalizarPreco(valorTotal)
+    },
+    {
+      titulo: 'Quantidade',
+      valor: formatarQuantidadeResumo(quantidadeTotal)
+    },
+    {
+      titulo: 'Pedidos/Produtos',
+      valor: `${pedidos.size}/${produtos.size}`
+    }
+  ];
+}
+
 function montarCardsPlaceholder(titulo) {
   return [
     {
@@ -1483,6 +1711,132 @@ function montarCardsPlaceholder(titulo) {
       titulo: 'Filtro de cabecalho',
       valor: 'Expansivel',
       descricao: 'A mesma base pode receber filtros no cabecalho sempre que o fluxo for evoluido.'
+    }
+  ];
+}
+
+function montarCamposFiltrosPedidosFechados({
+  clientes,
+  vendedores,
+  gruposEmpresa,
+  gruposProduto,
+  marcas,
+  etapasPedido,
+  tiposPedido,
+  onBuscarCliente
+}) {
+  return [
+    {
+      name: 'idCliente',
+      label: 'Cliente',
+      placeholder: 'Todos os clientes',
+      options: clientes.map((cliente) => ({
+        valor: String(cliente.idCliente),
+        label: cliente.nomeFantasia || cliente.razaoSocial || `Cliente #${cliente.idCliente}`
+      })),
+      acaoExtra: (
+        <Botao
+          variante="secundario"
+          type="button"
+          icone="pesquisa"
+          className="botaoCampoAcao"
+          somenteIcone
+          title="Buscar cliente"
+          aria-label="Buscar cliente"
+          onClick={onBuscarCliente}
+        >
+          Buscar cliente
+        </Botao>
+      )
+    },
+    {
+      name: 'idsVendedores',
+      label: 'Vendedor',
+      multiple: true,
+      tituloSelecao: 'Selecionar vendedores',
+      placeholder: 'Todos os vendedores',
+      options: vendedores.map((vendedor) => ({
+        valor: String(vendedor.idVendedor),
+        label: vendedor.nome || `Vendedor #${vendedor.idVendedor}`
+      }))
+    },
+    {
+      name: 'idsGruposEmpresa',
+      label: 'Grupo de empresa',
+      multiple: true,
+      tituloSelecao: 'Selecionar grupos de empresa',
+      placeholder: 'Todos os grupos',
+      options: gruposEmpresa.map((grupo) => ({
+        valor: String(grupo.idGrupoEmpresa),
+        label: grupo.descricao || `Grupo #${grupo.idGrupoEmpresa}`
+      }))
+    },
+    {
+      name: 'idsGruposProduto',
+      label: 'Grupo de produto',
+      multiple: true,
+      tituloSelecao: 'Selecionar grupos de produto',
+      placeholder: 'Todos os grupos',
+      options: gruposProduto.map((grupo) => ({
+        valor: String(grupo.idGrupo),
+        label: grupo.descricao || `Grupo #${grupo.idGrupo}`
+      }))
+    },
+    {
+      name: 'idsMarcas',
+      label: 'Marca',
+      multiple: true,
+      tituloSelecao: 'Selecionar marcas',
+      placeholder: 'Todas as marcas',
+      options: marcas.map((marca) => ({
+        valor: String(marca.idMarca),
+        label: marca.descricao || `Marca #${marca.idMarca}`
+      }))
+    },
+    {
+      name: 'idsEtapasPedido',
+      label: 'Etapa',
+      multiple: true,
+      tituloSelecao: 'Selecionar etapas do pedido',
+      placeholder: 'Todas as etapas',
+      options: etapasPedido.map((etapa) => ({
+        valor: String(etapa.idEtapaPedido),
+        label: etapa.descricao || `Etapa #${etapa.idEtapaPedido}`
+      }))
+    },
+    {
+      name: 'idsTiposPedido',
+      label: 'Tipo de venda',
+      multiple: true,
+      tituloSelecao: 'Selecionar tipos de venda',
+      placeholder: 'Todos os tipos',
+      options: tiposPedido.map((tipoPedido) => ({
+        valor: String(tipoPedido.idTipoPedido),
+        label: tipoPedido.descricao || `Tipo #${tipoPedido.idTipoPedido}`
+      }))
+    },
+    {
+      name: 'periodoInclusaoPedidosFechados',
+      label: 'Datas',
+      type: 'date-filters-modal',
+      tituloSelecao: 'Filtro por datas de vendas',
+      placeholder: 'Selecionar periodo',
+      periodos: [
+        {
+          titulo: 'Data de inclusao',
+          nomeInicio: 'dataInclusaoInicio',
+          nomeFim: 'dataInclusaoFim',
+          labelInicio: 'Inicio da inclusao',
+          labelFim: 'Fim da inclusao'
+        },
+        {
+          titulo: 'Data de entrega',
+          nomeInicio: 'dataEntregaInicio',
+          nomeFim: 'dataEntregaFim',
+          labelInicio: 'Inicio da entrega',
+          labelFim: 'Fim da entrega'
+        }
+      ]
     }
   ];
 }
@@ -1693,6 +2047,10 @@ function formatarDataResumo(valor) {
   }
 
   return new Intl.DateTimeFormat('pt-BR').format(new Date(`${valor}T00:00:00`));
+}
+
+function formatarDataTabela(valor) {
+  return valor ? formatarDataResumo(valor) : 'Nao informada';
 }
 
 function validarPeriodoData(valorData, dataInicio, dataFim) {

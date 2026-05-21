@@ -289,6 +289,11 @@ const atalhosConfiguracao = [
     icone: 'pedido'
   },
   {
+    id: 'relatorioItensPedidosFechados',
+    titulo: 'Itens de vendas',
+    icone: 'produtos'
+  },
+  {
     id: 'relatorioPedidosEntregues',
     titulo: 'Conversao',
     icone: 'orcamento'
@@ -358,6 +363,7 @@ const secoesConfiguracao = [
         'marcas',
         'atualizacaoSistema',
         'relatorioPedidosFechados',
+        'relatorioItensPedidosFechados',
         'relatorioPedidosEntregues',
         'relatorioAtendimentos',
         'unidadesMedida',
@@ -367,7 +373,7 @@ const secoesConfiguracao = [
   {
     id: 'relatorios',
     titulo: 'Relatorios',
-    atalhos: ['relatorioPedidosFechados', 'relatorioPedidosEntregues', 'relatorioAtendimentos']
+    atalhos: ['relatorioPedidosFechados', 'relatorioItensPedidosFechados', 'relatorioPedidosEntregues', 'relatorioAtendimentos']
   }
 ];
 const IDS_STATUS_VISITA_CRITICOS = new Set([1, 2, 3, 4, 5]);
@@ -1405,6 +1411,7 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
 
     if ([
       'relatorioPedidosFechados',
+      'relatorioItensPedidosFechados',
       'relatorioPedidosEntregues',
       'relatorioAtendimentos'
     ].includes(atalho.id)) {
@@ -1569,6 +1576,7 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
                             'colunasGridAtendimentos',
                             'atualizacaoSistema',
                             'relatorioPedidosFechados',
+                            'relatorioItensPedidosFechados',
                             'relatorioPedidosEntregues',
                             'relatorioAtendimentos'
                           ].includes(atalho.id))
