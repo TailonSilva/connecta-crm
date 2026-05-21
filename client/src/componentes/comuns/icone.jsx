@@ -23,6 +23,12 @@ const caminhosIcones = {
   produtos: (
     <path d="M4.5 7.5 12 4l7.5 3.5L12 11 4.5 7.5Zm0 3.5L11 14v6L4.5 17Zm15 0V17L13 20v-6Z" />
   ),
+  servicos: (
+    <>
+      <path d="M6.5 4.5h8l3 3V18A1.5 1.5 0 0 1 16 19.5H8A1.5 1.5 0 0 1 6.5 18Z" />
+      <path d="M14.5 4.5V8h3M9 11h6M9 14h6M9 17h3" />
+    </>
+  ),
   configuracoes: (
     <>
       <path d="M6 7.5h12" />

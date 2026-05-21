@@ -197,6 +197,11 @@
   color: #b34c4c;
 }
 
+.etiquetaStatus.pendente {
+  background: rgba(122, 136, 148, 0.14);
+  color: #62717d;
+}
+
 .etiquetaPrincipal {
   background: rgba(242, 145, 31, 0.14);
   color: #c46a06;

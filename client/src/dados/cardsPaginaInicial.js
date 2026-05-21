@@ -100,21 +100,37 @@ export const cardsPaginaInicial = [
   }
 ];
 
-const idsPermitidosCardsPaginaInicial = new Set(cardsPaginaInicial.map((item) => item.id));
-const mapaCardsPaginaInicial = new Map(cardsPaginaInicial.map((item) => [item.id, item]));
+export function criarDefinicoesCardsServicosPaginaInicial(servicos) {
+  return (servicos || [])
+    .filter((servico) => Number(servico.status ?? 1) !== 0)
+    .map((servico, indice) => ({
+      id: criarIdCardServicoPaginaInicial(servico.idServico),
+      rotulo: servico.descricao || `Servico #${servico.idServico}`,
+      ajudaConfiguracao: 'Mostra a quantidade e o percentual de clientes com este servico contratado.',
+      ordemPadrao: cardsPaginaInicial.length + indice + 1,
+      spanPadrao: 2,
+      visivelPadrao: true,
+      dinamico: true
+    }));
+}
 
-export function normalizarConfiguracoesCardsPaginaInicial(valor) {
+export function normalizarConfiguracoesCardsPaginaInicial(valor, definicoesExtras = []) {
+  const definicoesPorId = new Map(combinarDefinicoesCards(definicoesExtras).map((item) => [item.id, item]));
   const lista = normalizarListaConfiguracoes(valor);
   const configuracoesPorId = new Map();
 
   lista.forEach((item, indice) => {
     const id = String(item?.id || '').trim();
 
-    if (!idsPermitidosCardsPaginaInicial.has(id)) {
+    if (!definicoesPorId.has(id) && !idEhCardServicoPaginaInicial(id)) {
       return;
     }
 
-    const definicao = mapaCardsPaginaInicial.get(id);
+    if (!definicoesPorId.has(id)) {
+      definicoesPorId.set(id, criarDefinicaoCardServicoPersistido(item, indice));
+    }
+
+    const definicao = definicoesPorId.get(id);
     const configuracaoExistente = configuracoesPorId.get(id);
 
     configuracoesPorId.set(id, {
@@ -133,7 +149,8 @@ export function normalizarConfiguracoesCardsPaginaInicial(valor) {
     });
   });
 
-  const configuracoesNormalizadas = cardsPaginaInicial.map((definicao, indice) => {
+  const definicoes = [...definicoesPorId.values()];
+  const configuracoesNormalizadas = definicoes.map((definicao, indice) => {
     const configuracao = configuracoesPorId.get(definicao.id);
 
     return {
@@ -149,10 +166,11 @@ export function normalizarConfiguracoesCardsPaginaInicial(valor) {
     };
   });
 
-  return reordenarConfiguracoesCardsPaginaInicial(configuracoesNormalizadas);
+  return reordenarConfiguracoesCardsPaginaInicial(configuracoesNormalizadas, definicoesExtras);
 }
 
-export function reordenarConfiguracoesCardsPaginaInicial(configuracoes) {
+export function reordenarConfiguracoesCardsPaginaInicial(configuracoes, definicoesExtras = []) {
+  const definicoes = combinarDefinicoesCards(definicoesExtras);
   const lista = Array.isArray(configuracoes)
     ? configuracoes.map((item) => ({ ...item }))
     : [];
@@ -164,7 +182,7 @@ export function reordenarConfiguracoesCardsPaginaInicial(configuracoes) {
       ordem: indice + 1,
       visivel: true
     }));
-  const ocultos = cardsPaginaInicial
+  const ocultos = definicoes
     .map((definicao) => lista.find((item) => item.id === definicao.id))
     .filter(Boolean)
     .filter((item) => !item.visivel)
@@ -176,12 +194,12 @@ export function reordenarConfiguracoesCardsPaginaInicial(configuracoes) {
   return [...visiveis, ...ocultos];
 }
 
-export function reposicionarConfiguracaoCardsPaginaInicial(configuracoes, idCard, ordemDesejada) {
+export function reposicionarConfiguracaoCardsPaginaInicial(configuracoes, idCard, ordemDesejada, definicoesExtras = []) {
   const lista = Array.isArray(configuracoes) ? configuracoes.map((item) => ({ ...item })) : [];
   const cardAlvo = lista.find((item) => item.id === idCard);
 
   if (!cardAlvo) {
-    return reordenarConfiguracoesCardsPaginaInicial(lista);
+    return reordenarConfiguracoesCardsPaginaInicial(lista, definicoesExtras);
   }
 
   const visiveis = lista
@@ -207,7 +225,43 @@ export function reposicionarConfiguracaoCardsPaginaInicial(configuracoes, idCard
   return reordenarConfiguracoesCardsPaginaInicial([
     ...visiveisReindexados,
     ...lista.filter((item) => !item.visivel)
-  ]);
+  ], definicoesExtras);
+}
+
+export function criarIdCardServicoPaginaInicial(idServico) {
+  return `servicoContratado_${idServico}`;
+}
+
+function idEhCardServicoPaginaInicial(id) {
+  return String(id || '').startsWith('servicoContratado_');
+}
+
+function criarDefinicaoCardServicoPersistido(item, indice) {
+  const rotulo = normalizarRotulo(item?.rotulo, 'Servico contratado');
+
+  return {
+    id: String(item?.id || '').trim(),
+    rotulo,
+    ajudaConfiguracao: 'Mostra a quantidade e o percentual de clientes com este servico contratado.',
+    ordemPadrao: cardsPaginaInicial.length + indice + 1,
+    spanPadrao: 2,
+    visivelPadrao: Boolean(item?.visivel),
+    dinamico: true
+  };
+}
+
+function combinarDefinicoesCards(definicoesExtras = []) {
+  const definicoesPorId = new Map(cardsPaginaInicial.map((item) => [item.id, item]));
+
+  (definicoesExtras || []).forEach((definicao) => {
+    const id = String(definicao?.id || '').trim();
+
+    if (id) {
+      definicoesPorId.set(id, definicao);
+    }
+  });
+
+  return [...definicoesPorId.values()];
 }
 
 function normalizarListaConfiguracoes(valor) {

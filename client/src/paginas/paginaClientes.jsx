@@ -5,8 +5,10 @@ import {
   atualizarCliente,
   atualizarConceitoCliente,
   atualizarContato,
+  atualizarClienteServico,
   atualizarGrupoEmpresa,
   atualizarRamoAtividade,
+  incluirClienteServico,
   incluirConceitoCliente,
   incluirGrupoEmpresa,
   incluirRamoAtividade,
@@ -14,12 +16,14 @@ import {
   incluirContato,
   importarClientesPlanilha,
   listarClientesGrid,
+  listarClientesServicos,
   listarConceitosCliente,
   listarContatos,
   listarGruposEmpresa,
   listarRamosAtividade,
   listarVendedores
 } from '../servicos/clientes';
+import { listarServicos } from '../servicos/servicos';
 import { atualizarEmpresa, criarPayloadAtualizacaoColunasGrid, listarEmpresas } from '../servicos/empresa';
 import {
   atualizarContatoGrupoEmpresa,
@@ -54,6 +58,8 @@ export function PaginaClientes({ usuarioLogado }) {
   const [pesquisa, definirPesquisa] = useState('');
   const [clientes, definirClientes] = useState([]);
   const [contatos, definirContatos] = useState([]);
+  const [clienteServicos, definirClienteServicos] = useState([]);
+  const [servicos, definirServicos] = useState([]);
   const [gruposEmpresa, definirGruposEmpresa] = useState([]);
   const [contatosGruposEmpresa, definirContatosGruposEmpresa] = useState([]);
   const [empresa, definirEmpresa] = useState(null);
@@ -142,6 +148,8 @@ export function PaginaClientes({ usuarioLogado }) {
     try {
       const resultados = await Promise.allSettled([
         listarContatos(),
+        listarClientesServicos(),
+        listarServicos({ incluirInativos: true }),
         listarGruposEmpresa({ incluirInativos: true }),
         listarContatosGruposEmpresaConfiguracao({ incluirInativos: true }),
         listarEmpresas(),
@@ -152,6 +160,8 @@ export function PaginaClientes({ usuarioLogado }) {
 
       const [
         contatosResultado,
+        clienteServicosResultado,
+        servicosResultado,
         gruposEmpresaResultado,
         contatosGrupoResultado,
         empresasResultado,
@@ -161,6 +171,8 @@ export function PaginaClientes({ usuarioLogado }) {
       ] = resultados;
 
       definirContatos(contatosResultado.status === 'fulfilled' ? contatosResultado.value : []);
+      definirClienteServicos(clienteServicosResultado.status === 'fulfilled' ? clienteServicosResultado.value : []);
+      definirServicos(servicosResultado.status === 'fulfilled' ? servicosResultado.value : []);
       definirGruposEmpresa(gruposEmpresaResultado.status === 'fulfilled' ? gruposEmpresaResultado.value : []);
       definirContatosGruposEmpresa(contatosGrupoResultado.status === 'fulfilled' ? contatosGrupoResultado.value : []);
       definirEmpresa(
@@ -241,9 +253,40 @@ export function PaginaClientes({ usuarioLogado }) {
       dadosCliente.contatos || []
     );
 
+    await salvarServicosCliente(
+      clienteSalvo.idCliente,
+      dadosCliente.servicos || []
+    );
+
     await recarregarPagina();
     definirModalAberto(false);
     definirClienteEmEdicao(null);
+  }
+
+  async function salvarServicosCliente(idCliente, servicosCliente) {
+    for (const servicoCliente of servicosCliente) {
+      const observacao = String(servicoCliente.observacao || '').trim();
+      const situacao = obterSituacaoServicoCliente(servicoCliente);
+      const contratado = situacao === 'contratado' ? 1 : 0;
+
+      if (!servicoCliente.idClienteServico && situacao === 'naoContratado' && !observacao) {
+        continue;
+      }
+
+      const payload = {
+        idCliente,
+        idServico: Number(servicoCliente.idServico),
+        contratado,
+        situacao,
+        observacao
+      };
+
+      if (servicoCliente.idClienteServico) {
+        await atualizarClienteServico(servicoCliente.idClienteServico, payload);
+      } else {
+        await incluirClienteServico(payload);
+      }
+    }
   }
 
   async function importarClientes(linhas) {
@@ -521,6 +564,8 @@ export function PaginaClientes({ usuarioLogado }) {
         codigoSugerido={proximoCodigoCliente}
         contatos={obterContatosDoCliente(contatos, clienteEmEdicao?.idCliente)}
         contatosEditaveis={obterContatosEditaveisDoCliente(contatos, clienteEmEdicao?.idCliente)}
+        servicos={servicos}
+        clienteServicos={obterServicosDoCliente(clienteServicos, clienteEmEdicao?.idCliente)}
         gruposEmpresa={gruposEmpresa}
         contatosGruposEmpresa={contatosGruposEmpresa}
         vendedores={vendedoresDisponiveis}
@@ -662,6 +707,26 @@ function obterContatosDoCliente(contatos, idCliente) {
 function obterContatosEditaveisDoCliente(contatos, idCliente) {
   return obterContatosDoCliente(contatos, idCliente)
     .filter((contato) => !Boolean(contato.contatoVinculadoGrupo));
+}
+
+function obterServicosDoCliente(clienteServicos, idCliente) {
+  if (!idCliente) {
+    return [];
+  }
+
+  return (clienteServicos || []).filter((servicoCliente) => (
+    String(servicoCliente.idCliente) === String(idCliente)
+  ));
+}
+
+function obterSituacaoServicoCliente(servicoCliente) {
+  const situacao = String(servicoCliente?.situacao || '').trim();
+
+  if (['contratado', 'naoContratado', 'naoAplicavel'].includes(situacao)) {
+    return situacao;
+  }
+
+  return servicoCliente?.contratado ? 'contratado' : 'naoContratado';
 }
 
 function normalizarPayloadCliente(dadosCliente) {

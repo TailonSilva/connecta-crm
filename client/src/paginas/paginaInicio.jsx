@@ -3,7 +3,7 @@ import '../recursos/estilos/paginaInicio.css';
 import { CorpoPagina } from '../componentes/layout/corpoPagina';
 import { listarAgendamentos } from '../servicos/agenda';
 import { listarAtendimentosGrid } from '../servicos/atendimentos';
-import { listarClientes, listarConceitosCliente, listarVendedores } from '../servicos/clientes';
+import { listarClientes, listarClientesServicos, listarConceitosCliente, listarVendedores } from '../servicos/clientes';
 import {
   listarCanaisAtendimentoConfiguracao,
   listarEtapasOrcamentoConfiguracao,
@@ -17,11 +17,16 @@ import { listarEmpresas } from '../servicos/empresa';
 import { listarOrcamentos } from '../servicos/orcamentos';
 import { listarPedidos } from '../servicos/pedidos';
 import { listarGruposProduto, listarMarcas, listarProdutos } from '../servicos/produtos';
+import { listarServicos } from '../servicos/servicos';
 import { listarUsuarios } from '../servicos/usuarios';
 import { formatarCodigoCliente } from '../utilitarios/codigoCliente';
 import { normalizarPreco } from '../utilitarios/normalizarPreco';
 import { registroEstaAtivo } from '../utilitarios/statusRegistro';
-import { normalizarConfiguracoesCardsPaginaInicial } from '../dados/cardsPaginaInicial';
+import {
+  criarDefinicoesCardsServicosPaginaInicial,
+  criarIdCardServicoPaginaInicial,
+  normalizarConfiguracoesCardsPaginaInicial
+} from '../dados/cardsPaginaInicial';
 import { CabecalhoInicio } from '../componentes/modulos/inicio-cabecalhoInicio';
 import { IndicadorConfiguravelInicio } from '../componentes/modulos/inicio-indicadorConfiguravelInicio';
 import { IndicadorResumoInicio } from '../componentes/modulos/inicio-indicadorResumoInicio';
@@ -38,6 +43,7 @@ import { SecaoVendasClientesInicio } from '../componentes/modulos/inicio-secaoVe
 import { SecaoVendasConceitosClienteInicio } from '../componentes/modulos/inicio-secaoVendasConceitosClienteInicio';
 import { SecaoVendasProdutosInicio } from '../componentes/modulos/inicio-secaoVendasProdutosInicio';
 import { SecaoVendasUfInicio } from '../componentes/modulos/inicio-secaoVendasUfInicio';
+import { SecaoServicosClientesInicio } from '../componentes/modulos/inicio-secaoServicosClientesInicio';
 import { SecaoAtendimentosCanalInicio } from '../componentes/modulos/inicio-secaoAtendimentosCanalInicio';
 import { SecaoAtendimentosOrigemInicio } from '../componentes/modulos/inicio-secaoAtendimentosOrigemInicio';
 import { SecaoAtendimentosClientesInicio } from '../componentes/modulos/inicio-secaoAtendimentosClientesInicio';
@@ -154,6 +160,8 @@ export function PaginaInicio({ usuarioLogado }) {
         listarOrigensAtendimentoConfiguracao(),
         listarTiposAtendimentoConfiguracao(),
         listarUsuarios({ incluirInativos: true }),
+        listarServicos({ incluirInativos: true }),
+        listarClientesServicos(),
         listarEmpresas()
       ]);
 
@@ -176,6 +184,8 @@ export function PaginaInicio({ usuarioLogado }) {
         origensAtendimentoResultado,
         tiposAtendimentoResultado,
         usuariosResultado,
+        servicosResultado,
+        clientesServicosResultado,
         empresasResultado
       ] = resultados;
 
@@ -197,6 +207,8 @@ export function PaginaInicio({ usuarioLogado }) {
       const origensAtendimento = origensAtendimentoResultado.status === 'fulfilled' ? origensAtendimentoResultado.value : [];
       const tiposAtendimento = tiposAtendimentoResultado.status === 'fulfilled' ? tiposAtendimentoResultado.value : [];
       const usuarios = usuariosResultado.status === 'fulfilled' ? usuariosResultado.value : [];
+      const servicos = servicosResultado.status === 'fulfilled' ? servicosResultado.value : [];
+      const clientesServicos = clientesServicosResultado.status === 'fulfilled' ? clientesServicosResultado.value : [];
       const empresas = empresasResultado.status === 'fulfilled' ? empresasResultado.value : [];
 
       definirPainelBruto({
@@ -218,6 +230,8 @@ export function PaginaInicio({ usuarioLogado }) {
         origensAtendimento,
         tiposAtendimento,
         usuarios,
+        servicos,
+        clientesServicos,
         empresa: empresas[0] || null
       });
     } catch (_erro) {
@@ -254,7 +268,9 @@ export function PaginaInicio({ usuarioLogado }) {
         ) : (
           <div className="paginaInicioLayout">
             <div className="paginaInicioGradeIndicadores">
-              {indicadoresConfigurados.map((indicador) => (
+              {indicadoresConfigurados
+                .filter((indicador) => abaAtiva === 'vendas' || !String(indicador.id || '').startsWith('servicoContratado_'))
+                .map((indicador) => (
                 <IndicadorConfiguravelInicio key={indicador.id} colunas={indicador.span}>
                   <IndicadorResumoInicio
                     ariaLabel={indicador.titulo}
@@ -481,6 +497,11 @@ function montarPainel(dados, usuarioLogado) {
     clientesVisiveis,
     dados.conceitosCliente
   );
+  const servicosClientes = montarResumoServicosClientes(
+    clientesVisiveis,
+    dados.servicos,
+    dados.clientesServicos
+  );
   const atendimentosPorCanal = montarResumoAtendimentosPorRelacionamento(
     atendimentosMesHome,
     dados.canaisAtendimento,
@@ -518,6 +539,7 @@ function montarPainel(dados, usuarioLogado) {
   return {
     ...base,
     empresa: dados.empresa || null,
+    servicos: dados.servicos || [],
     resumo: usuarioLogado?.tipo === 'Usuario padrao'
       ? `${clientesVisiveis.length} clientes na sua carteira`
       : `${clientesVisiveis.length} clientes no acompanhamento`,
@@ -744,6 +766,7 @@ function montarPainel(dados, usuarioLogado) {
     vendasPorCliente,
     vendasPorConceitoCliente,
     vendasPorProduto,
+    servicosClientes,
     atendimentosPorCanal,
     atendimentosPorOrigem,
     atendimentosPorCliente,
@@ -795,11 +818,16 @@ function montarSecoesOrcamentos(painel) {
 }
 
 function montarIndicadoresConfigurados(painel) {
-  const configuracoes = Array.isArray(painel?.empresa?.cardsPaginaInicial)
-    ? painel.empresa.cardsPaginaInicial
-    : normalizarConfiguracoesCardsPaginaInicial();
+  const definicoesCardsServicos = criarDefinicoesCardsServicosPaginaInicial(painel?.servicos || []);
+  const configuracoes = normalizarConfiguracoesCardsPaginaInicial(
+    painel?.empresa?.cardsPaginaInicial,
+    definicoesCardsServicos
+  );
   const indicadoresPorId = new Map(
-    (painel?.indicadores || []).map((indicador) => [indicador.id, indicador])
+    [
+      ...(painel?.indicadores || []),
+      ...montarIndicadoresServicosContratados(painel)
+    ].map((indicador) => [indicador.id, indicador])
   );
 
   return configuracoes
@@ -818,6 +846,22 @@ function montarIndicadoresConfigurados(painel) {
       };
     })
     .filter(Boolean);
+}
+
+function montarIndicadoresServicosContratados(painel) {
+  return (painel?.servicosClientes || []).map((servico) => ({
+    id: criarIdCardServicoPaginaInicial(servico.id),
+    span: 2,
+    icone: 'servicos',
+    titulo: servico.descricao,
+    valor: String(servico.quantidadeContratados || 0),
+    valorComplemento: formatarPercentualTaxa(servico.percentualContratados),
+    descricao: 'Clientes com este servico contratado.',
+    ajuda: {
+      composicao: `${servico.quantidadeContratados || 0} clientes com servico contratado de um total de ${servico.totalClientes || 0} clientes visiveis.`,
+      periodo: 'Base cadastral atual da carteira visivel.'
+    }
+  }));
 }
 
 function montarSecoesVendas(painel) {
@@ -854,6 +898,9 @@ function montarSecoesVendas(painel) {
           itens={painel.ranking}
         />
       )
+    }],
+    ['servicosClientes', {
+      renderizar: (configuracao) => <SecaoServicosClientesInicio itens={painel.servicosClientes} titulo={configuracao.rotulo} />
     }]
   ]);
 
@@ -1065,6 +1112,7 @@ function criarPainelBase(usuarioLogado) {
     vendasPorCliente: [],
     vendasPorConceitoCliente: [],
     vendasPorProduto: [],
+    servicosClientes: [],
     atendimentosPorCanal: [],
     atendimentosPorOrigem: [],
     atendimentosPorCliente: [],
@@ -1563,6 +1611,78 @@ function montarResumoPorConceitoCliente(pedidos, clientes, conceitosCliente) {
       periodo: 'Mes corrente pela data de entrada do pedido.'
     }
   }));
+}
+
+function montarResumoServicosClientes(clientes, servicos, clientesServicos) {
+  const clientesVisiveis = Array.isArray(clientes) ? clientes : [];
+  const totalClientes = clientesVisiveis.length;
+  const idsClientesVisiveis = new Set(clientesVisiveis.map((cliente) => String(cliente.idCliente)));
+  const vinculosPorClienteServico = new Map(
+    (clientesServicos || [])
+      .filter((vinculo) => idsClientesVisiveis.has(String(vinculo?.idCliente || '')))
+      .map((vinculo) => [`${vinculo.idCliente}-${vinculo.idServico}`, vinculo])
+  );
+
+  return (servicos || [])
+    .filter((servico) => Number(servico.status ?? 1) !== 0 || possuiVinculoServico(vinculosPorClienteServico, servico.idServico))
+    .map((servico) => {
+      const resumo = clientesVisiveis.reduce((acumulado, cliente) => {
+        const vinculo = vinculosPorClienteServico.get(`${cliente.idCliente}-${servico.idServico}`);
+        const situacao = obterSituacaoServicoClienteInicio(vinculo);
+
+        if (situacao === 'contratado') {
+          acumulado.quantidadeContratados += 1;
+        } else if (situacao === 'naoAplicavel') {
+          acumulado.quantidadeNaoAplicavel += 1;
+        } else {
+          acumulado.quantidadeNaoContratados += 1;
+        }
+
+        return acumulado;
+      }, {
+        quantidadeContratados: 0,
+        quantidadeNaoContratados: 0,
+        quantidadeNaoAplicavel: 0
+      });
+      const quantidadeNaoOuNaoAplicavel = resumo.quantidadeNaoContratados + resumo.quantidadeNaoAplicavel;
+
+      return {
+        id: String(servico.idServico),
+        descricao: servico.descricao || `Servico #${servico.idServico}`,
+        valor: `${resumo.quantidadeContratados} sim`,
+        quantidadeItens: quantidadeNaoOuNaoAplicavel,
+        quantidadeContratados: resumo.quantidadeContratados,
+        quantidadeNaoContratados: resumo.quantidadeNaoContratados,
+        quantidadeNaoAplicavel: resumo.quantidadeNaoAplicavel,
+        totalClientes,
+        percentualContratados: calcularPercentualParteDoTotal(resumo.quantidadeContratados, totalClientes),
+        percentualNaoContratados: calcularPercentualParteDoTotal(resumo.quantidadeNaoContratados, totalClientes),
+        percentualNaoAplicavel: calcularPercentualParteDoTotal(resumo.quantidadeNaoAplicavel, totalClientes),
+        percentualNaoOuNaoAplicavel: calcularPercentualParteDoTotal(quantidadeNaoOuNaoAplicavel, totalClientes),
+        ajuda: {
+          composicao: `${resumo.quantidadeContratados} clientes com servico contratado, ${resumo.quantidadeNaoContratados} nao contratados e ${resumo.quantidadeNaoAplicavel} como N/A para ${servico.descricao || 'Servico'}.`,
+          periodo: 'Base cadastral atual da carteira visivel.'
+        }
+      };
+    })
+    .sort((servicoA, servicoB) => (
+      servicoB.quantidadeContratados - servicoA.quantidadeContratados
+      || String(servicoA.descricao || '').localeCompare(String(servicoB.descricao || ''), 'pt-BR')
+    ));
+}
+
+function possuiVinculoServico(vinculosPorClienteServico, idServico) {
+  return [...vinculosPorClienteServico.keys()].some((chave) => chave.endsWith(`-${idServico}`));
+}
+
+function obterSituacaoServicoClienteInicio(vinculo) {
+  const situacao = String(vinculo?.situacao || '').trim();
+
+  if (['contratado', 'naoContratado', 'naoAplicavel'].includes(situacao)) {
+    return situacao;
+  }
+
+  return vinculo?.contratado ? 'contratado' : 'naoContratado';
 }
 
 function montarResumoAtendimentosPorRelacionamento(

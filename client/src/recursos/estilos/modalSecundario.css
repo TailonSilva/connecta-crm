@@ -268,6 +268,47 @@
   padding-right: 16px;
 }
 
+.tabelaServicosCliente th:nth-child(1),
+.tabelaServicosCliente td:nth-child(1) {
+  width: 34%;
+}
+
+.tabelaServicosCliente th:nth-child(2),
+.tabelaServicosCliente td:nth-child(2) {
+  width: 140px;
+}
+
+.tabelaServicosCliente th:nth-child(3),
+.tabelaServicosCliente td:nth-child(3) {
+  width: auto;
+}
+
+.entradaFormularioObservacaoServico {
+  width: 100%;
+  min-height: 44px;
+  resize: vertical;
+}
+
+.campoCheckboxServicoCliente {
+  min-height: 36px;
+}
+
+.modalClienteServicosCliente {
+  max-width: min(920px, calc(100vw - 48px));
+}
+
+.modalClienteServicosCliente .corpoModalCliente {
+  max-height: min(68vh, 620px);
+}
+
+.gradeFormularioServicoCliente {
+  grid-template-columns: minmax(220px, 1fr) minmax(140px, 180px);
+}
+
+.gradeFormularioServicoCliente .campoFormularioIntegral {
+  grid-column: 1 / -1;
+}
+
 .celulaContatoModal,
 .celulaContatoComunicacao {
   display: grid;

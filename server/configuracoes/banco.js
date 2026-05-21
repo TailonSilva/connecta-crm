@@ -136,6 +136,14 @@ banco.serialize(() => {
   `);
 
   banco.run(`
+    CREATE TABLE IF NOT EXISTS servico (
+      idServico INTEGER PRIMARY KEY AUTOINCREMENT,
+      descricao VARCHAR(255) NOT NULL,
+      status BOOLEAN NOT NULL DEFAULT 1
+    )
+  `);
+
+  banco.run(`
     CREATE TABLE IF NOT EXISTS localAgenda (
       idLocal INTEGER PRIMARY KEY AUTOINCREMENT,
       descricao VARCHAR(150) NOT NULL,
@@ -1186,6 +1194,39 @@ banco.serialize(() => {
       console.error('Nao foi possivel garantir a coluna idContatoGrupoEmpresaOrigem do contato.', erro);
     }
   });
+
+  banco.run(`
+    CREATE TABLE IF NOT EXISTS clienteServico (
+      idClienteServico INTEGER PRIMARY KEY AUTOINCREMENT,
+      idCliente INTEGER NOT NULL,
+      idServico INTEGER NOT NULL,
+      contratado BOOLEAN NOT NULL DEFAULT 0,
+      situacao VARCHAR(30) NOT NULL DEFAULT 'naoContratado',
+      observacao TEXT,
+      FOREIGN KEY (idCliente) REFERENCES cliente (idCliente) ON DELETE CASCADE,
+      FOREIGN KEY (idServico) REFERENCES servico (idServico)
+    )
+  `);
+
+  banco.run(`
+    ALTER TABLE clienteServico ADD COLUMN situacao VARCHAR(30) NOT NULL DEFAULT 'naoContratado'
+  `, (erro) => {
+    if (erro && !String(erro.message || '').includes('duplicate column name')) {
+      console.error('Nao foi possivel garantir a coluna situacao do servico do cliente.', erro);
+    }
+  });
+
+  banco.run(`
+    UPDATE clienteServico
+    SET situacao = 'contratado'
+    WHERE contratado = 1
+      AND (situacao IS NULL OR situacao = '' OR situacao = 'naoContratado')
+  `);
+
+  banco.run(`
+    CREATE UNIQUE INDEX IF NOT EXISTS indiceClienteServicoUnico
+    ON clienteServico (idCliente, idServico)
+  `);
 
   banco.run(`
     CREATE TABLE IF NOT EXISTS atendimento (

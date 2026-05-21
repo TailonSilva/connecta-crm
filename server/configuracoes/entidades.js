@@ -79,6 +79,13 @@ const entidades = [
     camposPermitidos: ['descricao', 'status']
   },
   {
+    nome: 'servico',
+    rota: '/api/servicos',
+    chavePrimaria: 'idServico',
+    camposObrigatorios: ['descricao'],
+    camposPermitidos: ['descricao', 'status']
+  },
+  {
     nome: 'localAgenda',
     rota: '/api/locaisAgenda',
     chavePrimaria: 'idLocal',
@@ -357,6 +364,13 @@ const entidades = [
       'status',
       'principal'
     ]
+  },
+  {
+    nome: 'clienteServico',
+    rota: '/api/clientesServicos',
+    chavePrimaria: 'idClienteServico',
+    camposObrigatorios: ['idCliente', 'idServico'],
+    camposPermitidos: ['idCliente', 'idServico', 'contratado', 'situacao', 'observacao']
   },
   {
     nome: 'produto',

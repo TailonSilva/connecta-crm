@@ -18,6 +18,10 @@ export function listarContatos(parametros) {
   return requisitarApi(`/contatos${montarParametrosConsulta(parametros)}`);
 }
 
+export function listarClientesServicos(parametros) {
+  return requisitarApi(`/clientesServicos${montarParametrosConsulta(parametros)}`);
+}
+
 export function listarVendedores(opcoes) {
   return requisitarListaApi('/vendedores', opcoes);
 }
@@ -136,6 +140,26 @@ export function incluirContato(payload) {
 
 export function atualizarContato(idContato, payload) {
   return requisitarApi(`/contatos/${idContato}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+export function incluirClienteServico(payload) {
+  return requisitarApi('/clientesServicos', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+export function atualizarClienteServico(idClienteServico, payload) {
+  return requisitarApi(`/clientesServicos/${idClienteServico}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json'

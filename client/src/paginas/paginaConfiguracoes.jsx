@@ -23,6 +23,7 @@ import {
   atualizarTipoPedido,
   atualizarRecurso,
   atualizarRamoAtividade,
+  atualizarServico,
   atualizarStatusVisita,
   atualizarTipoAgenda,
   atualizarTipoRecurso,
@@ -48,6 +49,7 @@ import {
   incluirTipoPedido,
   incluirRecurso,
   incluirRamoAtividade,
+  incluirServico,
   incluirStatusVisita,
   incluirTipoAgenda,
   incluirTipoRecurso,
@@ -74,6 +76,7 @@ import {
   listarTiposPedidoConfiguracao,
   listarRecursosConfiguracao,
   listarRamosAtividadeConfiguracao,
+  listarServicosConfiguracao,
   listarStatusVisitaConfiguracao,
   listarTamanhosConfiguracao,
   listarTiposAgendaConfiguracao,
@@ -104,6 +107,7 @@ import {
   TOTAL_COLUNAS_GRAFICOS_PAGINA_INICIAL
 } from '../dados/graficosPaginaInicial';
 import {
+  criarDefinicoesCardsServicosPaginaInicial,
   normalizarConfiguracoesCardsPaginaInicial,
   reordenarConfiguracoesCardsPaginaInicial,
   reposicionarConfiguracaoCardsPaginaInicial,
@@ -129,6 +133,7 @@ import { ModalMarcas } from '../componentes/modulos/configuracoes-modalMarcas';
 import { ModalPrazosPagamento } from '../componentes/modulos/configuracoes-modalPrazosPagamento';
 import { ModalRelatorioConfiguracao } from '../componentes/modulos/configuracoes-modalRelatorioConfiguracao';
 import { ModalRamosAtividade } from '../componentes/modulos/configuracoes-modalRamosAtividade';
+import { ModalServicos } from '../componentes/modulos/configuracoes-modalServicos';
 import { ModalUnidadesMedida } from '../componentes/modulos/configuracoes-modalUnidadesMedida';
 import { ModalUsuarios } from '../componentes/modulos/configuracoes-modalUsuarios';
 
@@ -279,6 +284,11 @@ const atalhosConfiguracao = [
     icone: 'medida'
   },
   {
+    id: 'servicos',
+    titulo: 'Servicos',
+    icone: 'servicos'
+  },
+  {
     id: 'atualizacaoSistema',
     titulo: 'Atualizacao do sistema',
     icone: 'importar'
@@ -337,6 +347,7 @@ const secoesConfiguracao = [
       'marcas',
       'tiposPedido',
       'unidadesMedida',
+      'servicos',
       'tamanhos'
     ]
   },
@@ -367,6 +378,7 @@ const secoesConfiguracao = [
         'relatorioPedidosEntregues',
         'relatorioAtendimentos',
         'unidadesMedida',
+        'servicos',
         'tamanhos'
       ].includes(id))
   },
@@ -436,6 +448,7 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
   const [camposOrcamento, definirCamposOrcamento] = useState([]);
   const [camposPedido, definirCamposPedido] = useState([]);
   const [tamanhos, definirTamanhos] = useState([]);
+  const [servicos, definirServicos] = useState([]);
   const [configuracaoAtualizacaoSistema, definirConfiguracaoAtualizacaoSistema] = useState(null);
   const [modalManualAberto, definirModalManualAberto] = useState(false);
   const [modalEmpresaAberto, definirModalEmpresaAberto] = useState(false);
@@ -747,7 +760,8 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
         listarEtapasOrcamentoConfiguracao({ incluirInativos: true }),
         listarCamposOrcamentoConfiguracao({ incluirInativos: true }),
         listarCamposPedidoConfiguracao({ incluirInativos: true }),
-        listarTamanhosConfiguracao({ incluirInativos: true })
+        listarTamanhosConfiguracao({ incluirInativos: true }),
+        listarServicosConfiguracao({ incluirInativos: true })
       ]);
 
     definirGruposProduto(obterResultadoLista(resultados[0]));
@@ -776,6 +790,7 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
     definirCamposOrcamento(obterResultadoLista(resultados[23]));
     definirCamposPedido(obterResultadoLista(resultados[24]));
     definirTamanhos(obterResultadoLista(resultados[25]));
+    definirServicos(obterResultadoLista(resultados[26]));
   }
 
   async function salvarUsuario(dadosUsuario) {
@@ -881,6 +896,26 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
 
   async function inativarTamanho(registro) {
     await atualizarTamanho(registro.idTamanho, { status: 0 });
+    await carregarCadastrosConfiguracao();
+  }
+
+  async function salvarServico(dadosServico) {
+    const payload = {
+      descricao: dadosServico.descricao.trim(),
+      status: dadosServico.status ? 1 : 0
+    };
+
+    if (dadosServico.idServico) {
+      await atualizarServico(dadosServico.idServico, payload);
+    } else {
+      await incluirServico(payload);
+    }
+
+    await carregarCadastrosConfiguracao();
+  }
+
+  async function inativarServico(registro) {
+    await atualizarServico(registro.idServico, { status: 0 });
     await carregarCadastrosConfiguracao();
   }
 
@@ -1447,6 +1482,7 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
       'tiposRecurso',
       'vendedores',
       'unidadesMedida',
+      'servicos',
       'tamanhos'
     ].includes(atalho.id)) {
       definirCadastroConfiguracaoAberto(atalho.id);
@@ -1693,9 +1729,20 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
         titulo="Cards resumo"
         empresa={empresa}
         configuracoesAtuais={empresa?.cardsPaginaInicial}
-        normalizarConfiguracoes={normalizarConfiguracoesCardsPaginaInicial}
-        reordenarConfiguracoes={reordenarConfiguracoesCardsPaginaInicial}
-        reposicionarConfiguracao={reposicionarConfiguracaoCardsPaginaInicial}
+        normalizarConfiguracoes={(configuracoes) => normalizarConfiguracoesCardsPaginaInicial(
+          configuracoes,
+          criarDefinicoesCardsServicosPaginaInicial(servicos)
+        )}
+        reordenarConfiguracoes={(configuracoes) => reordenarConfiguracoesCardsPaginaInicial(
+          configuracoes,
+          criarDefinicoesCardsServicosPaginaInicial(servicos)
+        )}
+        reposicionarConfiguracao={(configuracoes, idCard, ordemDesejada) => reposicionarConfiguracaoCardsPaginaInicial(
+          configuracoes,
+          idCard,
+          ordemDesejada,
+          criarDefinicoesCardsServicosPaginaInicial(servicos)
+        )}
         totalColunas={TOTAL_COLUNAS_CARDS_PAGINA_INICIAL}
         limiteTotalColunas={TOTAL_COLUNAS_MAXIMO_CARDS_PAGINA_INICIAL}
         maxLinhas={2}
@@ -1858,6 +1905,14 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
         aoFechar={fecharCadastroConfiguracao}
         aoSalvar={salvarTamanho}
         aoInativar={inativarTamanho}
+      />
+      <ModalServicos
+        aberto={cadastroConfiguracaoAberto === 'servicos'}
+        registros={servicos}
+        somenteConsulta={usuarioSomenteConsulta}
+        aoFechar={fecharCadastroConfiguracao}
+        aoSalvar={salvarServico}
+        aoInativar={inativarServico}
       />
       <ModalMarcas
         aberto={cadastroConfiguracaoAberto === 'marcas'}

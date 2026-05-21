@@ -279,6 +279,10 @@ export function listarUnidadesMedidaConfiguracao(opcoes) {
   return listarCadastroConfiguracao('/unidadesMedida', opcoes);
 }
 
+export function listarServicosConfiguracao(opcoes) {
+  return listarCadastroConfiguracao('/servicos', opcoes);
+}
+
 export function incluirUnidadeMedida(payload) {
   return requisitarApi('/unidadesMedida', {
     method: 'POST',
@@ -402,6 +406,26 @@ export function atualizarMotivoPerda(idMotivo, payload) {
 export function incluirMotivoDevolucao(payload) {
   return requisitarApi('/motivosDevolucao', {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+export function incluirServico(payload) {
+  return requisitarApi('/servicos', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+export function atualizarServico(idServico, payload) {
+  return requisitarApi(`/servicos/${idServico}`, {
+    method: 'PUT',
     headers: {
       'Content-Type': 'application/json'
     },

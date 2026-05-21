@@ -21,6 +21,12 @@ function IconeMenu({ tipo }) {
     produtos: (
       <path d="M4.5 7.5 12 4l7.5 3.5L12 11 4.5 7.5Zm0 3.5L11 14v6L4.5 17Zm15 0V17L13 20v-6Z" />
     ),
+    servicos: (
+      <>
+        <path d="M6.5 4.5h8l3 3V18A1.5 1.5 0 0 1 16 19.5H8A1.5 1.5 0 0 1 6.5 18Z" />
+        <path d="M14.5 4.5V8h3M9 11h6M9 14h6M9 17h3" />
+      </>
+    ),
     orcamentos: (
       <path d="M6.5 4h8l4 4v10.5A1.5 1.5 0 0 1 17 20h-10A1.5 1.5 0 0 1 5.5 18.5v-13A1.5 1.5 0 0 1 7 4Zm7.5 1.5V9h3.5M8 12h8m-8 3h8" />
     ),

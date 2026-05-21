@@ -291,6 +291,7 @@ Observacao:
 - Formulario de contato reutilizavel
 - Campo `Grupo de empresa` no modal do cliente, com atalho lateral para cadastrar e selecionar o grupo sem sair do fluxo
 - Campo `Conceito` no modal do cliente, com atalho lateral para cadastrar e selecionar o conceito sem sair do fluxo
+- Aba `Servicos` no modal do cliente, permitindo marcar cada servico como contratado, nao contratado ou nao aplicavel e registrar observacao individual
 - Cada cliente pode se vincular a no maximo um `Grupo de empresa`, enquanto um grupo pode atender varios clientes
 - Contatos do grupo aparecem como herdados no cadastro do cliente e ficam disponiveis para consulta no proprio modal
 - Abertura do mesmo modal de `Ramo de Atividade` usado em configuracoes
@@ -338,6 +339,17 @@ Filtros de produtos:
 - `Marca`
 - `Unidade`
 - `Ativo`
+
+### Servicos
+
+- Pagina propria de servicos com matriz de clientes por servico contratado
+- A grade exibe `Codigo do cliente`, `Nome fantasia` e uma coluna para cada servico cadastrado
+- Cada celula marca check quando o cliente contratou o servico, `X` quando nao contratou e `N/A` quando o servico nao se aplica ao cliente
+- Observacoes do servico aparecem no hover do check, do `X` ou do `N/A`
+- O modal de filtros da pagina lista todos os servicos cadastrados e permite filtrar cada um por `Sim`, `Nao` ou `-`, onde `-` ignora o servico no recorte
+- Cadastro auxiliar `Servicos` tambem disponivel em `Configuracoes > Cadastros`
+- Cada servico possui `Codigo`, `Descricao` e `Status`
+- Inativacao persiste no banco
 
 ### Agenda
 
@@ -595,6 +607,7 @@ O cadastro de empresa tem modal proprio com abas:
 - `Documento`
 - O dashboard inclui grafico diario de tendencia para `Atendimentos`, `Orcamentos` e `Pedidos` nos ultimos 7 dias do recorte
 - O dashboard inclui rankings de `Vendedores`, `Produtos`, `Grupos de produto` e `Marcas` com barras comparativas
+- A aba `Vendas` da pagina inicial inclui cards dinamicos para cada servico com quantidade e percentual de clientes contratados, alem do grafico `Servicos Contratados` contando clientes em `Sim`, `Nao` e `N/A`
 - O dashboard inclui painel de agenda dos proximos dias e bloco de saude comercial com conversao, fechamento e entregas
 - Os cards de resumo da pagina inicial usam titulo no topo com tipografia mais contida, valor abaixo, descricao auxiliar e icone ampliado na direita com corte parcial pelo proprio card
 - Endereco completo
@@ -674,8 +687,10 @@ Cadastros comerciais:
 - `grupoProdutoTamanho`
 - `marca`
 - `unidadeMedida`
+- `servico`
 - `cliente`
 - `contato`
+- `clienteServico`
 - `produto`
 
 Cadastros da empresa e acesso:
@@ -740,6 +755,7 @@ Rotas CRUD atualmente expostas:
 - `/api/gruposProdutoTamanhos`
 - `/api/marcas`
 - `/api/unidadesMedida`
+- `/api/servicos`
 - `/api/locaisAgenda`
 - `/api/tiposRecurso`
 - `/api/recursos`
@@ -761,6 +777,7 @@ Rotas CRUD atualmente expostas:
 - `/api/usuarios`
 - `/api/clientes`
 - `/api/contatos`
+- `/api/clientesServicos`
 - `/api/produtos`
 - `/api/atendimentos`
 - `/api/listagens/clientes`: listagem enxuta para o grid principal, com busca textual e filtros enviados pela tela
@@ -952,6 +969,7 @@ Paginas hoje presentes no painel:
 - `Atendimentos`
 - `Clientes`
 - `Produtos`
+- `Servicos`
 - `Orcamentos`
 - `Pedidos`
 - `Configuracoes`

@@ -39,6 +39,7 @@ const abasModalCliente = [
   { id: 'endereco', label: 'Endereco' },
   { id: 'observacoes', label: 'Observacoes' },
   { id: 'contatos', label: 'Contato' },
+  { id: 'servicos', label: 'Servicos' },
   { id: 'atendimento', label: 'Atendimento', abreModal: 'atendimentos' },
   { id: 'vendas', label: 'Vendas', abreModal: 'vendas' }
 ];
@@ -126,6 +127,8 @@ export function ModalCliente({
   codigoSugerido,
   contatos,
   contatosEditaveis = [],
+  servicos = [],
+  clienteServicos = [],
   gruposEmpresa = [],
   contatosGruposEmpresa = [],
   vendedores,
@@ -147,9 +150,12 @@ export function ModalCliente({
 }) {
   const [formulario, definirFormulario] = useState(estadoInicialFormulario);
   const [contatosFormulario, definirContatosFormulario] = useState([]);
+  const [servicosFormulario, definirServicosFormulario] = useState([]);
+  const [formularioServicoCliente, definirFormularioServicoCliente] = useState(criarFormularioServicoCliente());
   const [formularioContato, definirFormularioContato] = useState(estadoInicialContato);
   const [modoContato, definirModoContato] = useState('novo');
   const [modalContatoAberto, definirModalContatoAberto] = useState(false);
+  const [modalServicosAberto, definirModalServicosAberto] = useState(false);
   const [abaAtiva, definirAbaAtiva] = useState(abasModalCliente[0].id);
   const [salvando, definirSalvando] = useState(false);
   const [mensagemErro, definirMensagemErro] = useState('');
@@ -229,9 +235,12 @@ export function ModalCliente({
 
     definirFormulario(criarFormularioCliente(cliente, idVendedorBloqueado));
     definirContatosFormulario(criarContatosFormulario(contatosEditaveis));
+    definirServicosFormulario(criarServicosFormulario(servicos, clienteServicos));
+    definirFormularioServicoCliente(criarFormularioServicoCliente());
     definirFormularioContato(estadoInicialContato);
     definirModoContato('novo');
     definirModalContatoAberto(false);
+    definirModalServicosAberto(false);
     definirAbaAtiva(abasModalCliente[0].id);
     definirMensagemErro('');
     definirSalvando(false);
@@ -364,7 +373,7 @@ export function ModalCliente({
     return () => {
       cancelado = true;
     };
-  }, [aberto, cliente?.idCliente, contatos, vendedores]);
+  }, [aberto, cliente?.idCliente, contatos, vendedores, servicos, clienteServicos]);
 
   useEffect(() => {
     if (!aberto) {
@@ -379,6 +388,11 @@ export function ModalCliente({
 
       if (evento.key === 'Escape' && modalHistoricoVendasAberto) {
         definirModalHistoricoVendasAberto(false);
+        return;
+      }
+
+      if (evento.key === 'Escape' && modalServicosAberto) {
+        definirModalServicosAberto(false);
         return;
       }
 
@@ -413,7 +427,7 @@ export function ModalCliente({
     return () => {
       window.removeEventListener('keydown', tratarTecla);
     };
-  }, [aberto, aoFechar, salvando, modalContatoAberto, modalFiltrosAtendimentosAberto, modalFiltrosPedidosAberto, modalBuscaProdutoPedidosAberto, modalHistoricoAtendimentosAberto, modalHistoricoVendasAberto]);
+  }, [aberto, aoFechar, salvando, modalContatoAberto, modalServicosAberto, modalFiltrosAtendimentosAberto, modalFiltrosPedidosAberto, modalBuscaProdutoPedidosAberto, modalHistoricoAtendimentosAberto, modalHistoricoVendasAberto]);
 
   async function submeterFormulario(evento) {
     evento.preventDefault();
@@ -448,7 +462,8 @@ export function ModalCliente({
     try {
       await aoSalvar({
         ...formulario,
-        contatos: contatosFormulario
+        contatos: contatosFormulario,
+        servicos: servicosFormulario
       });
     } catch (erro) {
       definirMensagemErro(erro.message || 'Nao foi possivel salvar o cliente.');
@@ -482,6 +497,42 @@ export function ModalCliente({
         ? checked
         : ['telefone', 'whatsapp'].includes(name) ? normalizarTelefone(valorNormalizado) : valorNormalizado
     }));
+  }
+
+  function alterarCampoServicoCliente(evento) {
+    const { name, value } = evento.target;
+
+    definirFormularioServicoCliente((estadoAtual) => ({
+      ...estadoAtual,
+      [name]: value
+    }));
+  }
+
+  function abrirModalServicosCliente(servicoCliente = null) {
+    definirFormularioServicoCliente(criarFormularioServicoCliente(servicoCliente, servicosFormulario));
+    definirModalServicosAberto(true);
+  }
+
+  function aplicarServicosCliente() {
+    const idServicoSelecionado = String(formularioServicoCliente.idServico || '').trim();
+
+    if (!idServicoSelecionado) {
+      definirMensagemErro('Selecione um servico para vincular ao cliente.');
+      return;
+    }
+
+    definirMensagemErro('');
+    definirServicosFormulario((estadoAtual) => estadoAtual.map((servicoCliente) => (
+      String(servicoCliente.idServico) === idServicoSelecionado
+        ? {
+          ...servicoCliente,
+          contratado: formularioServicoCliente.contratado === 'contratado',
+          situacao: formularioServicoCliente.contratado,
+          observacao: formularioServicoCliente.observacao || ''
+        }
+        : servicoCliente
+    )));
+    definirModalServicosAberto(false);
   }
 
   async function buscarDadosCep() {
@@ -1048,6 +1099,72 @@ export function ModalCliente({
             </section>
           ) : null}
 
+          {abaAtiva === 'servicos' ? (
+            <section className="painelContatosModalCliente">
+              <div className="cabecalhoGradeContatosModal">
+                <div>
+                  <h3>Servicos do cliente</h3>
+                  <p className="descricaoSecaoModalCliente">Visualize os servicos vinculados ao cliente e edite a lista quando necessario.</p>
+                </div>
+                <Botao
+                  variante={somenteLeitura ? 'secundario' : 'primario'}
+                  type="button"
+                  onClick={() => abrirModalServicosCliente()}
+                  disabled={somenteLeitura}
+                >
+                  Incluir
+                </Botao>
+              </div>
+
+              <GradePadrao
+                className="gradeContatosModal gradeServicosCliente"
+                classNameTabela="tabelaContatosModal tabelaServicosCliente"
+                classNameMensagem="mensagemTabelaContatosModal"
+                cabecalho={(
+                  <tr>
+                    <th>Servico</th>
+                    <th>Contratado</th>
+                    <th>Observacao</th>
+                    <th className="cabecalhoAcoesContato">Acoes</th>
+                  </tr>
+                )}
+                temItens={servicosFormulario.some((servicoCliente) => servicoCliente.situacao !== 'naoContratado' || String(servicoCliente.observacao || '').trim())}
+                mensagemVazia="Nenhum servico vinculado ao cliente."
+              >
+                {servicosFormulario
+                  .filter((servicoCliente) => servicoCliente.situacao !== 'naoContratado' || String(servicoCliente.observacao || '').trim())
+                  .map((servicoCliente) => (
+                  <tr key={servicoCliente.idServico}>
+                    <td>
+                      <div className="celulaContatoModal">
+                        <strong>{servicoCliente.descricaoServico || 'Servico nao informado'}</strong>
+                        <span>{`Codigo ${String(servicoCliente.idServico).padStart(4, '0')}`}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`etiquetaStatus ${obterClasseSituacaoServicoCliente(servicoCliente.situacao)}`}>
+                        {obterRotuloSituacaoServicoCliente(servicoCliente.situacao)}
+                      </span>
+                    </td>
+                    <td>
+                      {servicoCliente.observacao || 'Sem observacao'}
+                    </td>
+                    <td>
+                      <div className="acoesContatoModal">
+                        <BotaoAcaoGrade
+                          icone="editar"
+                          titulo="Editar servicos do cliente"
+                          onClick={() => abrirModalServicosCliente(servicoCliente)}
+                          disabled={somenteLeitura}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </GradePadrao>
+            </section>
+          ) : null}
+
         </div>
 
         <MensagemErroPopup mensagem={mensagemErro} titulo="Nao foi possivel salvar o cliente." />
@@ -1091,6 +1208,71 @@ export function ModalCliente({
         aoFechar={fecharModalContato}
         aoSalvar={salvarContatoLocal}
       />
+
+      {modalServicosAberto ? (
+        <div className="camadaModalContato" role="presentation" onMouseDown={() => definirModalServicosAberto(false)}>
+          <div
+            className="modalCliente modalClienteServicosCliente"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="tituloModalServicosCliente"
+            onMouseDown={(evento) => evento.stopPropagation()}
+          >
+            <header className="cabecalhoModalCliente">
+              <h2 id="tituloModalServicosCliente">Servicos do cliente</h2>
+
+              <div className="acoesCabecalhoModalCliente">
+                <Botao variante="secundario" type="button" onClick={() => definirModalServicosAberto(false)}>
+                  Cancelar
+                </Botao>
+                <Botao variante="primario" type="button" onClick={aplicarServicosCliente}>
+                  Aplicar
+                </Botao>
+              </div>
+            </header>
+
+            <div className="corpoModalCliente">
+              <section className="gradeCamposModalCliente gradeFormularioServicoCliente">
+                <CampoSelect
+                  label="Servico"
+                  name="idServico"
+                  value={formularioServicoCliente.idServico}
+                  onChange={alterarCampoServicoCliente}
+                  options={servicosFormulario.map((servicoCliente) => ({
+                    valor: String(servicoCliente.idServico),
+                    label: servicoCliente.descricaoServico || `Servico #${servicoCliente.idServico}`
+                  }))}
+                  required
+                />
+                <CampoSelect
+                  label="Contratado"
+                  name="contratado"
+                  value={formularioServicoCliente.contratado}
+                  onChange={alterarCampoServicoCliente}
+                  options={[
+                    { valor: 'contratado', label: 'Sim' },
+                    { valor: 'naoContratado', label: 'Nao' },
+                    { valor: 'naoAplicavel', label: 'N/A' }
+                  ]}
+                  required
+                />
+                <div className="campoFormulario campoFormularioIntegral">
+                  <label htmlFor="observacaoServicoCliente">Observacao</label>
+                  <input
+                    id="observacaoServicoCliente"
+                    className="entradaFormulario"
+                    type="text"
+                    name="observacao"
+                    value={formularioServicoCliente.observacao}
+                    onChange={alterarCampoServicoCliente}
+                    placeholder="Observacao do servico"
+                  />
+                </div>
+              </section>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <ModalHistoricoAtendimentosCliente
         aberto={modalHistoricoAtendimentosAberto}
@@ -1536,6 +1718,72 @@ function criarContatosFormulario(contatos) {
     status: Boolean(contato.status),
     principal: Boolean(contato.principal)
   }));
+}
+
+function criarServicosFormulario(servicos, clienteServicos) {
+  const vinculosPorServico = new Map(
+    (clienteServicos || []).map((vinculo) => [String(vinculo.idServico), vinculo])
+  );
+
+  return (servicos || [])
+    .filter((servico) => Number(servico.status ?? 1) !== 0 || vinculosPorServico.has(String(servico.idServico)))
+    .map((servico) => {
+      const vinculo = vinculosPorServico.get(String(servico.idServico));
+
+      return {
+        idClienteServico: vinculo?.idClienteServico || '',
+        idServico: servico.idServico,
+        descricaoServico: servico.descricao || '',
+        contratado: obterSituacaoServicoCliente(vinculo) === 'contratado',
+        situacao: obterSituacaoServicoCliente(vinculo),
+        observacao: vinculo?.observacao || ''
+      };
+    })
+    .sort((servicoA, servicoB) => String(servicoA.descricaoServico || '').localeCompare(String(servicoB.descricaoServico || ''), 'pt-BR'));
+}
+
+function criarFormularioServicoCliente(servicoCliente = null, servicosFormulario = []) {
+  const servicoBase = servicoCliente || servicosFormulario[0] || null;
+
+  return {
+    idServico: servicoBase?.idServico ? String(servicoBase.idServico) : '',
+    contratado: servicoBase?.situacao || (servicoBase?.contratado ? 'contratado' : 'naoContratado'),
+    observacao: servicoBase?.observacao || ''
+  };
+}
+
+function obterSituacaoServicoCliente(vinculo) {
+  const situacao = String(vinculo?.situacao || '').trim();
+
+  if (['contratado', 'naoContratado', 'naoAplicavel'].includes(situacao)) {
+    return situacao;
+  }
+
+  return vinculo?.contratado ? 'contratado' : 'naoContratado';
+}
+
+function obterRotuloSituacaoServicoCliente(situacao) {
+  if (situacao === 'contratado') {
+    return 'Sim';
+  }
+
+  if (situacao === 'naoAplicavel') {
+    return 'N/A';
+  }
+
+  return 'Nao';
+}
+
+function obterClasseSituacaoServicoCliente(situacao) {
+  if (situacao === 'contratado') {
+    return 'ativo';
+  }
+
+  if (situacao === 'naoAplicavel') {
+    return 'pendente';
+  }
+
+  return 'inativo';
 }
 
 function criarContatosHerdadosFormulario(contatosGruposEmpresa, gruposEmpresa, idGrupoEmpresa) {

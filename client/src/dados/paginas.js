@@ -35,6 +35,13 @@ export const paginasPainel = [
     icone: 'produtos'
   },
   {
+    id: 'servicos',
+    rotulo: 'Servicos',
+    titulo: 'Pagina de servicos',
+    descricao: 'Espaco reservado para cadastro, consulta e manutencao dos servicos.',
+    icone: 'servicos'
+  },
+  {
     id: 'orcamentos',
     rotulo: 'Orcamentos',
     titulo: 'Pagina de orcamentos',

@@ -7,6 +7,7 @@ import { PaginaOrcamentos } from '../../paginas/paginaOrcamentos';
 import { PaginaPadrao } from '../../paginas/paginaPadrao';
 import { PaginaPedidos } from '../../paginas/paginaPedidos';
 import { PaginaProdutos } from '../../paginas/paginaProdutos';
+import { PaginaServicos } from '../../paginas/paginaServicos';
 
 // Renderiza o conteudo central do painel com base no `id` da pagina atualmente selecionada.
 export function ConteudoPainel({ paginaSelecionada, usuarioLogado }) {
@@ -28,6 +29,10 @@ export function ConteudoPainel({ paginaSelecionada, usuarioLogado }) {
 
   if (paginaSelecionada.id === 'produtos') {
     return <PaginaProdutos usuarioLogado={usuarioLogado} />;
+  }
+
+  if (paginaSelecionada.id === 'servicos') {
+    return <PaginaServicos usuarioLogado={usuarioLogado} />;
   }
 
   if (paginaSelecionada.id === 'orcamentos') {
