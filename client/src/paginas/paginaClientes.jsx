@@ -722,7 +722,7 @@ function obterServicosDoCliente(clienteServicos, idCliente) {
 function obterSituacaoServicoCliente(servicoCliente) {
   const situacao = String(servicoCliente?.situacao || '').trim();
 
-  if (['contratado', 'naoContratado', 'naoAplicavel'].includes(situacao)) {
+  if (['contratado', 'naoContratado', 'naoAplicavel', 'terceiro'].includes(situacao)) {
     return situacao;
   }
 

@@ -83,7 +83,7 @@ const entidades = [
     rota: '/api/servicos',
     chavePrimaria: 'idServico',
     camposObrigatorios: ['descricao'],
-    camposPermitidos: ['descricao', 'status']
+    camposPermitidos: ['descricao', 'icone', 'status']
   },
   {
     nome: 'localAgenda',

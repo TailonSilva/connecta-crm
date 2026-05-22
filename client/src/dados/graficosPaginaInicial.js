@@ -112,7 +112,7 @@ export const graficosPaginaInicialVendas = [
   {
     id: 'servicosClientes',
     rotulo: 'Servicos Contratados',
-    ajudaConfiguracao: 'Mostra a quantidade de clientes por servico contratado, nao contratado e nao aplicavel.',
+    ajudaConfiguracao: 'Mostra a quantidade de clientes por servico contratado, nao contratado, nao aplicavel e terceiro.',
     ordemPadrao: 9,
     spanPadrao: 5,
     visivelPadrao: true

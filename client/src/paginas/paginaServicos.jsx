@@ -1,22 +1,55 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ModalFiltros } from '../componentes/comuns/modalFiltros';
 import { CorpoPagina } from '../componentes/layout/corpoPagina';
 import { CabecalhoServicos } from '../componentes/modulos/servicos-cabecalhoServicos';
 import { ListaServicos } from '../componentes/modulos/servicos-listaServicos';
-import { listarClientes, listarClientesServicos } from '../servicos/clientes';
+import { ModalEdicaoServicosCliente } from '../componentes/modulos/servicos-modalEdicaoCliente';
+import { ModalFiltrosServicos } from '../componentes/modulos/servicos-modalFiltrosServicos';
+import {
+  atualizarClienteServico,
+  incluirClienteServico,
+  listarClientes,
+  listarClientesServicos,
+  listarConceitosCliente,
+  listarGruposEmpresa,
+  listarVendedores
+} from '../servicos/clientes';
+import { listarEmpresas } from '../servicos/empresa';
 import { listarServicos } from '../servicos/servicos';
+import { useFiltrosPersistidos } from '../hooks/useFiltrosPersistidos';
 import { obterCodigoPrincipalCliente } from '../utilitarios/codigoCliente';
 import '../recursos/estilos/paginaServicos.css';
+
+const filtrosIniciaisServicos = {
+  idVendedor: [],
+  idConceito: [],
+  idGrupoEmpresa: [],
+  status: [],
+  estado: [],
+  servicos: []
+};
 
 export function PaginaServicos({ usuarioLogado }) {
   const [pesquisa, definirPesquisa] = useState('');
   const [modalFiltrosAberto, definirModalFiltrosAberto] = useState(false);
-  const [filtros, definirFiltros] = useState({});
+  const [filtros, definirFiltros] = useFiltrosPersistidos({
+    chave: 'servicos',
+    usuario: usuarioLogado,
+    filtrosPadrao: filtrosIniciaisServicos,
+    normalizarFiltros: normalizarFiltrosServicos
+  });
   const [clientes, definirClientes] = useState([]);
   const [servicos, definirServicos] = useState([]);
   const [clientesServicos, definirClientesServicos] = useState([]);
+  const [gruposEmpresa, definirGruposEmpresa] = useState([]);
+  const [conceitosCliente, definirConceitosCliente] = useState([]);
+  const [vendedores, definirVendedores] = useState([]);
+  const [empresa, definirEmpresa] = useState(null);
   const [carregando, definirCarregando] = useState(true);
   const [mensagemErro, definirMensagemErro] = useState('');
+  const [clienteEmEdicao, definirClienteEmEdicao] = useState(null);
+  const [formularioServicosCliente, definirFormularioServicosCliente] = useState([]);
+  const [salvandoServicosCliente, definirSalvandoServicosCliente] = useState(false);
+  const [mensagemErroModal, definirMensagemErroModal] = useState('');
 
   useEffect(() => {
     carregarServicosClientes();
@@ -29,22 +62,22 @@ export function PaginaServicos({ usuarioLogado }) {
 
   const linhas = useMemo(
     () => filtrarLinhasServicosCliente(
-      montarLinhasServicosCliente(clientes, clientesServicos),
+      montarLinhasServicosCliente(clientes, clientesServicos, gruposEmpresa, conceitosCliente, empresa),
       servicosOrdenados,
       pesquisa,
       filtros
     ),
-    [clientes, clientesServicos, pesquisa, servicosOrdenados, filtros]
-  );
-
-  const camposFiltros = useMemo(
-    () => criarCamposFiltrosServicos(servicosOrdenados),
-    [servicosOrdenados]
+    [clientes, clientesServicos, gruposEmpresa, conceitosCliente, empresa, pesquisa, servicosOrdenados, filtros]
   );
 
   const filtrosAtivos = useMemo(
-    () => Object.values(filtros).some((valor) => filtroServicoEstaAtivo(valor)),
+    () => filtrosServicosEstaoAtivos(filtros),
     [filtros]
+  );
+
+  const estadosClientes = useMemo(
+    () => obterEstadosClientes(clientes),
+    [clientes]
   );
 
   async function carregarServicosClientes() {
@@ -55,25 +88,109 @@ export function PaginaServicos({ usuarioLogado }) {
       const resultados = await Promise.allSettled([
         listarClientes(),
         listarServicos({ incluirInativos: true }),
-        listarClientesServicos()
+        listarClientesServicos(),
+        listarGruposEmpresa({ incluirInativos: true }),
+        listarConceitosCliente({ incluirInativos: true }),
+        listarVendedores({ incluirInativos: true }),
+        listarEmpresas()
       ]);
 
       const [
         clientesResultado,
         servicosResultado,
-        clientesServicosResultado
+        clientesServicosResultado,
+        gruposEmpresaResultado,
+        conceitosClienteResultado,
+        vendedoresResultado,
+        empresasResultado
       ] = resultados;
 
       definirClientes(clientesResultado.status === 'fulfilled' ? clientesResultado.value : []);
       definirServicos(servicosResultado.status === 'fulfilled' ? servicosResultado.value : []);
       definirClientesServicos(clientesServicosResultado.status === 'fulfilled' ? clientesServicosResultado.value : []);
+      definirGruposEmpresa(gruposEmpresaResultado.status === 'fulfilled' ? gruposEmpresaResultado.value : []);
+      definirConceitosCliente(conceitosClienteResultado.status === 'fulfilled' ? conceitosClienteResultado.value : []);
+      definirVendedores(vendedoresResultado.status === 'fulfilled' ? vendedoresResultado.value : []);
+      definirEmpresa(empresasResultado.status === 'fulfilled' ? (empresasResultado.value[0] || null) : null);
     } catch (_erro) {
       definirMensagemErro('Nao foi possivel carregar os servicos por cliente.');
       definirClientes([]);
       definirServicos([]);
       definirClientesServicos([]);
+      definirGruposEmpresa([]);
+      definirConceitosCliente([]);
+      definirVendedores([]);
+      definirEmpresa(null);
     } finally {
       definirCarregando(false);
+    }
+  }
+
+  function abrirEdicaoServicosCliente(linha) {
+    definirClienteEmEdicao(linha);
+    definirFormularioServicosCliente(criarFormularioServicosCliente(linha, servicosOrdenados));
+    definirMensagemErroModal('');
+  }
+
+  function fecharEdicaoServicosCliente() {
+    if (salvandoServicosCliente) {
+      return;
+    }
+
+    definirClienteEmEdicao(null);
+    definirFormularioServicosCliente([]);
+    definirMensagemErroModal('');
+  }
+
+  function alterarServicoClienteFormulario(idServico, campo, valor) {
+    definirFormularioServicosCliente((estadoAtual) => estadoAtual.map((servicoCliente) => (
+      String(servicoCliente.idServico) === String(idServico)
+        ? { ...servicoCliente, [campo]: valor }
+        : servicoCliente
+    )));
+  }
+
+  async function salvarServicosCliente() {
+    if (!clienteEmEdicao?.idCliente) {
+      return;
+    }
+
+    definirSalvandoServicosCliente(true);
+    definirMensagemErroModal('');
+
+    try {
+      for (const servicoCliente of formularioServicosCliente) {
+        const observacao = String(servicoCliente.observacao || '').trim();
+        const situacao = obterSituacaoServicoCliente(servicoCliente);
+        const contratado = situacao === 'contratado' ? 1 : 0;
+
+        if (!servicoCliente.idClienteServico && situacao === 'naoContratado' && !observacao) {
+          continue;
+        }
+
+        const payload = {
+          idCliente: Number(clienteEmEdicao.idCliente),
+          idServico: Number(servicoCliente.idServico),
+          contratado,
+          situacao,
+          observacao
+        };
+
+        if (servicoCliente.idClienteServico) {
+          await atualizarClienteServico(servicoCliente.idClienteServico, payload);
+        } else {
+          await incluirClienteServico(payload);
+        }
+      }
+
+      await carregarServicosClientes();
+      definirClienteEmEdicao(null);
+      definirFormularioServicosCliente([]);
+      definirMensagemErroModal('');
+    } catch (_erro) {
+      definirMensagemErroModal('Nao foi possivel salvar os servicos do cliente.');
+    } finally {
+      definirSalvandoServicosCliente(false);
     }
   }
 
@@ -92,14 +209,18 @@ export function PaginaServicos({ usuarioLogado }) {
           servicos={servicosOrdenados}
           carregando={carregando}
           mensagemErro={mensagemErro}
+          aoEditarCliente={abrirEdicaoServicosCliente}
         />
       </CorpoPagina>
 
-      <ModalFiltros
+      <ModalFiltrosServicos
         aberto={modalFiltrosAberto}
-        titulo="Filtros de servicos"
-        campos={camposFiltros}
         filtros={filtros}
+        vendedores={vendedores}
+        conceitosCliente={conceitosCliente}
+        gruposEmpresa={gruposEmpresa}
+        estados={estadosClientes}
+        servicos={servicosOrdenados}
         aoFechar={() => definirModalFiltrosAberto(false)}
         aoAplicar={(proximosFiltros) => {
           definirFiltros(normalizarFiltrosServicos(proximosFiltros));
@@ -110,15 +231,59 @@ export function PaginaServicos({ usuarioLogado }) {
           return {};
         }}
       />
+
+      <ModalEdicaoServicosCliente
+        aberto={Boolean(clienteEmEdicao)}
+        cliente={clienteEmEdicao}
+        servicos={servicosOrdenados}
+        formulario={formularioServicosCliente}
+        salvando={salvandoServicosCliente}
+        mensagemErro={mensagemErroModal}
+        aoAlterarServico={alterarServicoClienteFormulario}
+        aoFechar={fecharEdicaoServicosCliente}
+        aoSalvar={salvarServicosCliente}
+      />
     </>
   );
 }
 
-function montarLinhasServicosCliente(clientes, clientesServicos) {
+function criarFormularioServicosCliente(linha, servicos) {
+  return (servicos || []).map((servico) => {
+    const vinculo = linha?.servicosPorId?.get(String(servico.idServico));
+    const situacao = obterSituacaoServicoCliente(vinculo);
+
+    return {
+      idClienteServico: vinculo?.idClienteServico || null,
+      idServico: servico.idServico,
+      descricaoServico: servico.descricao || `Servico #${servico.idServico}`,
+      situacao,
+      contratado: situacao === 'contratado',
+      observacao: vinculo?.observacao || ''
+    };
+  });
+}
+
+function montarLinhasServicosCliente(clientes, clientesServicos, gruposEmpresa, conceitosCliente, empresa) {
+  const gruposEmpresaPorId = new Map((gruposEmpresa || []).map((grupo) => [
+    String(grupo.idGrupoEmpresa),
+    grupo.descricao || ''
+  ]));
+  const conceitosClientePorId = new Map((conceitosCliente || []).map((conceito) => [
+    String(conceito.idConceito),
+    conceito.descricao || ''
+  ]));
+
   return (clientes || []).map((cliente) => ({
     idCliente: cliente.idCliente,
-    codigoCliente: obterCodigoPrincipalCliente(cliente) || cliente.idCliente,
+    idVendedor: cliente.idVendedor,
+    idConceito: cliente.idConceito,
+    idGrupoEmpresa: cliente.idGrupoEmpresa,
+    status: Number(cliente.status ?? 1) === 0 ? 'inativo' : 'ativo',
+    estado: String(cliente.estado || '').trim().toUpperCase(),
+    codigoCliente: obterCodigoPrincipalCliente(cliente, empresa) || cliente.idCliente,
     nomeFantasia: cliente.nomeFantasia || cliente.razaoSocial || `Cliente #${cliente.idCliente}`,
+    grupoEmpresa: gruposEmpresaPorId.get(String(cliente.idGrupoEmpresa || '')) || 'Sem grupo',
+    conceitoCliente: conceitosClientePorId.get(String(cliente.idConceito || '')) || 'Sem conceito',
     servicosPorId: montarMapaServicosCliente(clientesServicos, cliente.idCliente)
   })).sort((clienteA, clienteB) => (
     String(clienteA.nomeFantasia || '').localeCompare(String(clienteB.nomeFantasia || ''), 'pt-BR')
@@ -148,7 +313,9 @@ function filtrarLinhasServicosCliente(linhas, servicos, pesquisa, filtros) {
   return (linhas || []).filter((linha) => {
     const dadosCliente = [
       linha.codigoCliente,
-      linha.nomeFantasia
+      linha.nomeFantasia,
+      linha.grupoEmpresa,
+      linha.conceitoCliente
     ];
 
     const dadosServicos = servicos.flatMap((servico) => {
@@ -167,75 +334,92 @@ function filtrarLinhasServicosCliente(linhas, servicos, pesquisa, filtros) {
       String(valor || '').toLowerCase().includes(termo)
     ));
 
-    return atendePesquisa && linhaAtendeFiltrosServicos(linha, servicos, filtros);
+    return atendePesquisa && linhaAtendeFiltrosCliente(linha, filtros) && linhaAtendeFiltrosServicos(linha, filtros);
   });
 }
 
-function linhaAtendeFiltrosServicos(linha, servicos, filtros) {
-  return servicos.every((servico) => {
-    const valorFiltro = normalizarValorFiltroServico(filtros?.[criarNomeFiltroServico(servico.idServico)]);
+function linhaAtendeFiltrosCliente(linha, filtros) {
+  const vendedoresSelecionados = normalizarListaFiltroServicos(filtros?.idVendedor);
+  const conceitosSelecionados = normalizarListaFiltroServicos(filtros?.idConceito);
+  const gruposSelecionados = normalizarListaFiltroServicos(filtros?.idGrupoEmpresa);
+  const statusSelecionados = normalizarListaFiltroServicos(filtros?.status);
+  const estadosSelecionados = normalizarListaFiltroServicos(filtros?.estado).map((estado) => estado.toUpperCase());
 
-    if (!filtroServicoEstaAtivo(valorFiltro)) {
-      return true;
-    }
+  return (
+    listaFiltroIncluiValor(vendedoresSelecionados, linha.idVendedor)
+    && listaFiltroIncluiValor(conceitosSelecionados, linha.idConceito)
+    && listaFiltroIncluiValor(gruposSelecionados, linha.idGrupoEmpresa)
+    && listaFiltroIncluiValor(statusSelecionados, linha.status)
+    && listaFiltroIncluiValor(estadosSelecionados, linha.estado)
+  );
+}
 
-    const vinculo = linha.servicosPorId.get(String(servico.idServico));
+function linhaAtendeFiltrosServicos(linha, filtros) {
+  const servicosSelecionados = Array.isArray(filtros?.servicos) ? filtros.servicos : [];
+
+  if (servicosSelecionados.length === 0) {
+    return true;
+  }
+
+  return servicosSelecionados.every((idServico) => {
+    const vinculo = linha.servicosPorId.get(String(idServico));
     const situacao = obterSituacaoServicoCliente(vinculo);
 
-    if (valorFiltro === 'sim') {
-      return situacao === 'contratado';
-    }
-
-    return situacao !== 'contratado';
+    return situacao === 'contratado';
   });
-}
-
-function criarCamposFiltrosServicos(servicos) {
-  return (servicos || []).map((servico) => ({
-    name: criarNomeFiltroServico(servico.idServico),
-    label: servico.descricao || `Servico #${servico.idServico}`,
-    placeholder: '-',
-    options: [
-      { valor: 'sim', label: 'Sim' },
-      { valor: 'nao', label: 'Nao' }
-    ]
-  }));
 }
 
 function normalizarFiltrosServicos(filtros) {
-  return Object.entries(filtros || {}).reduce((resultado, [chave, valor]) => {
-    const valorNormalizado = normalizarValorFiltroServico(valor);
-
-    if (filtroServicoEstaAtivo(valorNormalizado)) {
-      resultado[chave] = valorNormalizado;
-    }
-
-    return resultado;
-  }, {});
+  return {
+    idVendedor: normalizarListaFiltroServicos(filtros?.idVendedor),
+    idConceito: normalizarListaFiltroServicos(filtros?.idConceito),
+    idGrupoEmpresa: normalizarListaFiltroServicos(filtros?.idGrupoEmpresa),
+    status: normalizarListaFiltroServicos(filtros?.status).filter((valor) => ['ativo', 'inativo'].includes(valor)),
+    estado: normalizarListaFiltroServicos(filtros?.estado).map((estado) => estado.toUpperCase()),
+    servicos: normalizarListaFiltroServicos(filtros?.servicos)
+  };
 }
 
-function criarNomeFiltroServico(idServico) {
-  return `servico_${idServico}`;
+function filtrosServicosEstaoAtivos(filtros) {
+  return Boolean(
+    normalizarListaFiltroServicos(filtros?.idVendedor).length
+    || normalizarListaFiltroServicos(filtros?.idConceito).length
+    || normalizarListaFiltroServicos(filtros?.idGrupoEmpresa).length
+    || normalizarListaFiltroServicos(filtros?.status).length
+    || normalizarListaFiltroServicos(filtros?.estado).length
+    || (Array.isArray(filtros?.servicos) && filtros.servicos.length > 0)
+  );
 }
 
-function normalizarValorFiltroServico(valor) {
-  const valorNormalizado = String(valor || '').trim().toLowerCase();
-
-  if (valorNormalizado === 'sim' || valorNormalizado === 'nao') {
-    return valorNormalizado;
+function normalizarListaFiltroServicos(valor) {
+  if (Array.isArray(valor)) {
+    return valor.map((item) => String(item).trim()).filter(Boolean);
   }
 
-  return '';
+  const texto = String(valor || '').trim();
+  return texto ? [texto] : [];
 }
 
-function filtroServicoEstaAtivo(valor) {
-  return ['sim', 'nao'].includes(normalizarValorFiltroServico(valor));
+function listaFiltroIncluiValor(lista, valor) {
+  if (!Array.isArray(lista) || lista.length === 0) {
+    return true;
+  }
+
+  return lista.includes(String(valor || ''));
+}
+
+function obterEstadosClientes(clientes) {
+  return [...new Set(
+    (clientes || [])
+      .map((cliente) => String(cliente.estado || '').trim().toUpperCase())
+      .filter(Boolean)
+  )].sort((estadoA, estadoB) => estadoA.localeCompare(estadoB, 'pt-BR'));
 }
 
 function obterSituacaoServicoCliente(vinculo) {
   const situacao = String(vinculo?.situacao || '').trim();
 
-  if (['contratado', 'naoContratado', 'naoAplicavel'].includes(situacao)) {
+  if (['contratado', 'naoContratado', 'naoAplicavel', 'terceiro'].includes(situacao)) {
     return situacao;
   }
 
@@ -249,6 +433,10 @@ function obterRotuloSituacaoServicoCliente(situacao) {
 
   if (situacao === 'naoAplicavel') {
     return 'nao aplicavel n/a';
+  }
+
+  if (situacao === 'terceiro') {
+    return 'terceiro alerta';
   }
 
   return 'nao contratado x';

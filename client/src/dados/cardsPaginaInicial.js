@@ -170,10 +170,20 @@ export function normalizarConfiguracoesCardsPaginaInicial(valor, definicoesExtra
 }
 
 export function reordenarConfiguracoesCardsPaginaInicial(configuracoes, definicoesExtras = []) {
-  const definicoes = combinarDefinicoesCards(definicoesExtras);
   const lista = Array.isArray(configuracoes)
     ? configuracoes.map((item) => ({ ...item }))
     : [];
+  const definicoesPorId = new Map(combinarDefinicoesCards(definicoesExtras).map((item) => [item.id, item]));
+
+  lista.forEach((item) => {
+    const id = String(item?.id || '').trim();
+
+    if (idEhCardServicoPaginaInicial(id) && !definicoesPorId.has(id)) {
+      definicoesPorId.set(id, criarDefinicaoCardServicoPersistido(item, lista.length));
+    }
+  });
+
+  const definicoes = [...definicoesPorId.values()];
   const visiveis = lista
     .filter((item) => item.visivel)
     .sort(ordenarConfiguracoesCardsPaginaInicial)

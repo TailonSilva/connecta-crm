@@ -202,6 +202,11 @@
   color: #62717d;
 }
 
+.etiquetaStatus.terceiro {
+  background: rgba(242, 180, 31, 0.18);
+  color: #a15c00;
+}
+
 .etiquetaPrincipal {
   background: rgba(242, 145, 31, 0.14);
   color: #c46a06;

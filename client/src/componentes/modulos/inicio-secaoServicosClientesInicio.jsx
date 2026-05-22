@@ -14,10 +14,10 @@ export function SecaoServicosClientesInicio({ itens, titulo = 'Servicos Contrata
         modalSubtitulo="Lista completa de clientes por situacao de servico."
         colunasPainel={2}
         tituloValor="Sim"
-        tituloQuantidade="Nao / N/A"
+        tituloQuantidade="Nao / N/A / Terceiro"
         obterValorTexto={(item) => `${item.quantidadeContratados} sim (${formatarPercentualServico(item.percentualContratados)})`}
         obterValorPercentual={(item) => item.percentualContratados}
-        obterQuantidadeTexto={(item) => `${item.quantidadeNaoContratados} nao (${formatarPercentualServico(item.percentualNaoContratados)}) | ${item.quantidadeNaoAplicavel} N/A (${formatarPercentualServico(item.percentualNaoAplicavel)})`}
+        obterQuantidadeTexto={(item) => `${item.quantidadeNaoContratados} nao (${formatarPercentualServico(item.percentualNaoContratados)}) | ${item.quantidadeNaoAplicavel} N/A (${formatarPercentualServico(item.percentualNaoAplicavel)}) | ${item.quantidadeTerceiro} terceiro (${formatarPercentualServico(item.percentualTerceiro)})`}
         obterQuantidadePercentual={(item) => item.percentualNaoOuNaoAplicavel}
         ariaAcao="Abrir lista completa de clientes por servico"
       />

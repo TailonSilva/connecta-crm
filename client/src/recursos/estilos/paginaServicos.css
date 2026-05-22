@@ -49,9 +49,21 @@
   width: 260px;
 }
 
+.colunaServicoClienteGrupo,
+.colunaServicoClienteConceito {
+  min-width: 180px;
+  width: 180px;
+}
+
 .colunaServicoContratado {
   width: 128px;
   min-width: 128px;
+  text-align: center;
+}
+
+.colunaServicoAcoes {
+  width: 88px;
+  min-width: 88px;
   text-align: center;
 }
 
@@ -59,8 +71,21 @@
   text-align: center;
 }
 
-.tabelaServicosContratados td.colunaServicoContratado {
+.tabelaServicosContratados td.colunaServicoContratado,
+.tabelaServicosContratados td.colunaServicoAcoes {
   text-align: center;
+}
+
+.iconeCabecalhoServico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  min-height: 28px;
+  font-size: 1.15rem;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .indicadorServicoContratado {
@@ -96,6 +121,81 @@
   border: 1px solid rgba(122, 136, 148, 0.28);
 }
 
+.indicadorServicoContratado.terceiro {
+  color: #a15c00;
+  background: #fff4cc;
+  border: 1px solid #f4c45a;
+}
+
+.modalEdicaoServicosCliente {
+  width: min(980px, calc(100vw - 32px));
+}
+
+.modalEdicaoServicosCliente .corpoModalCliente {
+  max-height: min(72vh, 720px);
+}
+
+.mensagemErroModalServicosCliente {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border: 1px solid rgba(220, 38, 38, 0.24);
+  border-radius: 8px;
+  color: #9f1d1d;
+  background: rgba(254, 226, 226, 0.78);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.gradeEdicaoServicosCliente {
+  overflow: hidden;
+  border: 1px solid var(--corBorda);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.linhaCabecalhoEdicaoServicosCliente,
+.linhaEdicaoServicosCliente {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.1fr) 180px minmax(260px, 1.4fr);
+  gap: 16px;
+  align-items: center;
+  padding: 14px 16px;
+}
+
+.linhaCabecalhoEdicaoServicosCliente {
+  border-bottom: 1px solid var(--corBorda);
+  color: var(--corTextoSuave);
+  background: linear-gradient(180deg, #f8fbfe 0%, #edf4f8 100%);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.linhaEdicaoServicosCliente + .linhaEdicaoServicosCliente {
+  border-top: 1px solid rgba(200, 213, 223, 0.62);
+}
+
+.celulaServicoEdicaoCliente {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.celulaServicoEdicaoCliente strong {
+  overflow: hidden;
+  color: var(--corTexto);
+  font-size: 0.9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.celulaServicoEdicaoCliente span {
+  color: var(--corTextoSuave);
+  font-size: 0.78rem;
+}
+
 @media (max-width: 760px) {
   .gradePainelServicos .cabecaTabelaGradePadrao {
     display: table-header-group;
@@ -111,7 +211,19 @@
 
   .colunaServicoClienteCodigo,
   .colunaServicoClienteNome,
-  .colunaServicoContratado {
+  .colunaServicoClienteGrupo,
+  .colunaServicoClienteConceito,
+  .colunaServicoContratado,
+  .colunaServicoAcoes {
     min-width: 120px;
+  }
+
+  .linhaCabecalhoEdicaoServicosCliente {
+    display: none;
+  }
+
+  .linhaEdicaoServicosCliente {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 }

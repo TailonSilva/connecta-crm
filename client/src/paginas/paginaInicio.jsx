@@ -268,9 +268,7 @@ export function PaginaInicio({ usuarioLogado }) {
         ) : (
           <div className="paginaInicioLayout">
             <div className="paginaInicioGradeIndicadores">
-              {indicadoresConfigurados
-                .filter((indicador) => abaAtiva === 'vendas' || !String(indicador.id || '').startsWith('servicoContratado_'))
-                .map((indicador) => (
+              {indicadoresConfigurados.map((indicador) => (
                 <IndicadorConfiguravelInicio key={indicador.id} colunas={indicador.span}>
                   <IndicadorResumoInicio
                     ariaLabel={indicador.titulo}
@@ -1634,6 +1632,8 @@ function montarResumoServicosClientes(clientes, servicos, clientesServicos) {
           acumulado.quantidadeContratados += 1;
         } else if (situacao === 'naoAplicavel') {
           acumulado.quantidadeNaoAplicavel += 1;
+        } else if (situacao === 'terceiro') {
+          acumulado.quantidadeTerceiro += 1;
         } else {
           acumulado.quantidadeNaoContratados += 1;
         }
@@ -1642,9 +1642,10 @@ function montarResumoServicosClientes(clientes, servicos, clientesServicos) {
       }, {
         quantidadeContratados: 0,
         quantidadeNaoContratados: 0,
-        quantidadeNaoAplicavel: 0
+        quantidadeNaoAplicavel: 0,
+        quantidadeTerceiro: 0
       });
-      const quantidadeNaoOuNaoAplicavel = resumo.quantidadeNaoContratados + resumo.quantidadeNaoAplicavel;
+      const quantidadeNaoOuNaoAplicavel = resumo.quantidadeNaoContratados + resumo.quantidadeNaoAplicavel + resumo.quantidadeTerceiro;
 
       return {
         id: String(servico.idServico),
@@ -1654,13 +1655,15 @@ function montarResumoServicosClientes(clientes, servicos, clientesServicos) {
         quantidadeContratados: resumo.quantidadeContratados,
         quantidadeNaoContratados: resumo.quantidadeNaoContratados,
         quantidadeNaoAplicavel: resumo.quantidadeNaoAplicavel,
+        quantidadeTerceiro: resumo.quantidadeTerceiro,
         totalClientes,
         percentualContratados: calcularPercentualParteDoTotal(resumo.quantidadeContratados, totalClientes),
         percentualNaoContratados: calcularPercentualParteDoTotal(resumo.quantidadeNaoContratados, totalClientes),
         percentualNaoAplicavel: calcularPercentualParteDoTotal(resumo.quantidadeNaoAplicavel, totalClientes),
+        percentualTerceiro: calcularPercentualParteDoTotal(resumo.quantidadeTerceiro, totalClientes),
         percentualNaoOuNaoAplicavel: calcularPercentualParteDoTotal(quantidadeNaoOuNaoAplicavel, totalClientes),
         ajuda: {
-          composicao: `${resumo.quantidadeContratados} clientes com servico contratado, ${resumo.quantidadeNaoContratados} nao contratados e ${resumo.quantidadeNaoAplicavel} como N/A para ${servico.descricao || 'Servico'}.`,
+          composicao: `${resumo.quantidadeContratados} clientes com servico contratado, ${resumo.quantidadeNaoContratados} nao contratados, ${resumo.quantidadeNaoAplicavel} como N/A e ${resumo.quantidadeTerceiro} como terceiro para ${servico.descricao || 'Servico'}.`,
           periodo: 'Base cadastral atual da carteira visivel.'
         }
       };
@@ -1678,7 +1681,7 @@ function possuiVinculoServico(vinculosPorClienteServico, idServico) {
 function obterSituacaoServicoClienteInicio(vinculo) {
   const situacao = String(vinculo?.situacao || '').trim();
 
-  if (['contratado', 'naoContratado', 'naoAplicavel'].includes(situacao)) {
+  if (['contratado', 'naoContratado', 'naoAplicavel', 'terceiro'].includes(situacao)) {
     return situacao;
   }
 

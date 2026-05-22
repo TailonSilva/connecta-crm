@@ -139,9 +139,18 @@ banco.serialize(() => {
     CREATE TABLE IF NOT EXISTS servico (
       idServico INTEGER PRIMARY KEY AUTOINCREMENT,
       descricao VARCHAR(255) NOT NULL,
+      icone VARCHAR(20),
       status BOOLEAN NOT NULL DEFAULT 1
     )
   `);
+
+  banco.run(`
+    ALTER TABLE servico ADD COLUMN icone VARCHAR(20)
+  `, (erro) => {
+    if (erro && !String(erro.message || '').includes('duplicate column name')) {
+      console.error('Nao foi possivel garantir a coluna icone do servico.', erro);
+    }
+  });
 
   banco.run(`
     CREATE TABLE IF NOT EXISTS localAgenda (

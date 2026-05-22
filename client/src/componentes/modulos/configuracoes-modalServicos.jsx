@@ -1,4 +1,3 @@
-import { CodigoRegistro } from '../comuns/codigoRegistro';
 import { ModalCadastroConfiguracao } from './configuracoes-modalCadastroConfiguracao';
 
 export function ModalServicos({
@@ -18,10 +17,11 @@ export function ModalServicos({
       chavePrimaria="idServico"
       somenteConsulta={somenteConsulta}
       colunas={[
-        { key: 'idServico', label: 'Codigo', render: (registro) => <CodigoRegistro valor={registro.idServico} /> },
+        { key: 'icone', label: 'Icone', render: (registro) => registro.icone || '-' },
         { key: 'descricao', label: 'Descricao' }
       ]}
       camposFormulario={[
+        { name: 'icone', label: 'Icone do servico', maxLength: 20 },
         { name: 'descricao', label: 'Descricao do servico', required: true, maxLength: 255 },
         { name: 'status', label: 'Registro ativo', type: 'checkbox', defaultValue: true }
       ]}

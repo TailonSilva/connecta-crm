@@ -291,7 +291,7 @@ Observacao:
 - Formulario de contato reutilizavel
 - Campo `Grupo de empresa` no modal do cliente, com atalho lateral para cadastrar e selecionar o grupo sem sair do fluxo
 - Campo `Conceito` no modal do cliente, com atalho lateral para cadastrar e selecionar o conceito sem sair do fluxo
-- Aba `Servicos` no modal do cliente, permitindo marcar cada servico como contratado, nao contratado ou nao aplicavel e registrar observacao individual
+- Aba `Servicos` no modal do cliente, permitindo marcar cada servico como contratado, nao contratado, nao aplicavel ou terceiro e registrar observacao individual
 - Cada cliente pode se vincular a no maximo um `Grupo de empresa`, enquanto um grupo pode atender varios clientes
 - Contatos do grupo aparecem como herdados no cadastro do cliente e ficam disponiveis para consulta no proprio modal
 - Abertura do mesmo modal de `Ramo de Atividade` usado em configuracoes
@@ -344,11 +344,11 @@ Filtros de produtos:
 
 - Pagina propria de servicos com matriz de clientes por servico contratado
 - A grade exibe `Codigo do cliente`, `Nome fantasia` e uma coluna para cada servico cadastrado
-- Cada celula marca check quando o cliente contratou o servico, `X` quando nao contratou e `N/A` quando o servico nao se aplica ao cliente
-- Observacoes do servico aparecem no hover do check, do `X` ou do `N/A`
-- O modal de filtros da pagina lista todos os servicos cadastrados e permite filtrar cada um por `Sim`, `Nao` ou `-`, onde `-` ignora o servico no recorte
+- Cada celula marca check quando o cliente contratou o servico, `X` quando nao contratou, `N/A` quando o servico nao se aplica ao cliente e `!` amarelo quando o servico e de terceiro
+- Observacoes do servico aparecem no hover do check, do `X`, do `N/A` ou do `!`
+- O modal de filtros da pagina permite filtrar por `Vendedor`, `Conceito`, `Grupo de empresa`, `Ativo`, `Estado` e por uma secao de checkboxes com os servicos contratados que devem entrar no recorte
 - Cadastro auxiliar `Servicos` tambem disponivel em `Configuracoes > Cadastros`
-- Cada servico possui `Codigo`, `Descricao` e `Status`
+- Cada servico possui `Codigo`, `Icone`, `Descricao` e `Status`; o icone pode ser um emoji usado no cabecalho da matriz de servicos
 - Inativacao persiste no banco
 
 ### Agenda
@@ -607,7 +607,7 @@ O cadastro de empresa tem modal proprio com abas:
 - `Documento`
 - O dashboard inclui grafico diario de tendencia para `Atendimentos`, `Orcamentos` e `Pedidos` nos ultimos 7 dias do recorte
 - O dashboard inclui rankings de `Vendedores`, `Produtos`, `Grupos de produto` e `Marcas` com barras comparativas
-- A aba `Vendas` da pagina inicial inclui cards dinamicos para cada servico com quantidade e percentual de clientes contratados, alem do grafico `Servicos Contratados` contando clientes em `Sim`, `Nao` e `N/A`
+- A pagina inicial inclui cards dinamicos configuraveis para cada servico com quantidade e percentual de clientes contratados em todas as abas, alem do grafico `Servicos Contratados` na aba `Vendas` contando clientes em `Sim`, `Nao`, `N/A` e `Terceiro`
 - O dashboard inclui painel de agenda dos proximos dias e bloco de saude comercial com conversao, fechamento e entregas
 - Os cards de resumo da pagina inicial usam titulo no topo com tipografia mais contida, valor abaixo, descricao auxiliar e icone ampliado na direita com corte parcial pelo proprio card
 - Endereco completo

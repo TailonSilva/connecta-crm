@@ -1,4 +1,5 @@
 import { CodigoRegistro } from '../comuns/codigoRegistro';
+import { BotaoAcaoGrade } from '../comuns/botaoAcaoGrade';
 import { GradePadrao } from '../comuns/gradePadrao';
 import { TextoGradeClamp } from '../comuns/textoGradeClamp';
 
@@ -6,7 +7,8 @@ export function ListaServicos({
   linhas,
   servicos,
   carregando,
-  mensagemErro
+  mensagemErro,
+  aoEditarCliente
 }) {
   return (
     <GradePadrao
@@ -16,11 +18,23 @@ export function ListaServicos({
         <tr className="cabecalhoGradeServicos">
           <th className="colunaServicoClienteCodigo">Codigo</th>
           <th className="colunaServicoClienteNome">Nome fantasia</th>
+          <th className="colunaServicoClienteGrupo">Grupo de empresa</th>
+          <th className="colunaServicoClienteConceito">Conceito</th>
           {servicos.map((servico) => (
-            <th key={servico.idServico} className="colunaServicoContratado">
-              <TextoGradeClamp>{servico.descricao || `Servico #${servico.idServico}`}</TextoGradeClamp>
+            <th
+              key={servico.idServico}
+              className="colunaServicoContratado"
+              title={servico.descricao || `Servico #${servico.idServico}`}
+            >
+              <span
+                className="iconeCabecalhoServico"
+                aria-label={servico.descricao || `Servico #${servico.idServico}`}
+              >
+                {servico.icone || servico.descricao || `Servico #${servico.idServico}`}
+              </span>
             </th>
           ))}
+          <th className="colunaServicoAcoes">Acoes</th>
         </tr>
       )}
       carregando={carregando}
@@ -36,6 +50,12 @@ export function ListaServicos({
           </td>
           <td className="colunaServicoClienteNome">
             <TextoGradeClamp>{linha.nomeFantasia || 'Cliente nao informado'}</TextoGradeClamp>
+          </td>
+          <td className="colunaServicoClienteGrupo">
+            <TextoGradeClamp>{linha.grupoEmpresa || 'Sem grupo'}</TextoGradeClamp>
+          </td>
+          <td className="colunaServicoClienteConceito">
+            <TextoGradeClamp>{linha.conceitoCliente || 'Sem conceito'}</TextoGradeClamp>
           </td>
           {servicos.map((servico) => {
             const vinculo = linha.servicosPorId.get(String(servico.idServico));
@@ -55,6 +75,13 @@ export function ListaServicos({
               </td>
             );
           })}
+          <td className="colunaServicoAcoes">
+            <BotaoAcaoGrade
+              icone="editar"
+              titulo="Editar servicos do cliente"
+              onClick={() => aoEditarCliente?.(linha)}
+            />
+          </td>
         </tr>
       ))}
     </GradePadrao>
@@ -64,7 +91,7 @@ export function ListaServicos({
 function obterSituacaoServicoCliente(vinculo) {
   const situacao = String(vinculo?.situacao || '').trim();
 
-  if (['contratado', 'naoContratado', 'naoAplicavel'].includes(situacao)) {
+  if (['contratado', 'naoContratado', 'naoAplicavel', 'terceiro'].includes(situacao)) {
     return situacao;
   }
 
@@ -80,6 +107,10 @@ function obterRotuloSituacaoServicoCliente(situacao) {
     return 'nao aplicavel';
   }
 
+  if (situacao === 'terceiro') {
+    return 'terceiro';
+  }
+
   return 'nao contratado';
 }
 
@@ -90,6 +121,10 @@ function obterMarcadorSituacaoServicoCliente(situacao) {
 
   if (situacao === 'naoAplicavel') {
     return 'N/A';
+  }
+
+  if (situacao === 'terceiro') {
+    return '!';
   }
 
   return 'X';

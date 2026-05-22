@@ -1252,7 +1252,8 @@ export function ModalCliente({
                   options={[
                     { valor: 'contratado', label: 'Sim' },
                     { valor: 'naoContratado', label: 'Nao' },
-                    { valor: 'naoAplicavel', label: 'N/A' }
+                    { valor: 'naoAplicavel', label: 'N/A' },
+                    { valor: 'terceiro', label: 'Terceiro' }
                   ]}
                   required
                 />
@@ -1755,7 +1756,7 @@ function criarFormularioServicoCliente(servicoCliente = null, servicosFormulario
 function obterSituacaoServicoCliente(vinculo) {
   const situacao = String(vinculo?.situacao || '').trim();
 
-  if (['contratado', 'naoContratado', 'naoAplicavel'].includes(situacao)) {
+  if (['contratado', 'naoContratado', 'naoAplicavel', 'terceiro'].includes(situacao)) {
     return situacao;
   }
 
@@ -1771,6 +1772,10 @@ function obterRotuloSituacaoServicoCliente(situacao) {
     return 'N/A';
   }
 
+  if (situacao === 'terceiro') {
+    return 'Terceiro';
+  }
+
   return 'Nao';
 }
 
@@ -1781,6 +1786,10 @@ function obterClasseSituacaoServicoCliente(situacao) {
 
   if (situacao === 'naoAplicavel') {
     return 'pendente';
+  }
+
+  if (situacao === 'terceiro') {
+    return 'terceiro';
   }
 
   return 'inativo';

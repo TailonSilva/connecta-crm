@@ -902,6 +902,7 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
   async function salvarServico(dadosServico) {
     const payload = {
       descricao: dadosServico.descricao.trim(),
+      icone: String(dadosServico.icone || '').trim(),
       status: dadosServico.status ? 1 : 0
     };
 
