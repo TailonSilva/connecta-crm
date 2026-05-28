@@ -496,7 +496,7 @@ function montarPainel(dados, usuarioLogado) {
     dados.conceitosCliente
   );
   const servicosClientes = montarResumoServicosClientes(
-    clientesVisiveis,
+    clientesAtivos,
     dados.servicos,
     dados.clientesServicos
   );
@@ -856,8 +856,8 @@ function montarIndicadoresServicosContratados(painel) {
     valorComplemento: formatarPercentualTaxa(servico.percentualContratados),
     descricao: 'Clientes com este servico contratado.',
     ajuda: {
-      composicao: `${servico.quantidadeContratados || 0} clientes com servico contratado de um total de ${servico.totalClientes || 0} clientes visiveis.`,
-      periodo: 'Base cadastral atual da carteira visivel.'
+      composicao: `${servico.quantidadeContratados || 0} clientes com servico contratado de um total de ${servico.totalClientes || 0} clientes ativos da carteira.`,
+      periodo: 'Base cadastral atual da carteira ativa.'
     }
   }));
 }
@@ -1664,7 +1664,7 @@ function montarResumoServicosClientes(clientes, servicos, clientesServicos) {
         percentualNaoOuNaoAplicavel: calcularPercentualParteDoTotal(quantidadeNaoOuNaoAplicavel, totalClientes),
         ajuda: {
           composicao: `${resumo.quantidadeContratados} clientes com servico contratado, ${resumo.quantidadeNaoContratados} nao contratados, ${resumo.quantidadeNaoAplicavel} como N/A e ${resumo.quantidadeTerceiro} como terceiro para ${servico.descricao || 'Servico'}.`,
-          periodo: 'Base cadastral atual da carteira visivel.'
+          periodo: 'Base cadastral atual da carteira ativa.'
         }
       };
     })
