@@ -282,6 +282,7 @@ function montarLinhasServicosCliente(clientes, clientesServicos, gruposEmpresa, 
     estado: String(cliente.estado || '').trim().toUpperCase(),
     codigoCliente: obterCodigoPrincipalCliente(cliente, empresa) || cliente.idCliente,
     nomeFantasia: cliente.nomeFantasia || cliente.razaoSocial || `Cliente #${cliente.idCliente}`,
+    cidade: cliente.cidade || '',
     grupoEmpresa: gruposEmpresaPorId.get(String(cliente.idGrupoEmpresa || '')) || 'Sem grupo',
     conceitoCliente: conceitosClientePorId.get(String(cliente.idConceito || '')) || 'Sem conceito',
     servicosPorId: montarMapaServicosCliente(clientesServicos, cliente.idCliente)
@@ -314,6 +315,8 @@ function filtrarLinhasServicosCliente(linhas, servicos, pesquisa, filtros) {
     const dadosCliente = [
       linha.codigoCliente,
       linha.nomeFantasia,
+      linha.cidade,
+      linha.estado,
       linha.grupoEmpresa,
       linha.conceitoCliente
     ];

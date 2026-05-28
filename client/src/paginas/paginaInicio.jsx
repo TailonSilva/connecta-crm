@@ -3,7 +3,7 @@ import '../recursos/estilos/paginaInicio.css';
 import { CorpoPagina } from '../componentes/layout/corpoPagina';
 import { listarAgendamentos } from '../servicos/agenda';
 import { listarAtendimentosGrid } from '../servicos/atendimentos';
-import { listarClientes, listarClientesServicos, listarConceitosCliente, listarVendedores } from '../servicos/clientes';
+import { listarClientes, listarClientesServicos, listarConceitosCliente, listarRamosAtividade, listarVendedores } from '../servicos/clientes';
 import {
   listarCanaisAtendimentoConfiguracao,
   listarEtapasOrcamentoConfiguracao,
@@ -44,6 +44,7 @@ import { SecaoVendasConceitosClienteInicio } from '../componentes/modulos/inicio
 import { SecaoVendasProdutosInicio } from '../componentes/modulos/inicio-secaoVendasProdutosInicio';
 import { SecaoVendasUfInicio } from '../componentes/modulos/inicio-secaoVendasUfInicio';
 import { SecaoServicosClientesInicio } from '../componentes/modulos/inicio-secaoServicosClientesInicio';
+import { SecaoResumoRelacionamentoComModalInicio } from '../componentes/modulos/inicio-secaoResumoRelacionamentoComModalInicio';
 import { SecaoAtendimentosCanalInicio } from '../componentes/modulos/inicio-secaoAtendimentosCanalInicio';
 import { SecaoAtendimentosOrigemInicio } from '../componentes/modulos/inicio-secaoAtendimentosOrigemInicio';
 import { SecaoAtendimentosClientesInicio } from '../componentes/modulos/inicio-secaoAtendimentosClientesInicio';
@@ -62,7 +63,7 @@ export function PaginaInicio({ usuarioLogado }) {
   const [carregando, definirCarregando] = useState(true);
   const [mensagemErro, definirMensagemErro] = useState('');
   const [painelBruto, definirPainelBruto] = useState(null);
-  const [abaAtiva, definirAbaAtiva] = useState('orcamentos');
+  const [abaAtiva, definirAbaAtiva] = useState('carteira');
   const [modalManualAberto, definirModalManualAberto] = useState(false);
 
   useEffect(() => {
@@ -116,6 +117,10 @@ export function PaginaInicio({ usuarioLogado }) {
     () => montarSecoesVendas(painel),
     [painel]
   );
+  const secoesCarteiraConfiguradas = useMemo(
+    () => montarSecoesCarteira(painel),
+    [painel]
+  );
   const secoesAtendimentosConfiguradas = useMemo(
     () => montarSecoesAtendimentos(painel),
     [painel]
@@ -162,6 +167,7 @@ export function PaginaInicio({ usuarioLogado }) {
         listarUsuarios({ incluirInativos: true }),
         listarServicos({ incluirInativos: true }),
         listarClientesServicos(),
+        listarRamosAtividade({ incluirInativos: true }),
         listarEmpresas()
       ]);
 
@@ -186,6 +192,7 @@ export function PaginaInicio({ usuarioLogado }) {
         usuariosResultado,
         servicosResultado,
         clientesServicosResultado,
+        ramosAtividadeResultado,
         empresasResultado
       ] = resultados;
 
@@ -209,6 +216,7 @@ export function PaginaInicio({ usuarioLogado }) {
       const usuarios = usuariosResultado.status === 'fulfilled' ? usuariosResultado.value : [];
       const servicos = servicosResultado.status === 'fulfilled' ? servicosResultado.value : [];
       const clientesServicos = clientesServicosResultado.status === 'fulfilled' ? clientesServicosResultado.value : [];
+      const ramosAtividade = ramosAtividadeResultado.status === 'fulfilled' ? ramosAtividadeResultado.value : [];
       const empresas = empresasResultado.status === 'fulfilled' ? empresasResultado.value : [];
 
       definirPainelBruto({
@@ -232,6 +240,7 @@ export function PaginaInicio({ usuarioLogado }) {
         usuarios,
         servicos,
         clientesServicos,
+        ramosAtividade,
         empresa: empresas[0] || null
       });
     } catch (_erro) {
@@ -249,6 +258,7 @@ export function PaginaInicio({ usuarioLogado }) {
         abas={[
           { id: 'orcamentos', rotulo: 'Orcamentos' },
           { id: 'vendas', rotulo: 'Vendas' },
+          { id: 'carteira', rotulo: 'Carteira' },
           { id: 'atendimentos', rotulo: 'Atendimentos' }
         ]}
         abaAtiva={abaAtiva}
@@ -288,6 +298,12 @@ export function PaginaInicio({ usuarioLogado }) {
                 ))
               ) : abaAtiva === 'vendas' ? (
                 secoesVendasConfiguradas.map((secao) => (
+                  <SecaoConfiguravelInicio key={secao.id} colunas={secao.span}>
+                    {secao.renderizar()}
+                  </SecaoConfiguravelInicio>
+                ))
+              ) : abaAtiva === 'carteira' ? (
+                secoesCarteiraConfiguradas.map((secao) => (
                   <SecaoConfiguravelInicio key={secao.id} colunas={secao.span}>
                     {secao.renderizar()}
                   </SecaoConfiguravelInicio>
@@ -499,6 +515,36 @@ function montarPainel(dados, usuarioLogado) {
     clientesAtivos,
     dados.servicos,
     dados.clientesServicos
+  );
+  const servicosPorConceitoCliente = montarResumoServicosContratadosPorRelacionamento(
+    clientesAtivos,
+    dados.clientesServicos,
+    dados.conceitosCliente,
+    'idConceito',
+    'idConceito',
+    'Sem conceito'
+  );
+  const servicosPorRamoAtividade = montarResumoServicosContratadosPorRelacionamento(
+    clientesAtivos,
+    dados.clientesServicos,
+    dados.ramosAtividade,
+    'idRamo',
+    'idRamo',
+    'Sem ramo'
+  );
+  const carteiraPorConceitoCliente = montarResumoCarteiraPorRelacionamento(
+    clientesAtivos,
+    dados.conceitosCliente,
+    'idConceito',
+    'idConceito',
+    'Sem conceito'
+  );
+  const carteiraPorRamoAtividade = montarResumoCarteiraPorRelacionamento(
+    clientesAtivos,
+    dados.ramosAtividade,
+    'idRamo',
+    'idRamo',
+    'Sem ramo'
   );
   const atendimentosPorCanal = montarResumoAtendimentosPorRelacionamento(
     atendimentosMesHome,
@@ -765,6 +811,10 @@ function montarPainel(dados, usuarioLogado) {
     vendasPorConceitoCliente,
     vendasPorProduto,
     servicosClientes,
+    servicosPorConceitoCliente,
+    servicosPorRamoAtividade,
+    carteiraPorConceitoCliente,
+    carteiraPorRamoAtividade,
     atendimentosPorCanal,
     atendimentosPorOrigem,
     atendimentosPorCliente,
@@ -896,9 +946,6 @@ function montarSecoesVendas(painel) {
           itens={painel.ranking}
         />
       )
-    }],
-    ['servicosClientes', {
-      renderizar: (configuracao) => <SecaoServicosClientesInicio itens={painel.servicosClientes} titulo={configuracao.rotulo} />
     }]
   ]);
 
@@ -911,6 +958,107 @@ function montarSecoesVendas(painel) {
       renderizar: () => definicoes.get(item.id)?.renderizar(item)
     }))
     .filter((item) => typeof item.renderizar === 'function');
+}
+
+function montarSecoesCarteira(painel) {
+  const configuracoes = Array.isArray(painel?.empresa?.graficosPaginaInicialCarteira)
+    ? painel.empresa.graficosPaginaInicialCarteira
+    : [];
+  const definicoes = new Map([
+    ['servicosClientes', {
+      renderizar: (configuracao) => <SecaoServicosClientesInicio itens={painel.servicosClientes} titulo={configuracao.rotulo} />
+    }],
+    ['servicosConceitosCliente', {
+      renderizar: (configuracao) => (
+        <SecaoServicosContratadosRelacionamentoInicio
+          itens={painel.servicosPorConceitoCliente}
+          titulo={configuracao.rotulo}
+          agrupamento="conceito de cliente"
+        />
+      )
+    }],
+    ['servicosRamosAtividade', {
+      renderizar: (configuracao) => (
+        <SecaoServicosContratadosRelacionamentoInicio
+          itens={painel.servicosPorRamoAtividade}
+          titulo={configuracao.rotulo}
+          agrupamento="ramo de atividade"
+        />
+      )
+    }],
+    ['carteiraConceitosCliente', {
+      renderizar: (configuracao) => (
+        <SecaoCarteiraRelacionamentoInicio
+          itens={painel.carteiraPorConceitoCliente}
+          titulo={configuracao.rotulo}
+          agrupamento="conceito de cliente"
+        />
+      )
+    }],
+    ['carteiraRamosAtividade', {
+      renderizar: (configuracao) => (
+        <SecaoCarteiraRelacionamentoInicio
+          itens={painel.carteiraPorRamoAtividade}
+          titulo={configuracao.rotulo}
+          agrupamento="ramo de atividade"
+        />
+      )
+    }]
+  ]);
+
+  return configuracoes
+    .filter((item) => item?.visivel !== false)
+    .sort((itemA, itemB) => Number(itemA?.ordem || 0) - Number(itemB?.ordem || 0))
+    .map((item) => ({
+      id: item.id,
+      span: item.span,
+      renderizar: () => definicoes.get(item.id)?.renderizar(item)
+    }))
+    .filter((item) => typeof item.renderizar === 'function');
+}
+
+function SecaoServicosContratadosRelacionamentoInicio({ itens, titulo, agrupamento }) {
+  return (
+    <SecaoResumoRelacionamentoComModalInicio
+      titulo={titulo}
+      itens={itens}
+      composicao={`Quantidade de servicos contratados por ${agrupamento}.`}
+      periodo="Base cadastral atual da carteira ativa."
+      mensagemVazia={`Nenhum servico contratado por ${agrupamento}.`}
+      modalTitulo={titulo}
+      modalSubtitulo={`Lista completa de servicos contratados por ${agrupamento}.`}
+      colunasPainel={2}
+      tituloValor="Servicos"
+      tituloQuantidade="Clientes"
+      obterValorTexto={(item) => `${item.quantidadeServicosContratados} servicos`}
+      obterValorPercentual={(item) => item.percentualServicosContratados}
+      obterQuantidadeTexto={(item) => `${item.quantidadeClientes} clientes`}
+      obterQuantidadePercentual={(item) => item.percentualClientes}
+      ariaAcao={`Abrir lista completa de servicos contratados por ${agrupamento}`}
+    />
+  );
+}
+
+function SecaoCarteiraRelacionamentoInicio({ itens, titulo, agrupamento }) {
+  return (
+    <SecaoResumoRelacionamentoComModalInicio
+      titulo={titulo}
+      itens={itens}
+      composicao={`Quantidade de clientes ativos por ${agrupamento}.`}
+      periodo="Base cadastral atual da carteira ativa."
+      mensagemVazia={`Nenhum cliente ativo por ${agrupamento}.`}
+      modalTitulo={titulo}
+      modalSubtitulo={`Lista completa da carteira ativa por ${agrupamento}.`}
+      colunasPainel={2}
+      tituloValor="Clientes"
+      tituloQuantidade="Clientes"
+      obterValorTexto={(item) => `${item.quantidadeClientes} clientes`}
+      obterValorPercentual={(item) => item.percentualClientes}
+      obterQuantidadeTexto={(item) => `${item.quantidadeClientes} clientes`}
+      obterQuantidadePercentual={(item) => item.percentualClientes}
+      ariaAcao={`Abrir lista completa da carteira ativa por ${agrupamento}`}
+    />
+  );
 }
 
 function montarSecoesAtendimentos(painel) {
@@ -1111,6 +1259,10 @@ function criarPainelBase(usuarioLogado) {
     vendasPorConceitoCliente: [],
     vendasPorProduto: [],
     servicosClientes: [],
+    servicosPorConceitoCliente: [],
+    servicosPorRamoAtividade: [],
+    carteiraPorConceitoCliente: [],
+    carteiraPorRamoAtividade: [],
     atendimentosPorCanal: [],
     atendimentosPorOrigem: [],
     atendimentosPorCliente: [],
@@ -1671,6 +1823,134 @@ function montarResumoServicosClientes(clientes, servicos, clientesServicos) {
     .sort((servicoA, servicoB) => (
       servicoB.quantidadeContratados - servicoA.quantidadeContratados
       || String(servicoA.descricao || '').localeCompare(String(servicoB.descricao || ''), 'pt-BR')
+    ));
+}
+
+function montarResumoServicosContratadosPorRelacionamento(
+  clientes,
+  clientesServicos,
+  referencias,
+  chaveCliente,
+  chaveReferencia,
+  descricaoSemReferencia
+) {
+  const clientesAtivos = Array.isArray(clientes) ? clientes : [];
+  const referenciasPorId = new Map((referencias || []).map((referencia) => [
+    String(referencia?.[chaveReferencia] || ''),
+    referencia?.descricao || ''
+  ]));
+  const clientesPorId = new Map(clientesAtivos.map((cliente) => [String(cliente.idCliente), cliente]));
+  const resumoPorReferencia = new Map();
+
+  clientesAtivos.forEach((cliente) => {
+    const idReferencia = String(cliente?.[chaveCliente] || '');
+
+    if (!resumoPorReferencia.has(idReferencia)) {
+      resumoPorReferencia.set(idReferencia, criarResumoServicoReferencia(
+        idReferencia,
+        referenciasPorId.get(idReferencia) || descricaoSemReferencia
+      ));
+    }
+  });
+
+  (clientesServicos || []).forEach((vinculo) => {
+    const cliente = clientesPorId.get(String(vinculo?.idCliente || ''));
+
+    if (!cliente || obterSituacaoServicoClienteInicio(vinculo) !== 'contratado') {
+      return;
+    }
+
+    const idReferencia = String(cliente?.[chaveCliente] || '');
+    const resumo = resumoPorReferencia.get(idReferencia) || criarResumoServicoReferencia(
+      idReferencia,
+      referenciasPorId.get(idReferencia) || descricaoSemReferencia
+    );
+
+    resumo.quantidadeServicosContratados += 1;
+    resumo.idsClientes.add(String(cliente.idCliente));
+    resumoPorReferencia.set(idReferencia, resumo);
+  });
+
+  const lista = [...resumoPorReferencia.values()]
+    .map((item) => ({
+      ...item,
+      quantidadeClientes: item.idsClientes.size,
+      idsClientes: undefined
+    }))
+    .filter((item) => item.quantidadeServicosContratados > 0);
+  const totalServicosContratados = lista.reduce((total, item) => total + item.quantidadeServicosContratados, 0);
+  const totalClientes = lista.reduce((total, item) => total + item.quantidadeClientes, 0);
+
+  return lista
+    .map((item) => ({
+      ...item,
+      valor: `${item.quantidadeServicosContratados} servicos`,
+      quantidadeItens: item.quantidadeClientes,
+      percentualServicosContratados: calcularPercentualParteDoTotal(item.quantidadeServicosContratados, totalServicosContratados),
+      percentualClientes: calcularPercentualParteDoTotal(item.quantidadeClientes, totalClientes),
+      ajuda: {
+        composicao: `${item.quantidadeServicosContratados} servicos contratados em ${item.quantidadeClientes} clientes ativos para ${item.descricao}.`,
+        periodo: 'Base cadastral atual da carteira ativa.'
+      }
+    }))
+    .sort((itemA, itemB) => (
+      itemB.quantidadeServicosContratados - itemA.quantidadeServicosContratados
+      || String(itemA.descricao || '').localeCompare(String(itemB.descricao || ''), 'pt-BR')
+    ));
+}
+
+function criarResumoServicoReferencia(id, descricao) {
+  return {
+    id: String(id || 'semReferencia'),
+    descricao,
+    quantidadeServicosContratados: 0,
+    idsClientes: new Set()
+  };
+}
+
+function montarResumoCarteiraPorRelacionamento(
+  clientes,
+  referencias,
+  chaveCliente,
+  chaveReferencia,
+  descricaoSemReferencia
+) {
+  const clientesAtivos = Array.isArray(clientes) ? clientes : [];
+  const referenciasPorId = new Map((referencias || []).map((referencia) => [
+    String(referencia?.[chaveReferencia] || ''),
+    referencia?.descricao || ''
+  ]));
+  const resumoPorReferencia = new Map();
+
+  clientesAtivos.forEach((cliente) => {
+    const idReferencia = String(cliente?.[chaveCliente] || '');
+    const resumo = resumoPorReferencia.get(idReferencia) || {
+      id: idReferencia || 'semReferencia',
+      descricao: referenciasPorId.get(idReferencia) || descricaoSemReferencia,
+      quantidadeClientes: 0
+    };
+
+    resumo.quantidadeClientes += 1;
+    resumoPorReferencia.set(idReferencia, resumo);
+  });
+
+  const lista = [...resumoPorReferencia.values()].filter((item) => item.quantidadeClientes > 0);
+  const totalClientes = lista.reduce((total, item) => total + item.quantidadeClientes, 0);
+
+  return lista
+    .map((item) => ({
+      ...item,
+      valor: `${item.quantidadeClientes} clientes`,
+      quantidadeItens: item.quantidadeClientes,
+      percentualClientes: calcularPercentualParteDoTotal(item.quantidadeClientes, totalClientes),
+      ajuda: {
+        composicao: `${item.quantidadeClientes} clientes ativos em ${item.descricao}.`,
+        periodo: 'Base cadastral atual da carteira ativa.'
+      }
+    }))
+    .sort((itemA, itemB) => (
+      itemB.quantidadeClientes - itemA.quantidadeClientes
+      || String(itemA.descricao || '').localeCompare(String(itemB.descricao || ''), 'pt-BR')
     ));
 }
 

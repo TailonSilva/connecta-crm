@@ -188,7 +188,7 @@ Utilitarios importantes:
 
 ### Pagina inicial
 
-- A pagina inicial usa abas `Orcamentos`, `Vendas` e `Atendimentos` para separar funil, analise comercial e relacionamento
+- A pagina inicial usa abas `Carteira`, `Orcamentos`, `Vendas` e `Atendimentos` para separar carteira ativa, funil, analise comercial e relacionamento; `Carteira` e a aba inicial padrao
 - A configuracao da empresa agora possui a aba `Pagina inicial`, com botoes `Graficos Orcamentos`, `Graficos Vendas` e `Graficos Atendimentos`
 - A mesma aba agora tambem possui o bloco `Cards resumo`, usado para configurar os cards que aparecem no topo das duas abas da home
 - Cada aba da home pode ser configurada por lista, com `visivel`, `ordem`, `colunas` e `rotulo`, usando malha de `10 colunas`
@@ -607,7 +607,7 @@ O cadastro de empresa tem modal proprio com abas:
 - `Documento`
 - O dashboard inclui grafico diario de tendencia para `Atendimentos`, `Orcamentos` e `Pedidos` nos ultimos 7 dias do recorte
 - O dashboard inclui rankings de `Vendedores`, `Produtos`, `Grupos de produto` e `Marcas` com barras comparativas
-- A pagina inicial inclui cards dinamicos configuraveis para cada servico com quantidade e percentual de clientes contratados em todas as abas, alem do grafico `Servicos Contratados` na aba `Vendas` contando clientes em `Sim`, `Nao`, `N/A` e `Terceiro`
+- A pagina inicial mantem os cards resumo como bloco padrao para todas as abas e inclui a aba `Carteira`, com o grafico `Servicos Contratados` contando clientes ativos em `Sim`, `Nao`, `N/A` e `Terceiro`, graficos de servicos contratados por `Conceito` e por `Ramo de atividade`, e graficos da carteira ativa por `Conceito` e por `Ramo de atividade`, sem exibir percentuais no texto
 - O dashboard inclui painel de agenda dos proximos dias e bloco de saude comercial com conversao, fechamento e entregas
 - Os cards de resumo da pagina inicial usam titulo no topo com tipografia mais contida, valor abaixo, descricao auxiliar e icone ampliado na direita com corte parcial pelo proprio card
 - Endereco completo

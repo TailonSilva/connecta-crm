@@ -3,11 +3,13 @@
 }
 
 .gradePainelServicos .corpoGradePadrao {
-  overflow-x: auto;
+  overflow-x: hidden;
 }
 
 .tabelaServicosContratados {
-  min-width: max-content;
+  width: 100%;
+  min-width: 0;
+  table-layout: auto;
 }
 
 .tabelaServicosContratados th,
@@ -40,34 +42,69 @@
 }
 
 .colunaServicoClienteCodigo {
-  width: 64px;
+  width: 76px;
   white-space: nowrap;
 }
 
 .colunaServicoClienteNome {
-  min-width: 260px;
-  width: 260px;
+  min-width: 140px;
+  width: 16%;
 }
 
-.colunaServicoClienteGrupo,
+.colunaServicoClienteCidade {
+  min-width: 130px;
+  width: 14%;
+}
+
+.colunaServicoClienteUf {
+  width: 44px;
+  min-width: 44px;
+  text-align: center;
+}
+
+.colunaServicoClienteGrupo {
+  min-width: 190px;
+  width: auto;
+}
+
 .colunaServicoClienteConceito {
-  min-width: 180px;
-  width: 180px;
+  width: 112px;
+  min-width: 112px;
+  max-width: 112px;
 }
 
 .colunaServicoContratado {
-  width: 128px;
-  min-width: 128px;
+  width: 46px;
+  min-width: 46px;
+  max-width: 46px;
   text-align: center;
 }
 
 .colunaServicoAcoes {
-  width: 88px;
-  min-width: 88px;
+  width: 58px;
+  min-width: 58px;
+  max-width: 58px;
   text-align: center;
 }
 
+.tabelaServicosContratados th.colunaServicoContratado,
+.tabelaServicosContratados td.colunaServicoContratado {
+  padding-right: 4px;
+  padding-left: 4px;
+}
+
+.tabelaServicosContratados th.colunaServicoAcoes,
+.tabelaServicosContratados td.colunaServicoAcoes {
+  padding-right: 8px;
+  padding-left: 8px;
+}
+
 .cabecalhoGradeServicos .colunaServicoContratado {
+  text-align: center;
+}
+
+.tabelaServicosContratados th.colunaServicoClienteUf,
+.tabelaServicosContratados td.colunaServicoClienteUf {
   text-align: center;
 }
 
@@ -211,11 +248,26 @@
 
   .colunaServicoClienteCodigo,
   .colunaServicoClienteNome,
-  .colunaServicoClienteGrupo,
-  .colunaServicoClienteConceito,
-  .colunaServicoContratado,
-  .colunaServicoAcoes {
+  .colunaServicoClienteCidade,
+  .colunaServicoClienteUf,
+  .colunaServicoClienteGrupo {
     min-width: 120px;
+  }
+
+  .colunaServicoClienteConceito {
+    min-width: 112px;
+  }
+
+  .colunaServicoClienteUf {
+    min-width: 44px;
+  }
+
+  .colunaServicoContratado {
+    min-width: 46px;
+  }
+
+  .colunaServicoAcoes {
+    min-width: 58px;
   }
 
   .linhaCabecalhoEdicaoServicosCliente {

@@ -285,6 +285,7 @@ const entidades = [
       'graficosPaginaInicialOrcamentos',
       'graficosPaginaInicialVendas',
       'graficosPaginaInicialAtendimentos',
+      'graficosPaginaInicialCarteira',
       'cardsPaginaInicial',
       'corPrimariaOrcamento',
       'corSecundariaOrcamento',

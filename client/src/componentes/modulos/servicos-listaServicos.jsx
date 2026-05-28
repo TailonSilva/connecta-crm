@@ -18,8 +18,10 @@ export function ListaServicos({
         <tr className="cabecalhoGradeServicos">
           <th className="colunaServicoClienteCodigo">Codigo</th>
           <th className="colunaServicoClienteNome">Nome fantasia</th>
-          <th className="colunaServicoClienteGrupo">Grupo de empresa</th>
+          <th className="colunaServicoClienteCidade">Cidade</th>
+          <th className="colunaServicoClienteUf">UF</th>
           <th className="colunaServicoClienteConceito">Conceito</th>
+          <th className="colunaServicoClienteGrupo">Grupo de empresa</th>
           {servicos.map((servico) => (
             <th
               key={servico.idServico}
@@ -51,11 +53,17 @@ export function ListaServicos({
           <td className="colunaServicoClienteNome">
             <TextoGradeClamp>{linha.nomeFantasia || 'Cliente nao informado'}</TextoGradeClamp>
           </td>
-          <td className="colunaServicoClienteGrupo">
-            <TextoGradeClamp>{linha.grupoEmpresa || 'Sem grupo'}</TextoGradeClamp>
+          <td className="colunaServicoClienteCidade">
+            <TextoGradeClamp>{linha.cidade || 'Sem cidade'}</TextoGradeClamp>
+          </td>
+          <td className="colunaServicoClienteUf">
+            {linha.estado || '-'}
           </td>
           <td className="colunaServicoClienteConceito">
             <TextoGradeClamp>{linha.conceitoCliente || 'Sem conceito'}</TextoGradeClamp>
+          </td>
+          <td className="colunaServicoClienteGrupo">
+            <TextoGradeClamp>{linha.grupoEmpresa || 'Sem grupo'}</TextoGradeClamp>
           </td>
           {servicos.map((servico) => {
             const vinculo = linha.servicosPorId.get(String(servico.idServico));

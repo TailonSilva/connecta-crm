@@ -15,22 +15,12 @@ export function SecaoServicosClientesInicio({ itens, titulo = 'Servicos Contrata
         colunasPainel={2}
         tituloValor="Sim"
         tituloQuantidade="Nao / N/A / Terceiro"
-        obterValorTexto={(item) => `${item.quantidadeContratados} sim (${formatarPercentualServico(item.percentualContratados)})`}
+        obterValorTexto={(item) => `${item.quantidadeContratados} sim`}
         obterValorPercentual={(item) => item.percentualContratados}
-        obterQuantidadeTexto={(item) => `${item.quantidadeNaoContratados} nao (${formatarPercentualServico(item.percentualNaoContratados)}) | ${item.quantidadeNaoAplicavel} N/A (${formatarPercentualServico(item.percentualNaoAplicavel)}) | ${item.quantidadeTerceiro} terceiro (${formatarPercentualServico(item.percentualTerceiro)})`}
+        obterQuantidadeTexto={(item) => `${item.quantidadeNaoContratados} nao | ${item.quantidadeNaoAplicavel} N/A | ${item.quantidadeTerceiro} terceiro`}
         obterQuantidadePercentual={(item) => item.percentualNaoOuNaoAplicavel}
         ariaAcao="Abrir lista completa de clientes por servico"
       />
     </div>
   );
-}
-
-function formatarPercentualServico(valor) {
-  const numero = Number(valor);
-  const percentual = Number.isFinite(numero) ? numero : 0;
-
-  return `${percentual.toLocaleString('pt-BR', {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1
-  })}%`;
 }

@@ -14,6 +14,8 @@ export function SecaoResumoRelacionamentoComModalInicio({
   modalTitulo,
   modalSubtitulo = 'Lista completa do mes corrente.',
   colunasPainel = 2,
+  tituloValor = 'Valor',
+  tituloQuantidade = 'Quantidade',
   varianteValor = '',
   obterChave = (item) => item.id,
   obterRotulo = (item) => item.descricao,
@@ -44,8 +46,8 @@ export function SecaoResumoRelacionamentoComModalInicio({
         }}
         itens={itensExibidos}
         mensagemVazia={mensagemVazia}
-        tituloValor="Valor"
-        tituloQuantidade="Quantidade"
+        tituloValor={tituloValor}
+        tituloQuantidade={tituloQuantidade}
         obterChave={obterChave}
         obterRotulo={obterRotulo}
         obterValorTexto={obterValorTexto}

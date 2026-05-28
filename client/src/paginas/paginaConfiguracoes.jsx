@@ -97,11 +97,14 @@ import { normalizarConfiguracoesColunasGridAtendimentos } from '../dados/colunas
 import {
   normalizarConfiguracoesGraficosPaginaInicialOrcamentos,
   normalizarConfiguracoesGraficosPaginaInicialAtendimentos,
+  normalizarConfiguracoesGraficosPaginaInicialCarteira,
   normalizarConfiguracoesGraficosPaginaInicialVendas,
   reordenarConfiguracoesGraficosPaginaInicialAtendimentos,
+  reordenarConfiguracoesGraficosPaginaInicialCarteira,
   reordenarConfiguracoesGraficosPaginaInicialOrcamentos,
   reordenarConfiguracoesGraficosPaginaInicialVendas,
   reposicionarConfiguracaoGraficosPaginaInicialAtendimentos,
+  reposicionarConfiguracaoGraficosPaginaInicialCarteira,
   reposicionarConfiguracaoGraficosPaginaInicialOrcamentos,
   reposicionarConfiguracaoGraficosPaginaInicialVendas,
   TOTAL_COLUNAS_GRAFICOS_PAGINA_INICIAL
@@ -686,6 +689,22 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
     const payload = normalizarPayloadEmpresa({
       ...empresa,
       graficosPaginaInicialAtendimentos: graficos
+    });
+
+    await atualizarEmpresa(empresa.idEmpresa, payload);
+    await carregarEmpresa();
+    window.dispatchEvent(new CustomEvent('empresa-atualizada'));
+    definirModalGraficosPaginaInicialAberto(null);
+  }
+
+  async function salvarGraficosPaginaInicialCarteira(graficos) {
+    if (!empresa?.idEmpresa) {
+      throw new Error('Cadastre a empresa antes de configurar os graficos da pagina inicial.');
+    }
+
+    const payload = normalizarPayloadEmpresa({
+      ...empresa,
+      graficosPaginaInicialCarteira: graficos
     });
 
     await atualizarEmpresa(empresa.idEmpresa, payload);
@@ -1699,6 +1718,22 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
                           <strong>Graficos Atendimentos</strong>
                         </span>
                       </button>
+
+                      <button
+                        type="button"
+                        className="cartaoConfiguracao"
+                        disabled={usuarioSomenteConsulta || !empresa?.idEmpresa}
+                        onClick={() => definirModalGraficosPaginaInicialAberto('carteira')}
+                      >
+                        <span className="iconeCartaoConfiguracao" aria-hidden="true">
+                          <span className="circuloIconeConfiguracao">
+                            <Icone nome="clientes" />
+                          </span>
+                        </span>
+                        <span className="conteudoCartaoConfiguracao">
+                          <strong>Graficos Carteira</strong>
+                        </span>
+                      </button>
                     </div>
                     {!empresa?.idEmpresa ? (
                       <p className="descricaoOpcaoEmpresaPaginaInicial">
@@ -1794,6 +1829,20 @@ export function PaginaConfiguracoes({ usuarioLogado }) {
         camadaSecundaria={modalEmpresaAberto}
         aoFechar={() => definirModalGraficosPaginaInicialAberto(null)}
         aoSalvar={salvarGraficosPaginaInicialAtendimentos}
+      />
+      <ModalGraficosPaginaInicial
+        aberto={modalGraficosPaginaInicialAberto === 'carteira'}
+        titulo="Graficos Carteira"
+        empresa={empresa}
+        configuracoesAtuais={empresa?.graficosPaginaInicialCarteira}
+        normalizarConfiguracoes={normalizarConfiguracoesGraficosPaginaInicialCarteira}
+        reordenarConfiguracoes={reordenarConfiguracoesGraficosPaginaInicialCarteira}
+        reposicionarConfiguracao={reposicionarConfiguracaoGraficosPaginaInicialCarteira}
+        totalColunas={TOTAL_COLUNAS_GRAFICOS_PAGINA_INICIAL}
+        somenteConsulta={usuarioSomenteConsulta}
+        camadaSecundaria={modalEmpresaAberto}
+        aoFechar={() => definirModalGraficosPaginaInicialAberto(null)}
+        aoSalvar={salvarGraficosPaginaInicialCarteira}
       />
       <ModalLayoutOrcamento
         aberto={modalLayoutOrcamentoAberto}
@@ -2470,6 +2519,16 @@ function normalizarPayloadEmpresa(dadosEmpresa) {
     ),
     graficosPaginaInicialAtendimentos: JSON.stringify(
       normalizarConfiguracoesGraficosPaginaInicialAtendimentos(dadosEmpresa.graficosPaginaInicialAtendimentos).map((grafico) => ({
+        id: grafico.id,
+        base: grafico.base,
+        rotulo: grafico.rotulo,
+        visivel: Boolean(grafico.visivel),
+        ordem: grafico.ordem,
+        span: grafico.span
+      }))
+    ),
+    graficosPaginaInicialCarteira: JSON.stringify(
+      normalizarConfiguracoesGraficosPaginaInicialCarteira(dadosEmpresa.graficosPaginaInicialCarteira).map((grafico) => ({
         id: grafico.id,
         base: grafico.base,
         rotulo: grafico.rotulo,

@@ -109,11 +109,46 @@ export const graficosPaginaInicialVendas = [
     spanPadrao: 5,
     visivelPadrao: true
   },
+];
+
+export const graficosPaginaInicialCarteira = [
   {
     id: 'servicosClientes',
     rotulo: 'Servicos Contratados',
     ajudaConfiguracao: 'Mostra a quantidade de clientes por servico contratado, nao contratado, nao aplicavel e terceiro.',
-    ordemPadrao: 9,
+    ordemPadrao: 1,
+    spanPadrao: 5,
+    visivelPadrao: true
+  },
+  {
+    id: 'servicosConceitosCliente',
+    rotulo: 'Servicos contratados por conceito',
+    ajudaConfiguracao: 'Mostra a quantidade de servicos contratados por conceito de cliente, considerando apenas clientes ativos.',
+    ordemPadrao: 2,
+    spanPadrao: 5,
+    visivelPadrao: true
+  },
+  {
+    id: 'servicosRamosAtividade',
+    rotulo: 'Servicos contratados por ramo de atividade',
+    ajudaConfiguracao: 'Mostra a quantidade de servicos contratados por ramo de atividade, considerando apenas clientes ativos.',
+    ordemPadrao: 3,
+    spanPadrao: 5,
+    visivelPadrao: true
+  },
+  {
+    id: 'carteiraConceitosCliente',
+    rotulo: 'Carteira por conceito',
+    ajudaConfiguracao: 'Mostra a quantidade de clientes ativos por conceito.',
+    ordemPadrao: 4,
+    spanPadrao: 5,
+    visivelPadrao: true
+  },
+  {
+    id: 'carteiraRamosAtividade',
+    rotulo: 'Carteira por ramo de atividade',
+    ajudaConfiguracao: 'Mostra a quantidade de clientes ativos por ramo de atividade.',
+    ordemPadrao: 5,
     spanPadrao: 5,
     visivelPadrao: true
   }
@@ -171,6 +206,9 @@ const idsPermitidosGraficosPaginaInicialVendas = new Set(
 const idsPermitidosGraficosPaginaInicialAtendimentos = new Set(
   graficosPaginaInicialAtendimentos.map((grafico) => grafico.id)
 );
+const idsPermitidosGraficosPaginaInicialCarteira = new Set(
+  graficosPaginaInicialCarteira.map((grafico) => grafico.id)
+);
 
 const mapaGraficosPaginaInicialOrcamentos = new Map(
   graficosPaginaInicialOrcamentos.map((grafico) => [grafico.id, grafico])
@@ -180,6 +218,9 @@ const mapaGraficosPaginaInicialVendas = new Map(
 );
 const mapaGraficosPaginaInicialAtendimentos = new Map(
   graficosPaginaInicialAtendimentos.map((grafico) => [grafico.id, grafico])
+);
+const mapaGraficosPaginaInicialCarteira = new Map(
+  graficosPaginaInicialCarteira.map((grafico) => [grafico.id, grafico])
 );
 
 export function normalizarConfiguracoesGraficosPaginaInicialOrcamentos(valor) {
@@ -209,6 +250,15 @@ export function normalizarConfiguracoesGraficosPaginaInicialAtendimentos(valor) 
   );
 }
 
+export function normalizarConfiguracoesGraficosPaginaInicialCarteira(valor) {
+  return normalizarConfiguracoesGraficosPaginaInicial(
+    valor,
+    graficosPaginaInicialCarteira,
+    idsPermitidosGraficosPaginaInicialCarteira,
+    mapaGraficosPaginaInicialCarteira
+  );
+}
+
 export function reordenarConfiguracoesGraficosPaginaInicialOrcamentos(configuracoes) {
   return reordenarConfiguracoesGraficosPaginaInicial(
     configuracoes,
@@ -227,6 +277,13 @@ export function reordenarConfiguracoesGraficosPaginaInicialAtendimentos(configur
   return reordenarConfiguracoesGraficosPaginaInicial(
     configuracoes,
     graficosPaginaInicialAtendimentos
+  );
+}
+
+export function reordenarConfiguracoesGraficosPaginaInicialCarteira(configuracoes) {
+  return reordenarConfiguracoesGraficosPaginaInicial(
+    configuracoes,
+    graficosPaginaInicialCarteira
   );
 }
 
@@ -254,6 +311,15 @@ export function reposicionarConfiguracaoGraficosPaginaInicialAtendimentos(config
     idGrafico,
     ordemDesejada,
     graficosPaginaInicialAtendimentos
+  );
+}
+
+export function reposicionarConfiguracaoGraficosPaginaInicialCarteira(configuracoes, idGrafico, ordemDesejada) {
+  return reposicionarConfiguracaoGraficosPaginaInicial(
+    configuracoes,
+    idGrafico,
+    ordemDesejada,
+    graficosPaginaInicialCarteira
   );
 }
 
